@@ -7,6 +7,7 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Validator;
+use Spatie\Permission\Models\Role;
 class AuthController extends Controller
 {
     public function register(Request $request){
@@ -37,7 +38,7 @@ class AuthController extends Controller
     if($user->save()){
         $tokenResult = $user->createToken('Personal Access Token');
         $token = $tokenResult->plainTextToken;
-
+        $user->assignRole('team_admin');
         return response()->json([
             'message' => 'Successfully created user!',
             'accessToken'=> $token,
