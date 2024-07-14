@@ -16,17 +16,6 @@ class UsersTableSeeder extends Seeder
     {
         $teams = Team::all();
         // Create a specific user
-        $specificUser = User::create([
-            'name' => 'akram',
-            'email' => 'ak@gmail.com',
-            'password' => Hash::make('cakram123'), // Hash the password
-            'team_id' => $teams->random()->id, // Assign a random team
-        ]);
-
-        // Assign roles to the specific user if necessary
-        if ($specificUser) {
-            $specificUser->assignRole('admin');
-        }
 
 
         User::factory()->count(50)->make()->each(function ($user) use ($teams) {

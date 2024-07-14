@@ -30,14 +30,11 @@ class UserResource extends Resource
                     ->email()
                     ->required()
                     ->maxLength(255),
-                Forms\Components\DateTimePicker::make('email_verified_at'),
                 Forms\Components\TextInput::make('password')
                     ->password()
                     ->required()
                     ->maxLength(255),
-                Forms\Components\TextInput::make('team_id')
-                    ->numeric()
-                    ->default(null),
+                Forms\Components\Select::make('roles')->multiple()->relationship('roles', 'name'),
             ]);
     }
 
@@ -55,20 +52,17 @@ public static function table(Table $table): Table
                 ->searchable(),
             Tables\Columns\TextColumn::make('email')
                 ->searchable(),
-            Tables\Columns\TextColumn::make('email_verified_at')
-                ->dateTime()
-                ->sortable(),
-            Tables\Columns\TextColumn::make('created_at')
-                ->dateTime()
-                ->sortable()
-                ->toggleable(isToggledHiddenByDefault: true),
-            Tables\Columns\TextColumn::make('updated_at')
-                ->dateTime()
-                ->sortable()
-                ->toggleable(isToggledHiddenByDefault: true),
-            Tables\Columns\TextColumn::make('team_id')
-                ->numeric()
-                ->sortable(),
+          Tables\Columns\TextColumn::make('roles.name')
+                ->badge()
+                ->label('Roles')
+                ->searchable()
+                ->formatStateUsing(fn ($state) => ucfirst($state))
+                ->colors([
+                    'primary' => 'admin',
+                    'success' => 'team_admin',
+                    'warning' => 'worker',
+                ])
+                ->separator(','),
         ])
         ->actions([
             Tables\Actions\EditAction::make(),

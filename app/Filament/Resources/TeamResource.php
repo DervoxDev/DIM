@@ -12,7 +12,10 @@ use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
-
+use Filament\Resources\Pages\Page;
+use Filament\Forms\Get;
+use Filament\Forms\Set;
+use Illuminate\Database\Eloquent\Model;
 class TeamResource extends Resource
 {
     protected static ?string $model = Team::class;
@@ -26,20 +29,25 @@ class TeamResource extends Resource
                 Forms\Components\TextInput::make('name')
                     ->required()
                     ->maxLength(255),
-                Forms\Components\Select::make('subscription.subscription_type')
+                Forms\Components\Select::make('subscription_type')
                     ->label('Subscription Type')
                     ->options([
                         'Basic' => 'Basic',
                         'Premium' => 'Premium',
                         'Enterprise' => 'Enterprise',
                     ])
-                    ->required(),
-                Forms\Components\DatePicker::make('subscription.subscription_expiredDate')
+                    ->required()
+                    ->afterStateHydrated(function (Get $get, Set $set, ?Model $record) {
+                        $set('subscription_type', $record?->subscription?->subscription_type);
+                    }),
+                Forms\Components\DatePicker::make('subscription_expiredDate')
                     ->label('Subscription Expiry Date')
-                    ->required(),
+                    ->required()
+                    ->afterStateHydrated(function (Get $get, Set $set, ?Model $record) {
+                        $set('subscription_expiredDate', $record?->subscription?->subscription_expiredDate);
+                    }),
             ]);
     }
-
     public static function table(Table $table): Table
     {
         return $table
@@ -69,6 +77,7 @@ class TeamResource extends Resource
                 //
             ])
             ->actions([
+                Tables\Actions\ViewAction::make(),
                 Tables\Actions\EditAction::make(),
                 Tables\Actions\DeleteAction::make(),
             ])
@@ -77,19 +86,28 @@ class TeamResource extends Resource
             ]);
     }
 
-    public static function getRelations(): array
-    {
-        return [
-            //
-        ];
-    }
+public static function getRelations(): array
+{
+    return [
+        //
+    ];
+}
 
-    public static function getPages(): array
-    {
-        return [
-            'index' => Pages\ListTeams::route('/'),
-            'create' => Pages\CreateTeam::route('/create'),
-            'edit' => Pages\EditTeam::route('/{record}/edit'),
-        ];
-    }
+public static function getRecordSubNavigation(Page $page): array
+{
+    return $page->generateNavigationItems([
+        Pages\ViewTeam::class,
+        Pages\ViewTeamWorkers::class,
+    ]);
+}
+public static function getPages(): array
+{
+    return [
+        'index' => Pages\ListTeams::route('/'),
+        'create' => Pages\CreateTeam::route('/create'),
+        'view' => Pages\ViewTeam::route('/{record}'),
+        'edit' => Pages\EditTeam::route('/{record}/edit'),
+        'viewTeamWorkers' => Pages\ViewTeamWorkers::route('/{record}/workers'),
+    ];
+}
 }

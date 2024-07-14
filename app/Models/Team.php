@@ -4,54 +4,40 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Team extends Model
 {
     use HasFactory;
 
-    /**
-     * The attributes that are mass assignable.
-     *
-     * @var array<int, string>
-     */
     protected $fillable = [
         'name',
     ];
 
-    /**
-     * Get the users that belong to the team.
-     */
-    public function users()
+    // Add this line to always load the subscription relationship
+    protected $with = ['subscription'];
+
+    public function users(): HasMany
     {
         return $this->hasMany(User::class);
     }
 
-    /**
-     * Get the subscription associated with the team.
-     */
-    public function subscription()
+    public function subscription(): HasOne
     {
         return $this->hasOne(Subscription::class);
     }
 
-    /**
-     * Get all teams with their associated users and subscription.
-     *
-     * @return \Illuminate\Database\Eloquent\Collection
-     */
-    public static function getAllTeamsWithUsersAndSubscription()
+    // ... keep your other methods ...
+
+    // Add these accessors to make it easier to access subscription data
+    public function getSubscriptionTypeAttribute()
     {
-        return self::with(['users', 'subscription'])->get();
+        return $this->subscription->subscription_type ?? null;
     }
 
-    /**
-     * Get a specific team by ID with its associated users and subscription.
-     *
-     * @param int $id
-     * @return Team|null
-     */
-    public static function getTeamWithUsersAndSubscription($id)
+    public function getSubscriptionExpiredDateAttribute()
     {
-        return self::with(['users', 'subscription'])->find($id);
+        return $this->subscription->subscription_expiredDate ?? null;
     }
 }
