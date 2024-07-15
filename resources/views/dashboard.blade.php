@@ -10,7 +10,12 @@
             <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg">
                 <div class="p-6 text-gray-900 dark:text-gray-100">
                         @if(auth()->user()->hasRole('team_admin'))
-                        @include('team-admin-dashboard-content')
+                        {{--@include('team-admin-dashboard-content')--}}
+                @if($workers->isNotEmpty())
+                    @livewire('list-workers', ['team' => $team])
+                @else
+                    <p class="text-sm">No workers found.</p>
+                @endif
                     @else
                         {{ __("You're logged in!") }}
                     @endif

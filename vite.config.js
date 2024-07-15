@@ -12,6 +12,11 @@ export default defineConfig({
                 ...refreshPaths,
                 'app/Livewire/**',
                 'app/Filament/**',
+                'app/Forms/Components/**',
+                'app/Infolists/Components/**',
+                'app/Providers/Filament/**',
+                'app/Tables/Columns/**',
+                'resources/views/**'
             ],
         }),
     ],
