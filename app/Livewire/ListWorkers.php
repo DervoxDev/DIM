@@ -12,6 +12,7 @@ use Filament\Tables\Table;
 use Filament\Forms;
 use Filament\Forms\Form;
 use App\Models\User;
+use Filament\Notifications\Notification;
 use Illuminate\Contracts\View\View;
 
 class ListWorkers extends Component implements HasForms, HasTable
@@ -71,9 +72,15 @@ class ListWorkers extends Component implements HasForms, HasTable
                             'name' => $data['name'],
                             'email' => $data['email'],
                             'password' => bcrypt($data['password']),
+                            'team_id' => $this->team->id
                         ]);
-                        $this->team->users()->attach($user->id, ['role' => 'worker']);
-                        $this->dispatch('notify', 'User added successfully');
+                        $user->assignRole('worker');
+                        Notification::make()
+                            ->title('notify')
+                            ->body('User added successfully')
+                            ->success()
+                            ->send();
+
                     })
                     ->slideOver(),
             ]);
