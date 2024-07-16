@@ -12,9 +12,8 @@ use Filament\Tables\Table;
 use Filament\Forms;
 use Filament\Forms\Form;
 use App\Models\User;
-use Filament\Notifications\Notification;
 use Illuminate\Contracts\View\View;
-
+use Filament\Notifications\Notification;
 class ListWorkers extends Component implements HasForms, HasTable
 {
     use InteractsWithTable;
@@ -61,11 +60,6 @@ class ListWorkers extends Component implements HasForms, HasTable
                             ->password()
                             ->required()
                             ->minLength(8),
-                        Forms\Components\TextInput::make('password_confirmation')
-                            ->label('Confirm Password')
-                            ->password()
-                            ->required()
-                            ->same('password'),
                     ])
                     ->action(function (array $data): void {
                         $user = User::create([
@@ -77,16 +71,15 @@ class ListWorkers extends Component implements HasForms, HasTable
                         $user->assignRole('worker');
                         Notification::make()
                             ->title('notify')
-                            ->body('User added successfully')
+                            ->body('Worker added successfully')
                             ->success()
                             ->send();
-
                     })
-                    ->slideOver(),
+                // ->slideOver(),
             ]);
         // ->actions([
             //      Tables\Actions\EditAction::make()->slideOver(),
-            //      Tables\Actions\DeleteAction::make(),
+        //      Tables\Actions\DeleteAction::make(),
         // ]);
     }
 
