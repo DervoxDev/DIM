@@ -21,6 +21,6 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        Gate::policy(Panel::class, FilamentAdminPolicy::class);
+    #    Gate::policy(Panel::class, FilamentAdminPolicy::class);
     }
 }
