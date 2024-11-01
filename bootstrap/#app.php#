@@ -6,9 +6,7 @@
     use Illuminate\Auth\AuthenticationException;
     use App\Http\Middleware\FilamentAdminMiddleware;
     use Illuminate\Console\Scheduling\Schedule;
-use App\Console\Commands\ExpireSubscriptions;
-
-return Application::configure(basePath: dirname(__DIR__))
+    return Application::configure(basePath: dirname(__DIR__))
                       ->withRouting(
                           web: __DIR__.'/../routes/web.php',
                           api: __DIR__.'/../routes/api.php',
@@ -21,7 +19,7 @@ return Application::configure(basePath: dirname(__DIR__))
                           ]);
                       })
                       ->withSchedule(function (Schedule $schedule) {
-                          $schedule->command('subscriptions:expire')->everyMinute();
+                          $schedule->command(->everyMinute();
                       })
                       ->withExceptions(function (Exceptions $exceptions) {
                           //

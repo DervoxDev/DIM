@@ -1,0 +1,64 @@
+namespace App\Console\Commands;
+
+use Illuminate\Console\Command;
+use App\Models\Subscription;
+use Illuminate\Support\Facades\Mail;
+use App\Mail\SubscriptionExpiredNotice;
+use App\Mail\SubscriptionExpirationNotice;
+
+
+class ExpireSubscriptions extends Command
+{
+    protected $signature = 'subscriptions:expire';
+    protected $description = 'Send expiration notices and expire subscriptions';
+
+    public function handle()
+    {
+        \Log::info("ExpireSubscriptions command started.");
+
+        // Expire subscriptions that have passed their expiration date
+        $expiredSubscriptions = Subscription::where('status', 'active')
+                                            ->whereDate('subscription_expiredDate', '<', now())
+                                            ->get();
+
+        // Handle expired subscriptions
+        foreach ($expiredSubscriptions as $subscription) {
+            try {
+                $user = $subscription->team->user;
+
+                // Send expired subscription notice
+                Mail::to($user->email)->send(new SubscriptionExpiredNotice($subscription));
+
+                // Update subscription and team status
+                $subscription->update(['status' => 'expired']);
+                $subscription->team->update(['is_active' => false]);
+
+                \Log::info("Expired notice sent to: {$user->email}");
+            } catch (\Exception $e) {
+                \Log::error("Error processing expired subscription for team {$subscription->team_id}: " . $e->getMessage());
+            }
+        }
+
+        // Handle subscriptions that are about to expire (3 days remaining)
+        $expiringSubscriptions = Subscription::where('status', 'active')
+                                             ->whereDate('subscription_expiredDate', '=', now()->addDays(3))
+                                             ->get();
+
+        foreach ($expiringSubscriptions as $subscription) {
+            try {
+                $user = $subscription->team->user;
+                $daysRemaining = 3; // or calculate based on the actual remaining days
+
+                // Send expiration notice
+                Mail::to($user->email)->send(new SubscriptionExpirationNotice($subscription, $daysRemaining));
+
+                \Log::info("Expiration notice sent to: {$user->email}");
+            } catch (\Exception $e) {
+                \Log::error("Error processing expiration notice for team {$subscription->team_id}: " . $e->getMessage());
+            }
+        }
+
+        $this->info("Processed expired subscriptions and sent notifications.");
+        return Command::SUCCESS;
+    }
+}
