@@ -71,7 +71,7 @@ public function login(Request $request)
         return response()->json([
             'error' => true,
             'message' => 'Unauthorized',
-            'errors' => ['email' => ['The password entered is incorrect.']]
+            'errors' => ['email' => ['The email or password entered is incorrect.']]
         ], 401);
     }
 
