@@ -46,6 +46,16 @@
                 'duration_value' => 1,
             ]);
 
+            // Create Trial Plan
+            $trialPlan = Plan::create([
+                'name' => 'Trial',
+                'description' => 'Free 1-week trial for new users',
+                'price' => 0.00, // Free trial
+                'duration_type' => 'days',
+                'duration_value' => 7,
+                'is_active' => true,
+            ]);
+
             // Add features for Basic plans
             $basicFeatures = [
                 [
@@ -100,6 +110,27 @@
                         ['plan_id' => $plan->id]
                     ));
                 }
+            }
+
+            // Optionally, add any features specific to the Trial plan
+            $trialFeatures = [
+                [
+                    'feature_name' => 'max_users',
+                    'feature_value' => '3',
+                    'feature_type' => 'numeric'
+                ],
+                [
+                    'feature_name' => 'storage_limit_gb',
+                    'feature_value' => '5',
+                    'feature_type' => 'numeric'
+                ],
+            ];
+
+            foreach ($trialFeatures as $feature) {
+                PlanFeature::create(array_merge(
+                    $feature,
+                    ['plan_id' => $trialPlan->id]
+                ));
             }
         }
     }

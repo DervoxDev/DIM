@@ -17,7 +17,7 @@
                 $table->string('name');
                 $table->text('description')->nullable();
                 $table->decimal('price', 10, 2);
-                $table->enum('duration_type', ['monthly', 'yearly', 'lifetime']);
+                $table->enum('duration_type', ['monthly', 'yearly', 'lifetime','days']);
                 $table->integer('duration_value')->nullable();
                 $table->boolean('is_active')->default(true);
                 $table->timestamps();
