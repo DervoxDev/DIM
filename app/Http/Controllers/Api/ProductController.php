@@ -9,6 +9,9 @@
     use Illuminate\Support\Facades\Validator;
     use Illuminate\Validation\Rule;
     use App\Models\ProductBarcode;
+    use App\Services\ActivityLogService;
+    use App\Models\ActivityLog;
+
     class ProductController extends Controller
     {
         /**
@@ -128,7 +131,19 @@
             $product = new Product($request->all());
             $product->team_id = $user->team->id;
             $product->save();
-
+            $activityLog = ActivityLog::create([
+                'log_type' => 'Create',
+                'model_type' => "Product",
+                'model_id' => $product->id,
+                'model_identifier' => $product->name,
+                'user_identifier' => $user?->name,
+                'user_id' => $user->id,
+                'user_email' => $user?->email,
+                'ip_address' => $request->ip(),
+                'user_agent' => $request->userAgent(),
+                'description' => "Product {$product->name} created",
+                'new_values' => $product->toArray()
+            ]);
             return response()->json([
                 'message' => 'Product created successfully',
                 'product' => $product
@@ -177,7 +192,19 @@
             }
 
             $product->update($request->all());
-
+            $activityLog = ActivityLog::create([
+                'log_type' => 'Update',
+                'model_type' => "Product",
+                'model_id' => $product->id,
+                'model_identifier' => $product->name,
+                'user_identifier' => $user?->name,
+                'user_id' => $user->id,
+                'user_email' => $user?->email,
+                'ip_address' => $request->ip(),
+                'user_agent' => $request->userAgent(),
+                'description' => "Product {$product->name} updated",
+                'new_values' => $product->toArray()
+            ]);
             return response()->json([
                 'message' => 'Product updated successfully',
                 'product' => $product
@@ -201,7 +228,19 @@
             }
 
             $product->delete();
-
+            $activityLog = ActivityLog::create([
+                'log_type' => 'Delete',
+                'model_type' => "Product",
+                'model_id' => $product->id,
+                'model_identifier' => $product->name,
+                'user_identifier' => $user?->name,
+                'user_id' => $user->id,
+                'user_email' => $user?->email,
+                'ip_address' => $request->ip(),
+                'user_agent' => $request->userAgent(),
+                'description' => "Product {$product->name} deleted",
+                'new_values' => $product->toArray()
+            ]);
             return response()->json([
                 'message' => 'Product deleted successfully'
             ]);
@@ -241,7 +280,19 @@
                     $request->quantity,
                     $request->operation
                 );
-
+                $activityLog = ActivityLog::create([
+                    'log_type' => 'Update',
+                    'model_type' => "Product",
+                    'model_id' => $product->id,
+                    'model_identifier' => $product->name,
+                    'user_identifier' => $user?->name,
+                    'user_id' => $user->id,
+                    'user_email' => $user?->email,
+                    'ip_address' => $request->ip(),
+                    'user_agent' => $request->userAgent(),
+                    'description' => "Stock Updated for {$product->name}",
+                    'new_values' => $product->toArray()
+                ]);
                 return response()->json([
                     'message' => 'Stock updated successfully',
                     'product' => $product->fresh()
@@ -320,7 +371,19 @@
 
             try {
                 $barcode = $product->addBarcode($request->barcode);
-
+                $activityLog = ActivityLog::create([
+                    'log_type' => 'Create',
+                    'model_type' => "Product",
+                    'model_id' => $product->id,
+                    'model_identifier' => $product->name,
+                    'user_identifier' => $user?->name,
+                    'user_id' => $user->id,
+                    'user_email' => $user?->email,
+                    'ip_address' => $request->ip(),
+                    'user_agent' => $request->userAgent(),
+                    'description' => "Barcode {$barcode->barcode} created for {$product->name}",
+                    'new_values' => $product->toArray()
+                ]);
                 return response()->json([
                     'message' => 'Barcode added successfully',
                     'barcode' => $barcode
@@ -357,7 +420,19 @@
                     'message' => 'Barcode not found'
                 ], 404);
             }
-
+            $activityLog = ActivityLog::create([
+                'log_type' => 'Delete',
+                'model_type' => "Product",
+                'model_id' => $product->id,
+                'model_identifier' => $product->name,
+                'user_identifier' => $user?->name,
+                'user_id' => $user->id,
+                'user_email' => $user?->email,
+                'ip_address' => $request->ip(),
+                'user_agent' => $request->userAgent(),
+                'description' => "Barcode {$barcode} deleted from {$product->name}",
+                'new_values' => $product->toArray()
+            ]);
             return response()->json([
                 'message' => 'Barcode removed successfully'
             ]);
