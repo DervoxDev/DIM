@@ -48,43 +48,68 @@ class CashSource extends Model
     {
         $this->balance += $amount;
         $this->save();
-
+    
         return $this->transactions()->create([
             'team_id' => $this->team_id,
             'amount' => $amount,
             'type' => 'deposit',
             'description' => $description,
             'transaction_date' => now(),
+            'reference_number' => 'DEP-' . time(), // Generate a reference number
+            'transactionable_type' => 'App\Models\CashSource', // Default type
+            'transactionable_id' => $this->id, // Reference to self
         ]);
     }
 
-    public function withdraw($amount, $description = null)
-    {
-        if ($this->balance < $amount) {
-            throw new \Exception('Insufficient funds');
-        }
-
-        $this->balance -= $amount;
-        $this->save();
-
-        return $this->transactions()->create([
-            'team_id' => $this->team_id,
-            'amount' => $amount,
-            'type' => 'withdrawal',
-            'description' => $description,
-            'transaction_date' => now(),
-        ]);
+public function withdraw($amount, $description = null)
+{
+    if ($this->balance < $amount) {
+        throw new \Exception('Insufficient funds');
     }
 
-    public function transfer($amount, CashSource $destination, $description = null)
-    {
-        if ($this->balance < $amount) {
-            throw new \Exception('Insufficient funds for transfer');
-        }
+    $this->balance -= $amount;
+    $this->save();
 
-        $this->withdraw($amount, "Transfer to {$destination->name}: $description");
-        $destination->deposit($amount, "Transfer from {$this->name}: $description");
+    return $this->transactions()->create([
+        'team_id' => $this->team_id,
+        'amount' => $amount,
+        'type' => 'withdrawal',
+        'description' => $description,
+        'transaction_date' => now(),
+        'reference_number' => 'WIT-' . time(), // Generate a reference number
+        'transactionable_type' => 'App\Models\CashSource', // Default type
+        'transactionable_id' => $this->id, // Reference to self
+    ]);
+}
 
-        return true;
+// And update the transfer method as well
+public function transfer($amount, CashSource $destination, $description = null)
+{
+    if ($this->balance < $amount) {
+        throw new \Exception('Insufficient funds for transfer');
     }
+
+    // Create withdrawal transaction
+    $withdrawalTx = $this->transactions()->create([
+        'team_id' => $this->team_id,
+        'amount' => $amount,
+        'type' => 'transfer',
+        'description' => "Transfer to {$destination->name}: $description",
+        'transaction_date' => now(),
+        'reference_number' => 'TRF-' . time(),
+        'transactionable_type' => 'App\Models\CashSource',
+        'transactionable_id' => $this->id,
+        'transfer_destination_id' => $destination->id
+    ]);
+
+    // Update balances
+    $this->balance -= $amount;
+    $this->save();
+
+    $destination->balance += $amount;
+    $destination->save();
+
+    return $withdrawalTx;
+}
+
 }

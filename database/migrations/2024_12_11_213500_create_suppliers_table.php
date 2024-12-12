@@ -19,7 +19,7 @@ return new class extends Migration
             $table->string('payment_terms')->nullable();
             $table->string('tax_number')->nullable();
             $table->text('notes')->nullable();
-            $table->string('status')->default('active');
+            $table->string('status')->default('Active');
             $table->timestamps();
             $table->softDeletes();
         });
