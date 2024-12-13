@@ -102,12 +102,6 @@
             Route::post('/invoices/{id}/mark-as-paid', [InvoiceController::class, 'markAsPaid']);
             Route::get('/invoices/{id}/download', [InvoiceController::class, 'download']);
 
-            Route::get('/invoices', [InvoiceController::class, 'index']);
-            Route::get('/invoices/{id}', [InvoiceController::class, 'show']);
-            Route::put('/invoices/{id}', [InvoiceController::class, 'update']);
-            Route::delete('/invoices/{id}', [InvoiceController::class, 'destroy']);
-            Route::post('/invoices/{id}/send', [InvoiceController::class, 'send']);
-            Route::post('/invoices/{id}/mark-as-paid', [InvoiceController::class, 'markAsPaid']);
-            Route::get('/invoices/{id}/download', [InvoiceController::class, 'download']);
+
         });
     });
