@@ -4,6 +4,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Support\Facades\DB;
 
 class Sale extends Model
 {
@@ -82,27 +83,42 @@ class Sale extends Model
     }
 
     // Helper methods
-    public function addPayment($amount, $cashSource)
+    public function addPayment($amount, $cashSource, $paymentDate = null, $referenceNumber = null)
     {
         if ($amount > ($this->total_amount - $this->paid_amount)) {
             throw new \Exception('Payment amount exceeds remaining balance');
         }
-
-        $this->paid_amount += $amount;
-        $this->payment_status = $this->paid_amount >= $this->total_amount ? 'paid' : 'partial';
-        $this->save();
-
-        // Create transaction
-        return $this->transactions()->create([
-            'team_id' => $this->team_id,
-            'cash_source_id' => $cashSource->id,
-            'amount' => $amount,
-            'type' => 'sale_payment',
-            'transaction_date' => now(),
-            'description' => "Payment for sale #{$this->reference_number}",
-        ]);
+    
+        $transaction = null;
+    
+        DB::transaction(function () use ($amount, $cashSource, $paymentDate, $referenceNumber, &$transaction) {
+            // Add to cash source
+            $cashSource->deposit($amount, "Payment received for sale #{$this->reference_number}");
+    
+            // Update client balance if client exists
+            if ($this->client_id) {
+                $this->client->updateBalance($amount, 'subtract');
+            }
+    
+            // Update sale payment status
+            $this->paid_amount += $amount;
+            $this->payment_status = $this->paid_amount >= $this->total_amount ? 'paid' : 'partial';
+            $this->save();
+    
+            // Create transaction record
+            $transaction = $this->transactions()->create([
+                'team_id' => $this->team_id,
+                'cash_source_id' => $cashSource->id,
+                'amount' => $amount,
+                'type' => 'sale_payment',
+                'transaction_date' =>  now(),
+                'reference_number' => $referenceNumber,
+                'description' => "Payment received for sale #{$this->reference_number}",
+            ]);
+        });
+    
+        return $transaction;
     }
-
     public function calculateTotals()
     {
         $this->total_amount = $this->items->sum('total_price');

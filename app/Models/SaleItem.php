@@ -11,7 +11,10 @@ class SaleItem extends Model
     protected $fillable = [
         'sale_id',
         'product_id',
+        'package_id',
+        'is_package',
         'quantity',
+        'total_pieces',
         'unit_price',
         'total_price',
         'tax_rate',
@@ -21,13 +24,30 @@ class SaleItem extends Model
     ];
 
     protected $casts = [
+        'is_package' => 'boolean',
         'quantity' => 'integer',
+        'total_pieces' => 'integer',
         'unit_price' => 'decimal:2',
         'total_price' => 'decimal:2',
         'tax_rate' => 'decimal:2',
         'tax_amount' => 'decimal:2',
         'discount_amount' => 'decimal:2',
     ];
+
+    public function package()
+    {
+        return $this->belongsTo(ProductPackage::class);
+    }
+
+    public function updateProductStock()
+    {
+        if ($this->is_package) {
+            $totalPieces = $this->quantity * $this->package->pieces_per_package;
+            $this->product->updateStock($totalPieces, 'subtract');
+        } else {
+            $this->product->updateStock($this->quantity, 'subtract');
+        }
+    }
 
     // Relationships
     public function sale()
@@ -43,9 +63,15 @@ class SaleItem extends Model
     // Helper methods
     public function calculateTotals()
     {
-        $this->total_price = $this->quantity * $this->unit_price;
-        $this->tax_amount = ($this->total_price * $this->tax_rate) / 100;
-        $this->total_price = $this->total_price + $this->tax_amount - $this->discount_amount;
-        $this->save();
+        // Calculate total pieces
+        $this->total_pieces = $this->is_package 
+            ? $this->quantity * $this->package->pieces_per_package 
+            : $this->quantity;
+
+        // Calculate price totals
+        $subtotal = $this->quantity * $this->unit_price;
+        $this->tax_amount = ($subtotal * $this->tax_rate) / 100;
+        $this->total_price = $subtotal + $this->tax_amount - $this->discount_amount;
     }
+
 }

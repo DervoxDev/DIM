@@ -13,7 +13,7 @@ return new class extends Migration
             $table->foreignId('supplier_id')->constrained()->cascadeOnDelete();
             $table->foreignId('cash_source_id')->constrained()->cascadeOnDelete();
             $table->string('reference_number')->unique();
-            $table->decimal('total_amount', 12, 2);
+            $table->decimal('total_amount', 12, 2)->default(0); 
             $table->decimal('paid_amount', 12, 2)->default(0);
             $table->decimal('tax_amount', 12, 2)->default(0);
             $table->decimal('discount_amount', 12, 2)->default(0);

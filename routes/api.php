@@ -9,10 +9,12 @@
     use App\Http\Controllers\Api\SupplierController;
     use App\Http\Controllers\Api\CashSourceController;
     use App\Http\Controllers\Api\CashTransactionController;
+    use App\Http\Controllers\Api\PurchaseController;
     use App\Http\Controllers\Api\SaleController;
     use App\Http\Controllers\Api\ClientController;
     use App\Http\Controllers\Api\InvoiceController;
-    
+    use App\Http\Controllers\Api\DashboardAnalyticsController;
+
     Route::group(['prefix' =>'v1'], function () {
         Route::post('login', [AuthController::class, 'login']);
         Route::post('register', [AuthController::class, 'register']);
@@ -102,6 +104,14 @@
             Route::post('/invoices/{id}/mark-as-paid', [InvoiceController::class, 'markAsPaid']);
             Route::get('/invoices/{id}/download', [InvoiceController::class, 'download']);
 
+            Route::prefix('dashboard')->group(function () {
+                Route::get('/sales-analytics', [DashboardAnalyticsController::class, 'getSaleAnalytics']);
+                Route::get('/purchase-analytics', [DashboardAnalyticsController::class, 'getPurchaseAnalytics']);
+                Route::get('/inventory-analytics', [DashboardAnalyticsController::class, 'getInventoryAnalytics']);
+                Route::get('/customer-analytics', [DashboardAnalyticsController::class, 'getCustomerAnalytics']);
+                Route::get('/overall', [DashboardAnalyticsController::class, 'getOverallDashboard']);
+            });
+            
 
         });
     });

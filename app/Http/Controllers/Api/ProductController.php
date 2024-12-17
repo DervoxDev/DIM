@@ -69,26 +69,84 @@
         /**
          * Get a specific product
          */
+        // public function show(Request $request, $id)
+        // {
+        //     $user = $request->user();
+
+        //     $product = Product::where('team_id', $user->team->id)
+        //                       ->with('unit', 'packages')
+        //                       ->find($id);
+
+        //     if (!$product) {
+        //         return response()->json([
+        //             'error' => true,
+        //             'message' => 'Product not found'
+        //         ], 404);
+        //     }
+
+        //     return response()->json([
+        //         'product' => $product
+        //     ]);
+        // }
         public function show(Request $request, $id)
         {
             $user = $request->user();
-
+        
             $product = Product::where('team_id', $user->team->id)
-                              ->with('unit')
-                              ->find($id);
-
+                             ->with('unit', 'packages')
+                             ->find($id);
+        
             if (!$product) {
                 return response()->json([
                     'error' => true,
                     'message' => 'Product not found'
                 ], 404);
             }
-
+        
+            // Format the response with explicit package data
+            $formattedProduct = [
+                'id' => $product->id,
+                'reference' => $product->reference,
+                'name' => $product->name,
+                'description' => $product->description,
+                'price' => $product->price,
+                'purchase_price' => $product->purchase_price,
+                'expired_date' => $product->expired_date,
+                'quantity' => $product->quantity,
+                'product_unit_id' => $product->product_unit_id,
+                'sku' => $product->sku,
+                'min_stock_level' => $product->min_stock_level,
+                'max_stock_level' => $product->max_stock_level,
+                'reorder_point' => $product->reorder_point,
+                'location' => $product->location,
+                'unit' => $product->unit ? [
+                    'id' => $product->unit->id,
+                    'name' => $product->unit->name,
+                ] : null,
+                'packages' => $product->packages->map(function ($package) {
+                    return [
+                        'id' => $package->id,
+                        'name' => $package->name,
+                        'pieces_per_package' => $package->pieces_per_package,
+                        'purchase_price' => $package->purchase_price,
+                        'selling_price' => $package->selling_price,
+                        'barcode' => $package->barcode,
+                        'product_id' => $package->product_id,
+                    ];
+                })->values()->all()
+            ];
+        
+            // Add debug logging
+            \Log::info('Product data being sent:', [
+                'product_id' => $product->id,
+                'packages' => $formattedProduct['packages']
+            ]);
+        
             return response()->json([
-                'product' => $product
+                'product' => $formattedProduct
             ]);
         }
-
+        
         /**
          * Create a new product
          */
@@ -127,10 +185,33 @@
                     'errors' => $validator->errors()
                 ], 422);
             }
-
+            if ($request->has('packages')) {
+                $packageValidator = Validator::make($request->all(), [
+                    'packages.*.name' => 'required|string|max:255',
+                    'packages.*.pieces_per_package' => 'required|integer|min:1',
+                    'packages.*.purchase_price' => 'required|integer|min:0',
+                    'packages.*.selling_price' => 'required|integer|min:0',
+                    'packages.*.barcode' => 'nullable|string|unique:product_packages,barcode'
+                ]);
+        
+                if ($packageValidator->fails()) {
+                    return response()->json([
+                        'error' => true,
+                        'message' => 'Validation error',
+                        'errors' => $packageValidator->errors()
+                    ], 422);
+                }
+            }
             $product = new Product($request->all());
             $product->team_id = $user->team->id;
             $product->save();
+            if ($request->has('packages')) {
+                foreach ($request->packages as $packageData) {
+                    $packageData['team_id'] = $user->team->id;
+                    $product->packages()->create($packageData);
+                }
+            }
+            $product->load('packages');
             $activityLog = ActivityLog::create([
                 'log_type' => 'Create',
                 'model_type' => "Product",
@@ -190,8 +271,37 @@
                     'errors' => $validator->errors()
                 ], 422);
             }
-
+            if ($request->has('packages')) {
+                $packageValidator = Validator::make($request->all(), [
+                    'packages.*.name' => 'required|string|max:255',
+                    'packages.*.pieces_per_package' => 'required|integer|min:1',
+                    'packages.*.purchase_price' => 'required|integer|min:0',
+                    'packages.*.selling_price' => 'required|integer|min:0',
+                    'packages.*.barcode' => 'nullable|string'
+                ]);
+        
+                if ($packageValidator->fails()) {
+                    return response()->json([
+                        'error' => true,
+                        'message' => 'Validation error',
+                        'errors' => $packageValidator->errors()
+                    ], 422);
+                }
+            }
             $product->update($request->all());
+            if ($request->has('packages')) {
+                // Remove existing packages
+                $product->packages()->delete();
+                
+                // Add new packages
+                foreach ($request->packages as $packageData) {
+                    $packageData['team_id'] = $user->team->id;
+                    $product->packages()->create($packageData);
+                }
+            }
+        
+            // Load the packages relationship
+            $product->load('packages');
             $activityLog = ActivityLog::create([
                 'log_type' => 'Update',
                 'model_type' => "Product",

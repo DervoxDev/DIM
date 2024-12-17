@@ -10,10 +10,10 @@ return new class extends Migration
         Schema::create('sales', function (Blueprint $table) {
             $table->id();
             $table->foreignId('team_id')->constrained()->cascadeOnDelete();
-            $table->foreignId('client_id')->constrained()->cascadeOnDelete();
+            $table->foreignId('client_id')->nullable()->constrained()->nullOnDelete();
             $table->foreignId('cash_source_id')->constrained()->cascadeOnDelete();
             $table->string('reference_number')->unique();
-            $table->decimal('total_amount', 12, 2);
+            $table->decimal('total_amount', 12, 2)->default(0); 
             $table->decimal('paid_amount', 12, 2)->default(0);
             $table->decimal('tax_amount', 12, 2)->default(0);
             $table->decimal('discount_amount', 12, 2)->default(0);

@@ -43,7 +43,10 @@ class Invoice extends Model
     {
         return $this->morphTo();
     }
-
+    public function items()
+    {
+        return $this->hasMany(InvoiceItem::class);
+    }
     // Scopes
     public function scopeDraft($query)
     {

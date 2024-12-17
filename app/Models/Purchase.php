@@ -4,7 +4,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-
+use Illuminate\Support\Facades\DB;
 class Purchase extends Model
 {
     use HasFactory, SoftDeletes;
@@ -81,27 +81,43 @@ class Purchase extends Model
         return $query->where('payment_status', 'partial');
     }
 
-    // Helper methods
-    public function addPayment($amount, $cashSource)
+
+    public function addPayment($amount, $cashSource, $referenceNumber = null)
     {
         if ($amount > ($this->total_amount - $this->paid_amount)) {
             throw new \Exception('Payment amount exceeds remaining balance');
         }
-
-        $this->paid_amount += $amount;
-        $this->payment_status = $this->paid_amount >= $this->total_amount ? 'paid' : 'partial';
-        $this->save();
-
-        // Create transaction
-        return $this->transactions()->create([
-            'team_id' => $this->team_id,
-            'cash_source_id' => $cashSource->id,
-            'amount' => $amount,
-            'type' => 'purchase_payment',
-            'transaction_date' => now(),
-            'description' => "Payment for purchase #{$this->reference_number}",
-        ]);
+    
+        $transaction = null;  // Define variable outside transaction
+    
+        DB::transaction(function () use ($amount, $cashSource, $referenceNumber, &$transaction) {
+            // Withdraw from cash source
+            $cashSource->withdraw($amount, "Payment for purchase #{$this->reference_number}");
+    
+            // Update supplier balance (decrease what we owe)
+            $this->supplier->updateBalance($amount, 'subtract');
+    
+            // Update purchase payment status
+            $this->paid_amount += $amount;
+            $this->payment_status = $this->paid_amount >= $this->total_amount ? 'paid' : 'partial';
+            $this->save();
+    
+            // Create transaction record and assign to our variable
+            $transaction = $this->transactions()->create([
+                'team_id' => $this->team_id,
+                'cash_source_id' => $cashSource->id,
+                'amount' => $amount,
+                'type' => 'purchase_payment',
+                'transaction_date' => now(), 
+                'reference_number' => $referenceNumber,
+                'description' => "Payment for purchase #{$this->reference_number}",
+            ]);
+        });
+    
+        return $transaction;  // Return the transaction after DB::transaction completes
     }
+    
+    
 
     public function calculateTotals()
     {
