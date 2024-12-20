@@ -107,7 +107,7 @@ class Purchase extends Model
                 'team_id' => $this->team_id,
                 'cash_source_id' => $cashSource->id,
                 'amount' => $amount,
-                'type' => 'purchase_payment',
+                'type' => 'Purchase Payment',
                 'transaction_date' => now(), 
                 'reference_number' => $referenceNumber,
                 'description' => "Payment for purchase #{$this->reference_number}",

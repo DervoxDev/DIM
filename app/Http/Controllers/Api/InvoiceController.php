@@ -82,70 +82,319 @@ class InvoiceController extends Controller
             'invoice' => $invoice
         ]);
     }
-
-    public function update(Request $request, $id)
+    public function store(Request $request)
     {
-        $user = $request->user();
-
-        $invoice = Invoice::where('team_id', $user->team->id)->find($id);
-
-        if (!$invoice) {
-            return response()->json([
-                'error' => true,
-                'message' => 'Invoice not found'
-            ], 404);
-        }
-
-        $validator = Validator::make($request->all(), [
-            'status' => 'sometimes|required|in:draft,sent,paid,cancelled',
-            'due_date' => 'nullable|date',
-            'notes' => 'nullable|string',
-        ]);
-
-        if ($validator->fails()) {
-            return response()->json([
-                'error' => true,
-                'message' => 'Validation error',
-                'errors' => $validator->errors()
-            ], 422);
-        }
-
         try {
-            DB::beginTransaction();
-
-            $oldData = $invoice->toArray();
-            $invoice->update($request->all());
-
-            ActivityLog::create([
-                'log_type' => 'Update',
-                'model_type' => "Invoice",
-                'model_id' => $invoice->id,
-                'model_identifier' => $invoice->reference_number,
-                'user_identifier' => $user?->name,
-                'user_id' => $user->id,
-                'user_email' => $user?->email,
-                'ip_address' => $request->ip(),
-                'user_agent' => $request->userAgent(),
-                'description' => "Updated invoice {$invoice->reference_number}",
-                'old_values' => $oldData,
-                'new_values' => $invoice->fresh()->toArray()
+            \Log::info('Invoice creation request received', [
+                'request_data' => $request->all()
             ]);
-
-            DB::commit();
-
-            return response()->json([
-                'message' => 'Invoice updated successfully',
-                'invoice' => $invoice->fresh()
+    
+            $user = $request->user();
+            
+            if (!$user->team) {
+                return response()->json([
+                    'error' => true,
+                    'message' => 'No team found for the user'
+                ], 404);
+            }
+    
+            // Map invoice type to model namespace
+            $typeMapping = [
+                'Purchase' => 'App\\Models\\Purchase',
+                'Sale' => 'App\\Models\\Sale'
+            ];
+    
+            // Map the type or return error if invalid
+            if (!isset($typeMapping[$request->invoiceable_type])) {
+                return response()->json([
+                    'error' => true,
+                    'message' => 'Invalid invoiceable type',
+                    'valid_types' => array_keys($typeMapping)
+                ], 422);
+            }
+    
+            $mappedType = $typeMapping[$request->invoiceable_type];
+    
+            // Validate main invoice data
+            $validator = Validator::make($request->all(), [
+                'invoiceable_type' => 'required|string|in:Purchase,Sale',
+                'status' => 'required|in:draft,sent,paid,overdue,cancelled',
+                'issue_date' => 'required|date',
+                'due_date' => 'required|date|after_or_equal:issue_date',
+                'total_amount' => 'required|numeric|min:0',
+                'tax_amount' => 'nullable|numeric|min:0',
+                'discount_amount' => 'nullable|numeric|min:0',
+                'notes' => 'nullable|string',
+                'items' => 'required|array|min:1',
+                'items.*.description' => 'required|string',
+                'items.*.quantity' => 'required|numeric|min:1',
+                'items.*.unit_price' => 'required|numeric|min:0',
+                'items.*.total_price' => 'required|numeric|min:0',
+                'items.*.notes' => 'nullable|string'
             ]);
-
+    
+            if ($validator->fails()) {
+                return response()->json([
+                    'error' => true,
+                    'message' => 'Validation error',
+                    'errors' => $validator->errors()
+                ], 422);
+            }
+    
+            try {
+                DB::beginTransaction();
+    
+                $lastInvoice = Invoice::where('team_id', $user->team->id)
+                    ->orderBy('id', 'desc')
+                    ->first();
+    
+                $nextId = ($lastInvoice ? $lastInvoice->id : 0) + 1;
+                $nextInvoiceableId = ($lastInvoice ? $lastInvoice->invoiceable_id : 0) + 1;
+    
+                $year = date('Y');
+                $referenceNumber = "INV-{$year}-" . str_pad($nextId, 6, '0', STR_PAD_LEFT);
+    
+                // Create invoice with mapped type
+                $invoice = new Invoice([
+                    'team_id' => $user->team->id,
+                    'reference_number' => $referenceNumber,
+                    'invoiceable_type' => $mappedType, // Use mapped type here
+                    'invoiceable_id' => $nextInvoiceableId,
+                    'total_amount' => $request->total_amount,
+                    'tax_amount' => $request->tax_amount ?? 0,
+                    'discount_amount' => $request->discount_amount ?? 0,
+                    'status' => $request->status,
+                    'issue_date' => $request->issue_date,
+                    'due_date' => $request->due_date,
+                    'notes' => $request->notes,
+                    'meta_data' => array_merge($request->meta_data ?? [], [
+                        'created_by' => $user->id,
+                        'created_at' => now()->toISOString(),
+                        'source_type' => $request->invoiceable_type,
+                        'source_reference' => $referenceNumber
+                    ])
+                ]);
+    
+                $invoice->save();
+    
+                // Create invoice items
+                foreach ($request->items as $itemData) {
+                    $item = new InvoiceItem([
+                        'description' => $itemData['description'],
+                        'quantity' => $itemData['quantity'],
+                        'unit_price' => $itemData['unit_price'],
+                        'total_price' => $itemData['total_price'],
+                        'notes' => $itemData['notes'] ?? null,
+                        'meta_data' => $itemData['meta_data'] ?? null
+                    ]);
+                    $invoice->items()->save($item);
+                }
+    
+                // Log activity
+                ActivityLog::create([
+                    'log_type' => 'Create',
+                    'model_type' => "Invoice",
+                    'model_id' => $invoice->id,
+                    'model_identifier' => $invoice->reference_number,
+                    'user_identifier' => $user?->name,
+                    'user_id' => $user->id,
+                    'user_email' => $user?->email,
+                    'ip_address' => $request->ip(),
+                    'user_agent' => $request->userAgent(),
+                    'description' => "Created invoice {$invoice->reference_number}",
+                    'new_values' => array_merge($invoice->toArray(), [
+                        'items' => $invoice->items->toArray()
+                    ])
+                ]);
+    
+                DB::commit();
+    
+                // Transform the type back for the response
+                $invoice->load(['items']);
+                $responseInvoice = $invoice->toArray();
+                $responseInvoice['invoiceable_type'] = array_search($invoice->invoiceable_type, $typeMapping);
+    
+                return response()->json([
+                    'message' => 'Invoice created successfully',
+                    'invoice' => $responseInvoice
+                ], 201);
+    
+            } catch (\Exception $e) {
+                DB::rollBack();
+                throw $e;
+            }
         } catch (\Exception $e) {
-            DB::rollBack();
+            \Log::error('Error creating invoice', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+    
             return response()->json([
                 'error' => true,
-                'message' => 'Error updating invoice'
+                'message' => 'Error creating invoice',
+                'debug_message' => config('app.debug') ? $e->getMessage() : null
             ], 500);
         }
     }
+    
+    
+    
+    public function update(Request $request, $id)
+    {
+        try {
+            \Log::info('Invoice update request received', [
+                'invoice_id' => $id,
+                'request_data' => $request->all(),
+                'user_id' => $request->user()?->id,
+                'ip' => $request->ip()
+            ]);
+    
+            $user = $request->user();
+    
+            $invoice = Invoice::where('team_id', $user->team->id)->find($id);
+    
+            if (!$invoice) {
+                \Log::warning('Invoice not found for update', [
+                    'invoice_id' => $id,
+                    'team_id' => $user->team->id,
+                    'user_id' => $user->id
+                ]);
+                return response()->json([
+                    'error' => true,
+                    'message' => 'Invoice not found'
+                ], 404);
+            }
+    
+            \Log::info('Found invoice for update', [
+                'invoice_id' => $invoice->id,
+                'reference_number' => $invoice->reference_number,
+                'current_status' => $invoice->status
+            ]);
+    
+            // Only validate status
+            $validator = Validator::make($request->all(), [
+                'status' => 'required|in:draft,sent,paid,cancelled'
+            ]);
+    
+            if ($validator->fails()) {
+                \Log::warning('Invoice status update validation failed', [
+                    'invoice_id' => $id,
+                    'errors' => $validator->errors()->toArray(),
+                    'request_data' => $request->all()
+                ]);
+                return response()->json([
+                    'error' => true,
+                    'message' => 'Validation error',
+                    'errors' => $validator->errors()
+                ], 422);
+            }
+    
+            try {
+                DB::beginTransaction();
+    
+                \Log::info('Starting invoice status update transaction', [
+                    'invoice_id' => $invoice->id,
+                    'old_status' => $invoice->status,
+                    'new_status' => $request->status
+                ]);
+    
+                $oldData = $invoice->toArray();
+                
+                // Only update status
+                $invoice->status = $request->status;
+                $invoice->save();
+    
+                \Log::info('Invoice status updated successfully', [
+                    'invoice_id' => $invoice->id,
+                    'old_status' => $oldData['status'],
+                    'new_status' => $invoice->status
+                ]);
+    
+                try {
+                    ActivityLog::create([
+                        'log_type' => 'Status Update',
+                        'model_type' => "Invoice",
+                        'model_id' => $invoice->id,
+                        'model_identifier' => $invoice->reference_number,
+                        'user_identifier' => $user?->name,
+                        'user_id' => $user->id,
+                        'user_email' => $user?->email,
+                        'ip_address' => $request->ip(),
+                        'user_agent' => $request->userAgent(),
+                        'description' => "Updated invoice {$invoice->reference_number} status from {$oldData['status']} to {$invoice->status}",
+                        'old_values' => ['status' => $oldData['status']],
+                        'new_values' => ['status' => $invoice->status]
+                    ]);
+    
+                    \Log::info('Activity log created for invoice status update', [
+                        'invoice_id' => $invoice->id,
+                        'log_type' => 'Status Update'
+                    ]);
+                } catch (\Exception $e) {
+                    \Log::error('Error creating activity log for invoice status update', [
+                        'invoice_id' => $invoice->id,
+                        'error' => $e->getMessage(),
+                        'trace' => $e->getTraceAsString()
+                    ]);
+                    // Don't throw the error as this is not critical
+                }
+    
+                DB::commit();
+                \Log::info('Invoice status update transaction committed successfully', [
+                    'invoice_id' => $invoice->id
+                ]);
+    
+                $refreshedInvoice = $invoice->fresh(['items']);
+                return response()->json([
+                    'message' => 'Invoice status updated successfully',
+                    'invoice' => $refreshedInvoice
+                ]);
+    
+            } catch (\Exception $e) {
+                DB::rollBack();
+                
+                \Log::error('Error updating invoice status', [
+                    'invoice_id' => $id,
+                    'error_message' => $e->getMessage(),
+                    'error_code' => $e->getCode(),
+                    'error_file' => $e->getFile(),
+                    'error_line' => $e->getLine(),
+                    'trace' => $e->getTraceAsString(),
+                    'request_data' => $request->all()
+                ]);
+    
+                return response()->json([
+                    'error' => true,
+                    'message' => 'Error updating invoice status',
+                    'debug_message' => config('app.debug') ? $e->getMessage() : null,
+                    'error_details' => config('app.debug') ? [
+                        'file' => $e->getFile(),
+                        'line' => $e->getLine(),
+                        'message' => $e->getMessage(),
+                        'trace' => array_slice($e->getTrace(), 0, 5)
+                    ] : null
+                ], 500);
+            }
+        } catch (\Exception $e) {
+            \Log::critical('Unhandled exception in invoice status update', [
+                'invoice_id' => $id,
+                'error_message' => $e->getMessage(),
+                'error_code' => $e->getCode(),
+                'error_file' => $e->getFile(),
+                'error_line' => $e->getLine(),
+                'trace' => $e->getTraceAsString(),
+                'request_data' => $request->all()
+            ]);
+    
+            return response()->json([
+                'error' => true,
+                'message' => 'Critical error occurred while updating invoice status',
+                'debug_message' => config('app.debug') ? $e->getMessage() : null
+            ], 500);
+        }
+    }
+    
+
 
     public function destroy(Request $request, $id)
     {

@@ -580,15 +580,34 @@ class SaleController extends Controller
     public function generateInvoice(Request $request, $id)
     {
         $user = $request->user();
-        $model = Purchase::where('team_id', $user->team->id)->with(['items', 'supplier'])->find($id);
-        // Or for Sale: 
-        // $model = Sale::where('team_id', $user->team->id)->with(['items', 'client'])->find($id);
+        $model = Sale::where('team_id', $user->team->id)->with(['items', 'client'])->find($id);
     
         if (!$model) {
             return response()->json([
                 'error' => true,
                 'message' => 'Record not found'
             ], 404);
+        }
+    
+        // Reference number generation code remains the same...
+        $lastInvoice = Invoice::where('team_id', $user->team->id)
+            ->withTrashed()
+            ->where('reference_number', 'like', "INV-" . date('Y') . "-%")
+            ->orderBy('id', 'desc')
+            ->first();
+    
+        if ($lastInvoice) {
+            $lastNumber = (int) substr($lastInvoice->reference_number, -6);
+            $nextNumber = $lastNumber + 1;
+        } else {
+            $nextNumber = 1;
+        }
+    
+        $referenceNumber = "INV-" . date('Y') . "-" . str_pad($nextNumber, 6, '0', STR_PAD_LEFT);
+    
+        while (Invoice::where('reference_number', $referenceNumber)->withTrashed()->exists()) {
+            $nextNumber++;
+            $referenceNumber = "INV-" . date('Y') . "-" . str_pad($nextNumber, 6, '0', STR_PAD_LEFT);
         }
     
         try {
@@ -598,7 +617,7 @@ class SaleController extends Controller
             $invoice->team_id = $user->team->id;
             $invoice->invoiceable_type = get_class($model);
             $invoice->invoiceable_id = $model->id;
-            $invoice->reference_number = 'INV-' . str_pad(Invoice::max('id') + 1, 6, '0', STR_PAD_LEFT);
+            $invoice->reference_number = $referenceNumber;
             $invoice->total_amount = $model->total_amount;
             $invoice->tax_amount = $model->tax_amount;
             $invoice->discount_amount = $model->discount_amount;
@@ -606,18 +625,28 @@ class SaleController extends Controller
             $invoice->issue_date = now();
             $invoice->due_date = $model->due_date;
             
-            // Set meta_data
+            // Prepare contact data based on whether client exists
+            $contactData = null;
+            if ($model instanceof Purchase) {
+                $contactData = $model->supplier ? 
+                    ['type' => 'supplier', 'data' => $model->supplier->toArray()] : 
+                    ['type' => 'supplier', 'data' => null];
+            } else {
+                $contactData = $model->client ? 
+                    ['type' => 'client', 'data' => $model->client->toArray()] : 
+                    ['type' => 'client', 'data' => null];
+            }
+            
+            // Set meta_data with null check for items
             $invoice->meta_data = [
                 'source_type' => $model instanceof Purchase ? 'purchase' : 'sale',
                 'source_reference' => $model->reference_number,
                 'source_date' => $model->created_at,
-                'contact' => $model instanceof Purchase 
-                    ? ['type' => 'supplier', 'data' => $model->supplier->toArray()]
-                    : ['type' => 'client', 'data' => $model->client->toArray()],
+                'contact' => $contactData,
                 'items_data' => $model->items->map(function($item) {
                     return [
                         'product_id' => $item->product_id,
-                        'product_name' => $item->product->name,
+                        'product_name' => $item->product?->name ?? 'Unknown Product',
                         'quantity' => $item->quantity,
                         'unit_price' => $item->unit_price,
                         'tax_rate' => $item->tax_rate,
@@ -632,10 +661,10 @@ class SaleController extends Controller
             
             $invoice->save();
     
-            // Create invoice items
+            // Create invoice items with null checks
             foreach ($model->items as $sourceItem) {
                 $invoice->items()->create([
-                    'description' => $sourceItem->product->name,
+                    'description' => $sourceItem->product?->name ?? 'Unknown Product',
                     'quantity' => $sourceItem->quantity,
                     'unit_price' => $sourceItem->unit_price,
                     'total_price' => $sourceItem->total_price,
@@ -668,12 +697,20 @@ class SaleController extends Controller
     
         } catch (\Exception $e) {
             DB::rollBack();
+            \Log::error('Invoice generation error', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+                'model_id' => $id,
+                'user_id' => $user->id
+            ]);
+            
             return response()->json([
                 'error' => true,
                 'message' => 'Error generating invoice: ' . $e->getMessage()
             ], 500);
         }
     }
+    
     
     public function getSummary(Request $request)
     {

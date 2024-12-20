@@ -11,7 +11,7 @@ class Invoice extends Model
 
     protected $fillable = [
         'team_id',
-        'invoiceable_type',
+        'invoiceble_type',
         'invoiceable_id',
         'reference_number',
         'total_amount',

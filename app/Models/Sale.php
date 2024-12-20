@@ -110,7 +110,7 @@ class Sale extends Model
                 'team_id' => $this->team_id,
                 'cash_source_id' => $cashSource->id,
                 'amount' => $amount,
-                'type' => 'sale_payment',
+                'type' => 'Sale Payment',
                 'transaction_date' =>  now(),
                 'reference_number' => $referenceNumber,
                 'description' => "Payment received for sale #{$this->reference_number}",

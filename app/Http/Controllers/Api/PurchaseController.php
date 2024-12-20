@@ -506,7 +506,33 @@ class PurchaseController extends Controller
                 'message' => 'Record not found'
             ], 404);
         }
-    
+        // Get the last used number from the reference number
+        $lastInvoice = Invoice::where('team_id', $user->team->id)
+        ->withTrashed() // Include soft deleted records
+        ->where('reference_number', 'like', "INV-" . date('Y') . "-%")
+        ->orderBy('id', 'desc')
+        ->first();
+
+        // Extract the numeric part and increment
+        if ($lastInvoice) {
+        $lastNumber = (int) substr($lastInvoice->reference_number, -6);
+        $nextNumber = $lastNumber + 1;
+        } else {
+        $nextNumber = 1;
+        }
+
+        // Generate new reference number
+        $referenceNumber = "INV-" . date('Y') . "-" . str_pad($nextNumber, 6, '0', STR_PAD_LEFT);
+
+        // Verify uniqueness
+        while (Invoice::where('reference_number', $referenceNumber)->withTrashed()->exists()) {
+        $nextNumber++;
+        $referenceNumber = "INV-" . date('Y') . "-" . str_pad($nextNumber, 6, '0', STR_PAD_LEFT);
+        }
+        $nextId = ($lastInvoice ? $lastInvoice->id : 0) + 1;
+        $nextInvoiceableId = ($lastInvoice ? $lastInvoice->invoiceable_id : 0) + 1;
+
+
         try {
             DB::beginTransaction();
     
@@ -514,7 +540,7 @@ class PurchaseController extends Controller
             $invoice->team_id = $user->team->id;
             $invoice->invoiceable_type = get_class($model);
             $invoice->invoiceable_id = $model->id;
-            $invoice->reference_number = 'INV-' . str_pad(Invoice::max('id') + 1, 6, '0', STR_PAD_LEFT);
+            $invoice->reference_number = $referenceNumber;
             $invoice->total_amount = $model->total_amount;
             $invoice->tax_amount = $model->tax_amount;
             $invoice->discount_amount = $model->discount_amount;
