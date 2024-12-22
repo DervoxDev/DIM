@@ -8,7 +8,8 @@
     use Illuminate\Database\Eloquent\Relations\BelongsTo;
     use Illuminate\Database\Eloquent\Relations\HasMany;
     use Illuminate\Support\Facades\DB;
-
+    use Illuminate\Support\Facades\Storage;
+ 
     class Product extends Model
     {
         use HasFactory, SoftDeletes;
@@ -30,6 +31,7 @@
             'max_stock_level',
             'reorder_point',
             'location',
+            'image_path',
         ];
 
         protected $casts = [
@@ -41,7 +43,7 @@
             'max_stock_level' => 'integer',
             'reorder_point' => 'integer',
         ];
-
+        protected $appends = ['image_url'];
         // Relationships
         public function team(): BelongsTo
         {
@@ -87,7 +89,13 @@
         {
             return $this->expired_date && $this->expired_date->isPast();
         }
-
+        public function getImageUrlAttribute()
+        {
+            if ($this->image_path) {
+                return Storage::disk('public')->url($this->image_path);
+            }
+            return null;
+        }
         // // Helper methods
         // public function updateStock(int $quantity, string $operation = 'add'): void
         // {

@@ -36,9 +36,11 @@
             Route::get('product-units', [ProductController::class, 'getUnits']);
 
             Route::post('/products/{productId}/barcodes', [ProductController::class, 'addBarcode']);
+            Route::put('/products/{productId}/barcodes/{barcodeId}', [ProductController::class, 'updateBarcode']);
             Route::delete('/products/{productId}/barcodes/{barcodeId}', [ProductController::class, 'removeBarcode']);
             Route::get('/products/{productId}/barcodes', [ProductController::class, 'getBarcodes']);
-
+            Route::delete('products/{id}/image', [ProductController::class, 'removeImage']);
+            Route::post('products/{id}/image', [ProductController::class, 'uploadImage']); 
             Route::prefix('activity-logs')->group(function () {
                 Route::get('/', [ActivityLogController::class, 'index']);
                 Route::get('/{id}', [ActivityLogController::class, 'show']);
