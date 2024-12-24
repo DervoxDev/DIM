@@ -115,58 +115,70 @@
                     ], 500);
                 }
             }
-
-        public function index(Request $request)
-        {
-            $user = $request->user();
-
-            if (!$user->team) {
-                return response()->json([
-                    'error' => true,
-                    'message' => 'No team found for the user'
-                ], 404);
-            }
-
-            $query = Product::where('team_id', $user->team->id)
-                            ->with('unit');
-
-            // Handle filters
-            if ($request->has('status')) {
-                $query->where('status', $request->status);
-            }
-
-            if ($request->has('low_stock')) {
-                $query->lowStock();
-            }
-
-            if ($request->has('expiring_soon')) {
-                $query->expiringSoon(30); // Next 30 days
-            }
-
-            // Handle search
-            if ($request->has('search')) {
-                $search = $request->search;
-                $query->where(function($q) use ($search) {
-                    $q->where('name', 'like', "%{$search}%")
-                      ->orWhere('reference', 'like', "%{$search}%")
-                      ->orWhere('sku', 'like', "%{$search}%")
-                      ->orWhereHas('barcodes', function($query) use ($search) {
-                        $query->where('barcode', 'like', "%{$search}%");
+     
+            public function index(Request $request)
+            {
+                $user = $request->user();
+            
+                if (!$user->team) {
+                    return response()->json([
+                        'error' => true,
+                        'message' => 'No team found for the user'
+                    ], 404);
+                }
+            
+                $query = Product::where('team_id', $user->team->id)
+                                ->with('unit');
+            
+                // Handle filters
+                if ($request->has('status')) {
+                    $query->where('status', $request->status);
+                }
+            
+                if ($request->has('low_stock')) {
+                    $query->lowStock();
+                }
+            
+                if ($request->has('expiring_soon')) {
+                    $query->expiringSoon(30);
+                }
+            
+                // Handle search
+                if ($request->has('search')) {
+                    $search = $request->search;
+                    $query->where(function($q) use ($search) {
+                        $q->where('name', 'like', "%{$search}%")
+                          ->orWhere('reference', 'like', "%{$search}%")
+                          ->orWhere('sku', 'like', "%{$search}%")
+                          ->orWhereHas('barcodes', function($query) use ($search) {
+                            $query->where('barcode', 'like', "%{$search}%");
+                          });
                     });
-                });
+                }
+            
+                // Handle sorting
+                $sortField = $request->get('sort_by', 'created_at');
+                $sortDirection = $request->get('sort_direction', 'desc');
+                
+                // Special handling for barcode sorting
+                if ($sortField === 'barcode') {
+                    // Join with barcodes table and sort by barcode
+                    $query->leftJoin('product_barcodes', 'products.id', '=', 'product_barcodes.product_id')
+                          ->orderBy('product_barcodes.barcode', $sortDirection)
+                          ->select('products.*'); // Make sure to select only products table columns
+                } else {
+                    // Normal sorting for other fields
+                    $query->orderBy($sortField, $sortDirection);
+                }
+            
+                $products = $query->paginate(15);
+            
+                return response()->json([
+                    'products' => $products
+                ]);
             }
+            
 
-            // Handle sorting
-            $sortField = $request->get('sort_by', 'created_at');
-            $sortDirection = $request->get('sort_direction', 'desc');
-            $query->orderBy($sortField, $sortDirection);
-
-            $products = $query->paginate(15);
-
-            return response()->json([
-                'products' => $products
-            ]);
-        }
 
         /**
          * Get a specific product
@@ -738,7 +750,7 @@
                 'user_email' => $user?->email,
                 'ip_address' => $request->ip(),
                 'user_agent' => $request->userAgent(),
-                'description' => "Barcode {$barcode} deleted from {$product->name}",
+                'description' => "Barcode deleted from {$product->name}",
                 'new_values' => $product->toArray()
             ]);
             return response()->json([
