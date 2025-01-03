@@ -102,6 +102,8 @@ class SaleController extends Controller
             'items.*.is_package' => 'required|boolean',
             'items.*.package_id' => 'required_if:items.*.is_package,true|exists:product_packages,id',
             'items.*.total_pieces' => 'required|integer|min:1',
+            'auto_payment' => 'boolean',
+            'payment_amount' => 'required_if:auto_payment,true|numeric|min:0',
         ]);
     
         if ($validator->fails()) {
@@ -193,7 +195,20 @@ class SaleController extends Controller
         
             // Recalculate sale totals
             $sale->calculateTotals();
-        
+          // Handle auto-payment if enabled
+          if ($request->auto_payment) {
+            $referenceNumber = 'AUTO-PAY-' . date('YmdHis') . '-' . str_pad($sale->id, 4, '0', STR_PAD_LEFT);
+            
+            // Add payment using existing method
+            $transaction = $sale->addPayment(
+                $request->payment_amount ?? $sale->total_amount,
+                $sale->cashSource,
+                now(),
+                $referenceNumber,
+                "Auto payment on sale creation"
+            );
+        }
+
             // Log activity
             ActivityLog::create([
                 'log_type' => 'Create',
