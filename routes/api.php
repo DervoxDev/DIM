@@ -84,9 +84,11 @@
             Route::post('/sales', [SaleController::class, 'store']);
             Route::get('/sales/{id}', [SaleController::class, 'show']);
             Route::put('/sales/{id}', [SaleController::class, 'update']);
+            Route::get('sales/{id}/receipt', [SaleController::class, 'generateReceipt']);
             Route::delete('/sales/{id}', [SaleController::class, 'destroy']);
             Route::post('/sales/{id}/add-payment', [SaleController::class, 'addPayment']);
             Route::post('/sales/{id}/generate-invoice', [SaleController::class, 'generateInvoice']);
+           
             Route::get('/sales/summary', [SaleController::class, 'getSummary']);
 
             Route::get('/clients', [ClientController::class, 'index']);

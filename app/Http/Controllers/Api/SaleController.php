@@ -14,7 +14,9 @@ use App\Models\Invoice;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
-
+use Spatie\Browsershot\Browsershot;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\View;
 class SaleController extends Controller
 {
     public function index(Request $request)
@@ -726,7 +728,60 @@ class SaleController extends Controller
         }
     }
     
-    
+    public function generateReceipt(Request $request, $id)
+{
+    $user = $request->user();
+    $sale = Sale::where('team_id', $user->team->id)
+                ->with(['items.product', 'team'])
+                ->findOrFail($id);
+
+    try {
+        // Generate HTML
+        $html = View::make('receipts.pdf', [
+            'sale' => $sale
+        ])->render();
+
+        // Create filename
+        $filename = "receipt-{$sale->reference_number}.pdf";
+        $tempPath = storage_path('app/public/temp');
+        
+        if (!file_exists($tempPath)) {
+            mkdir($tempPath, 0755, true);
+        }
+        
+        $pdfPath = $tempPath . '/' . $filename;
+
+        // Generate PDF using Browsershot with custom width
+        Browsershot::html($html)
+            ->format('A4') // Use standard A4 format
+            ->windowSize(302, 1122) // 80mm ≈ 302px at 96 DPI
+            ->margins(5, 5, 5, 5)
+            ->showBackground()
+            ->savePdf($pdfPath);
+
+        // Log activity
+        ActivityLog::create([
+            'log_type' => 'Generate',
+            'model_type' => 'Receipt',
+            'model_id' => $sale->id,
+            'model_identifier' => $sale->reference_number,
+            'user_identifier' => $user->name,
+            'description' => "Generated receipt for sale {$sale->reference_number}"
+        ]);
+
+        return response()->download($pdfPath, $filename, [
+            'Content-Type' => 'application/pdf'
+        ])->deleteFileAfterSend(true);
+
+    } catch (\Exception $e) {
+        \Log::error('Receipt generation error: ' . $e->getMessage());
+        return response()->json([
+            'error' => true,
+            'message' => 'Error generating receipt: ' . $e->getMessage()
+        ], 500);
+    }
+}
+
     public function getSummary(Request $request)
     {
         $user = $request->user();
