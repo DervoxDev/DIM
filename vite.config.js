@@ -7,6 +7,7 @@ export default defineConfig({
             input: [
                 'resources/css/app.css',
                 'resources/js/app.js',
+                'resources/js/images.js',
             ],
             refresh: [
                 ...refreshPaths,
@@ -16,8 +17,10 @@ export default defineConfig({
                 'app/Infolists/Components/**',
                 'app/Providers/Filament/**',
                 'app/Tables/Columns/**',
-                'resources/views/**'
+                'resources/views/**',
+                'resources/images/**'
             ],
         }),
     ],
+    publicDir: 'public', // Add this line
 });

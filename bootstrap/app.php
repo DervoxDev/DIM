@@ -5,8 +5,9 @@
     use Illuminate\Foundation\Configuration\Middleware;
     use Illuminate\Auth\AuthenticationException;
     use App\Http\Middleware\FilamentAdminMiddleware;
+    use App\Http\Middleware\SetLocale;
     use Illuminate\Console\Scheduling\Schedule;
-use App\Console\Commands\ExpireSubscriptions;
+    use App\Console\Commands\ExpireSubscriptions;
 
 return Application::configure(basePath: dirname(__DIR__))
                       ->withRouting(
@@ -16,8 +17,11 @@ return Application::configure(basePath: dirname(__DIR__))
                           health: '/up',
                       )
                       ->withMiddleware(function (Middleware $middleware) {
+                        $middleware->web(append: [
+                            SetLocale::class
+                        ]);
                           $middleware->alias([
-                              'admin' => FilamentAdminMiddleware::class
+                              'admin' => FilamentAdminMiddleware::class,
                           ]);
                       })
                       ->withSchedule(function (Schedule $schedule) {
