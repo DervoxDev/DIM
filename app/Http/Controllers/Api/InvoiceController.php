@@ -568,7 +568,14 @@ class InvoiceController extends Controller
                     'message' => 'Invoice data is incomplete'
                 ], 422);
             }
-    
+            if ($invoice->team->image_path) {
+                $imagePath = storage_path('app/public/' . $invoice->team->image_path);
+                if (file_exists($imagePath)) {
+                    $imageData = base64_encode(file_get_contents($imagePath));
+                    $imageMime = mime_content_type($imagePath);
+                    $invoice->team->logo_data_url = "data:{$imageMime};base64,{$imageData}";
+                }
+            }
             // Generate HTML
             $html = View::make('invoices.pdf', [
                 'invoice' => $invoice,

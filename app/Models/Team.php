@@ -13,6 +13,10 @@
 
         protected $fillable = [
             'name',
+            'email',
+            'phone',
+            'address',
+            'image_path',
         ];
 
         // Add this line to always load the subscription relationship

@@ -14,7 +14,8 @@
     use App\Http\Controllers\Api\ClientController;
     use App\Http\Controllers\Api\InvoiceController;
     use App\Http\Controllers\Api\DashboardAnalyticsController;
-
+    use App\Http\Controllers\Api\TeamController;
+    
     Route::group(['prefix' =>'v1'], function () {
         Route::post('login', [AuthController::class, 'login']);
         Route::post('register', [AuthController::class, 'register']);
@@ -109,6 +110,15 @@
             Route::post('/invoices/{id}/mark-as-paid', [InvoiceController::class, 'markAsPaid']);
             Route::get('/invoices/{id}/download', [InvoiceController::class, 'download']);
 
+            Route::prefix('teams')->group(function () {
+                Route::get('/', [TeamController::class, 'index']);
+                Route::get('/{id}', [TeamController::class, 'show']);
+                Route::post('/', [TeamController::class, 'store']);
+                Route::put('/{id}', [TeamController::class, 'update']);
+                Route::delete('/{id}', [TeamController::class, 'destroy']);
+                Route::post('/{id}/image', [TeamController::class, 'uploadImage']);
+                Route::delete('/{id}/image', [TeamController::class, 'removeImage']);
+            });
             Route::prefix('dashboard')->group(function () {
                 Route::get('/sales-analytics', [DashboardAnalyticsController::class, 'getSaleAnalytics']);
                 Route::get('/purchase-analytics', [DashboardAnalyticsController::class, 'getPurchaseAnalytics']);

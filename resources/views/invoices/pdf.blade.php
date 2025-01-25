@@ -41,10 +41,20 @@
         padding-bottom: 10pt;
         border-bottom: 1px solid var(--border-color);
     }
+    .logo {
+    max-height: 60pt; /* Adjust size as needed */
+    max-width: 200pt;
+    margin-bottom: 10pt;
+}
 
     .company-details {
-        flex: 1;
-    }
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+.logo-container {
+    margin-bottom: 10pt;
+}
 
     .company-details h2 {
         color: var(--primary-color);
@@ -204,6 +214,11 @@
         <!-- Header Section -->
         <div class="header">
             <div class="company-details">
+            <div class="logo-container">
+            @if($invoice->team->image_path)
+                <img class="logo" src="{{ storage_path('app/public/' . $invoice->team->image_path) }}" alt="Company Logo">
+            @endif
+        </div>
                 <h2>{{ $invoice->team->name }}</h2>
                 <p>{{ $invoice->team->address ?? '' }}</p>
                 <p>{{ $invoice->team->phone ?? '' }}</p>
