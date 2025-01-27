@@ -2,7 +2,7 @@
 
 namespace App\Models;
 
-// use Illuminate\Contracts\Auth\MustVerifyEmail;
+use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
@@ -11,7 +11,7 @@ use Spatie\Permission\Traits\HasRoles;
 use App\Models\Team;
 use Filament\Models\Contracts\FilamentUser;
 use Filament\Panel;
-class User extends Authenticatable implements FilamentUser
+class User extends Authenticatable implements MustVerifyEmail, FilamentUser 
 {
     use HasFactory, Notifiable, HasApiTokens, HasRoles;
 

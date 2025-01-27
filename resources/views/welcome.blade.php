@@ -19,7 +19,7 @@
         min-width: 180px;
         cursor: pointer;
     }
-
+ 
     .primary-button {
         background-color: var(--light-color);
         color: var(--primary-color);
@@ -43,7 +43,31 @@
         color: var(--primary-color);
         transform: translateY(-2px);
     }
+    .pricing-card .button.primary-button {
+    background-color: var(--primary-color);
+    color: var(--light-color);
+    border: none;
+}
 
+.pricing-card .button.primary-button:hover {
+    background-color: var(--accent-color);
+    color: var(--light-color);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+/* Optional: Add a special class for the pricing CTA button */
+.pricing-cta-button {
+    background-color: var(--primary-color) !important;
+    color: var(--light-color) !important;
+    border: none !important;
+}
+
+.pricing-cta-button:hover {
+    background-color: var(--accent-color) !important;
+    color: var(--light-color) !important;
+}
+   
     /* Hero Section */
     .hero {
     background-image: url('https://kde.org/reusable-assets/home-blur.jpg');
@@ -456,7 +480,25 @@
     .pricing-card.popular {
         border: 2px solid var(--primary-color);
     }
+    .coming-soon {
+    opacity: 0.8;
+    pointer-events: none;
+}
 
+.coming-soon-badge {
+    position: absolute;
+    top: -12px;
+    right: 2rem;
+    background: var(--text-color);
+    color: var(--light-color);
+    padding: 0.25rem 1rem;
+    border-radius: 20px;
+    font-size: 0.875rem;
+}
+
+.pricing-card.coming-soon:hover {
+    transform: none;
+}
     .popular-badge {
         position: absolute;
         top: -12px;
@@ -500,7 +542,69 @@
     .pricing-card .button {
         margin-top: auto;
     }
+    .price-tba {
+    font-size: 1.5rem;
+    color: var(--text-color);
+}
 
+.price-tba .price-info {
+    font-size: 0.875rem;
+    margin-top: 0.5rem;
+    color: var(--text-color);
+    opacity: 0.8;
+}
+
+.custom-price {
+    font-size: 1.5rem;
+    color: var(--text-color);
+}
+
+.price-notify {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    padding: 1rem 0;
+}
+
+.notify-form {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    margin-top: 1rem;
+}
+
+.notify-input {
+    padding: 0.5rem 1rem;
+    border: 2px solid #e2e8f0;
+    border-radius: 8px;
+    width: 100%;
+}
+
+.notify-button {
+    background: var(--primary-color);
+    color: white;
+    padding: 0.5rem 1rem;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.notify-button:hover {
+    background: var(--accent-color);
+}
+
+/* Dark mode styles */
+.dark .notify-input {
+    background: rgba(30, 32, 34, 0.8);
+    border-color: #4a5568;
+    color: white;
+}
+
+.dark .price-tba,
+.dark .custom-price {
+    color: #e2e8f0;
+}
     /* CTA Section */
     .cta {
         padding: 100px 20px;
@@ -753,49 +857,62 @@
 <section id="pricing" class="pricing">
     <div class="pricing-header">
         <h2>{{ __('messages.Choose Your Plan') }}</h2>
-        <p>{{ __('messages.Start free and scale as you grow') }}</p>
+        <p>{{ __('messages.Start with our free trial and grow with us') }}</p>
     </div>
     <div class="pricing-grid">
-        <!-- Free Plan -->
-        <div class="pricing-card">
-            <h3>{{ __('messages.Free') }}</h3>
+        <!-- Current Available Plan -->
+        <div class="pricing-card popular">
+            <div class="popular-badge">{{ __('messages.Available Now') }}</div>
+            <h3>{{ __('messages.Free Trial') }}</h3>
             <div class="price">$0<span>/month</span></div>
             <ul class="features-list">
-                <li><i class="fas fa-check"></i> {{ __('messages.Up to 5 users') }}</li>
-                <li><i class="fas fa-check"></i> {{ __('messages.Basic features') }}</li>
-                <li><i class="fas fa-check"></i> {{ __('messages.Community support') }}</li>
+                <li><i class="fas fa-check"></i> {{ __('messages.Full Access to All Features') }}</li>
+                <li><i class="fas fa-check"></i> {{ __('messages.Up to 5 Team Members') }}</li>
+                <li><i class="fas fa-check"></i> {{ __('messages.Priority Support') }}</li>
+                <li><i class="fas fa-clock"></i> {{ __('messages.14-Day Trial Period') }}</li>
             </ul>
-            <a href="{{ route('register') }}" class="button primary-button">{{ __('messages.Get Started') }}</a>
+
+            <a href="{{ route('register') }}" class="button primary-button pricing-cta-button">{{ __('messages.Start Free Trial') }}</a>
+
         </div>
 
-        <!-- Pro Plan -->
-        <div class="pricing-card popular">
-            <div class="popular-badge">{{ __('messages.Popular') }}</div>
+        <!-- Coming Soon Plans -->
+        <div class="pricing-card coming-soon">
+            <div class="coming-soon-badge">{{ __('messages.Coming Soon') }}</div>
             <h3>{{ __('messages.Pro') }}</h3>
-            <div class="price">$29<span>/month</span></div>
-            <ul class="features-list">
-                <li><i class="fas fa-check"></i> {{ __('messages.Up to 50 users') }}</li>
-                <li><i class="fas fa-check"></i> {{ __('messages.Advanced features') }}</li>
-                <li><i class="fas fa-check"></i> {{ __('messages.Priority support') }}</li>
-                <li><i class="fas fa-check"></i> {{ __('messages.Analytics') }}</li>
+            <div class="price price-tba">
+        <span>{{ __('messages.Price TBA') }}</span>
+        <p class="price-info">{{ __('messages.Sign up to be notified') }}</p>
+</div>
+            <ul class="features-list opacity-75">
+                <li><i class="fas fa-check"></i> {{ __('messages.All Trial Features') }}</li>
+                <li><i class="fas fa-check"></i> {{ __('messages.Up to 50 Users') }}</li>
+                <li><i class="fas fa-check"></i> {{ __('messages.Advanced Analytics') }}</li>
             </ul>
-            <a href="{{ route('register') }}?plan=pro" class="button primary-button">{{ __('Start Free Trial') }}</a>
+            <button disabled class="button secondary-button opacity-75">
+                {{ __('messages.Coming Soon') }}
+            </button>
         </div>
 
-        <!-- Enterprise Plan -->
-        <div class="pricing-card">
-            <h3>{{ __('Enterprise') }}</h3>
-            <div class="price">$99<span>/month</span></div>
-            <ul class="features-list">
-                <li><i class="fas fa-check"></i> {{ __('messages.Unlimited users') }}</li>
-                <li><i class="fas fa-check"></i> {{ __('messages.All features') }}</li>
-                <li><i class="fas fa-check"></i> {{ __('messages.24/7 support') }}</li>
-                <li><i class="fas fa-check"></i> {{ __('messages.Custom integration') }}</li>
+        <div class="pricing-card coming-soon">
+            <div class="coming-soon-badge">{{ __('messages.Coming Soon') }}</div>
+            <h3>{{ __('messages.Enterprise') }}</h3>
+            <div class="price price-tba">
+        <span>{{ __('messages.Price TBA') }}</span>
+        <p class="price-info">{{ __('messages.Sign up to be notified') }}</p>
+</div>
+            <ul class="features-list opacity-75">
+                <li><i class="fas fa-check"></i> {{ __('messages.All Pro Features') }}</li>
+                <li><i class="fas fa-check"></i> {{ __('messages.Unlimited Users') }}</li>
+                <li><i class="fas fa-check"></i> {{ __('messages.Custom Integration') }}</li>
             </ul>
-            <a href="{{ route('register') }}?plan=enterprise" class="button primary-button">{{ __('messages.Contact Sales') }}</a>
+            <button disabled class="button secondary-button opacity-75">
+                {{ __('messages.Coming Soon') }}
+            </button>
         </div>
     </div>
 </section>
+
 
 <!-- CTA Section -->
 <section class="cta">

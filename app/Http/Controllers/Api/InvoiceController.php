@@ -594,6 +594,7 @@ class InvoiceController extends Controller
     
             // Generate PDF using Browsershot
             Browsershot::html($html)
+                ->setChromePath('/usr/bin/google-chrome-stable') // Specify Chrome path
                 ->format('A4')
                 ->margins(16, 16, 16, 16)
                 ->showBackground()

@@ -753,6 +753,7 @@ class SaleController extends Controller
 
         // Generate PDF using Browsershot with custom width
         Browsershot::html($html)
+            ->setChromePath('/usr/bin/google-chrome-stable') // Specify Chrome path
             ->format('A4') // Use standard A4 format
             ->windowSize(302, 1122) // 80mm ≈ 302px at 96 DPI
             ->margins(5, 5, 5, 5)
