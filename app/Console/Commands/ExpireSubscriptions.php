@@ -22,23 +22,27 @@ class ExpireSubscriptions extends Command
             ->get();
 
         foreach ($expiringSubscriptions as $subscription) {
-            \Log::info("Processing expiring subscription: {$subscription->id} for team {$subscription->team_id}");
+            \Log::info("Checking expiring subscription: {$subscription->id} for team {$subscription->team_id}");
 
             try {
-                // Get the team associated with the subscription
-                $team = $subscription->team;
+                // Skip if we shouldn't send a notification yet
+                if (!$subscription->shouldSendNotification()) {
+                    \Log::info("Skipping notification for subscription {$subscription->id} - too soon since last notification");
+                    continue;
+                }
 
-                // Get the first user associated with the team
+                $team = $subscription->team;
                 $user = $team->users()->first();
 
                 if ($user) {
-                    // Calculate the number of days remaining until expiration
                     $daysRemaining = now()->diffInDays($subscription->subscription_expiredDate, false);
 
-                    \Log::info("Sending expiration notice to: {$user->email}");
+                    \Log::info("Sending expiration notice to: {$user->email} ({$daysRemaining} days remaining)");
 
-                    // Send the expiration notice email
                     Mail::to($user->email)->send(new SubscriptionExpirationNotice($subscription, $daysRemaining));
+                    
+                    // Update the last notification timestamp
+                    $subscription->updateNotificationSent();
 
                     \Log::info("Expiration notice successfully sent to: {$user->email}");
                 } else {
@@ -49,7 +53,7 @@ class ExpireSubscriptions extends Command
             }
         }
 
-        // Fetch subscriptions that have already expired
+        // Handle expired subscriptions (this part remains largely the same)
         $expiredSubscriptions = Subscription::where('status', 'active')
             ->whereDate('subscription_expiredDate', '<', now())
             ->get();
@@ -58,22 +62,15 @@ class ExpireSubscriptions extends Command
             \Log::info("Processing expired subscription: {$subscription->id} for team {$subscription->team_id}");
 
             try {
-                // Get the team associated with the subscription
                 $team = $subscription->team;
-
-                // Get the user associated with the team
                 $user = $team->users()->first();
 
-                if ($user) {
-                    // Send expired subscription notice
+                if ($user && !$subscription->last_notification_sent_at?->isToday()) {
                     Mail::to($user->email)->send(new SubscriptionExpiredNotice($subscription));
-
+                    $subscription->updateNotificationSent();
                     \Log::info("Expired notice successfully sent to: {$user->email}");
-                } else {
-                    \Log::warning("No user found for team {$team->id}");
                 }
 
-                // Update subscription status to 'expired' and deactivate the team
                 $subscription->markAsExpired();
             } catch (\Exception $e) {
                 \Log::error("Error processing expired subscription for team {$subscription->team_id}: " . $e->getMessage());
@@ -82,9 +79,6 @@ class ExpireSubscriptions extends Command
 
         $this->info("Processed {$expiringSubscriptions->count()} expiring subscriptions.");
         $this->info("Processed {$expiredSubscriptions->count()} expired subscriptions.");
-
-        \Log::info("Processed {$expiringSubscriptions->count()} expiring subscriptions.");
-        \Log::info("Processed {$expiredSubscriptions->count()} expired subscriptions.");
 
         return Command::SUCCESS;
     }
