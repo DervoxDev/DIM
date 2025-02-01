@@ -62,6 +62,25 @@ return [
     'Start Free Trial' => 'ابدأ تجربة مجانية',
     'Contact Sales' => 'تواصل مع المبيعات',
 
+
+    'Available Now' => 'متوفر الآن',
+    'Free Trial' => 'تجربة مجانية',
+    'Full Access to All Features' => 'وصول كامل لجميع الميزات',
+    'Up to 5 Team Members' => 'حتى 5 أعضاء في الفريق',
+    'Priority Support' => 'دعم ذو أولوية',
+    '14-Day Trial Period' => 'فترة تجربة 14 يوم',
+    'Coming Soon' => 'قريباً',
+    'Price TBA' => 'السعر قريباً',
+    'Sign up to be notified' => 'سجل ليتم إخطارك',
+    'All Trial Features' => 'جميع ميزات النسخة التجريبية',
+    'All Pro Features' => 'جميع الميزات الاحترافية',
+    'Start with our free trial and grow with us' => 'ابدأ بالنسخة التجريبية المجانية وانمو معنا',
+    'Advanced Analytics' => 'تحليلات متقدمة',
+    'Custom Integration' => 'تكامل مخصص',
+    'Up to 50 Users' => 'حتى 50 مستخدم',
+    'Unlimited Users' => 'مستخدمين غير محدود',
+
+
     // CTA Section
     'Ready to Get Started?' => 'مستعد للبدء؟',
     'Join thousands of satisfied customers who trust our platform.' => 'انضم إلى آلاف العملاء الراضين الذين يثقون بمنصتنا.',
@@ -80,4 +99,43 @@ return [
     'Privacy' => 'الخصوصية',
     'Guidelines' => 'الإرشادات',
     'YOUR BEST COMPANY' => 'شركتك الأفضل',
+
+
+        // Profile Page
+        'Profile' => 'الملف الشخصي',
+        'Profile Information' => 'معلومات الملف الشخصي',
+        "Update your account's profile information and email address." => "تحديث معلومات حسابك وعنوان البريد الإلكتروني.",
+        'Name' => 'الاسم',
+        'Email' => 'البريد الإلكتروني',
+        'Save' => 'حفظ',
+        'Saved.' => 'تم الحفظ.',
+        'Your email address is unverified.' => 'عنوان بريدك الإلكتروني غير مؤكد.',
+        'Click here to re-send the verification email.' => 'انقر هنا لإعادة إرسال رسالة التحقق.',
+        'A new verification link has been sent to your email address.' => 'تم إرسال رابط تحقق جديد إلى عنوان بريدك الإلكتروني.',
+    
+        // Password Update
+        'Update Password' => 'تحديث كلمة المرور',
+        'Ensure your account is using a long, random password to stay secure.' => 'تأكد من استخدام حسابك لكلمة مرور طويلة وعشوائية للبقاء آمناً.',
+        'Current Password' => 'كلمة المرور الحالية',
+        'New Password' => 'كلمة المرور الجديدة',
+        'Confirm Password' => 'تأكيد كلمة المرور',
+    
+        // Account Deletion
+        'Delete Account' => 'حذف الحساب',
+        'Once your account is deleted, all of its resources and data will be permanently deleted. Before deleting your account, please download any data or information that you wish to retain.' => 'بمجرد حذف حسابك، سيتم حذف جميع موارده وبياناته نهائياً. قبل حذف حسابك، يرجى تحميل أي بيانات أو معلومات ترغب في الاحتفاظ بها.',
+        'Are you sure you want to delete your account?' => 'هل أنت متأكد أنك تريد حذف حسابك؟',
+        'Once your account is deleted, all of its resources and data will be permanently deleted. Please enter your password to confirm you would like to permanently delete your account.' => 'بمجرد حذف حسابك، سيتم حذف جميع موارده وبياناته نهائياً. الرجاء إدخال كلمة المرور لتأكيد رغبتك في حذف حسابك بشكل دائم.',
+        'Password' => 'كلمة المرور',
+        'Cancel' => 'إلغاء',
+
+        'Team Name' => 'اسم الفريق',
+        'No name' => 'لا يوجد اسم',
+        'Subscription' => 'الاشتراك',
+        'Expires On' => 'ينتهي في',
+        'Team Workers' => 'أعضاء الفريق',
+        'Add Worker' => 'إضافة عضو',
+        'No workers found' => 'لا يوجد أعضاء في الفريق.',
+        'Upgrade' => 'ترقية',
+        'N/A' => 'غير متوفر',
+        'Trial' => 'تجريبي',
 ];

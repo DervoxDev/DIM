@@ -1,7 +1,7 @@
 @extends('components.layouts.app')
 
-@section('title', 'Register')
 
+@section('title', __('auth.Register'))
 @push('styles')
 <style>
     /* Register Form Styles */
@@ -18,7 +18,7 @@
     }
 
     .register-container {
-        max-width: 500px;
+        max-width: 550px;
         width: 100%;
         background: rgba(255, 255, 255, 0.95);
         backdrop-filter: blur(10px);
@@ -97,7 +97,7 @@
     .register-button {
         background: var(--primary-color);
         color: white;
-        padding: 0.75rem 2rem;
+        padding: 0.70rem 1rem;
         border: none;
         border-radius: 8px;
         font-weight: 600;
@@ -167,32 +167,128 @@
         }
 
         .form-footer {
-            flex-direction: column;
-            gap: 1rem;
-            align-items: stretch;
-            text-align: center;
-        }
+        flex-direction: column;
+        gap: 1rem;
+        align-items: center;
+    }
 
         .register-button {
             width: 100%;
         }
+        .rtl .form-footer {
+        flex-direction: column;
     }
+    .register-button,
+    .rtl .register-button {
+        width: 100%;
+        margin: 0;
+        order: 2; /* In mobile, button goes below */
+    }
+        .register-button,
+   .rtl .register-button {
+    order: 1; /* Pull the register button to the left */
+    margin: 0;
+}
+
+    .rtl .login-link {
+    order: 2; /* Push the login link to the right */
+}
+.login-link,
+    .rtl .login-link {
+        width: 100%;
+        text-align: center;
+        order: 1; /* In mobile, link goes above */
+    }
+    }
+        /* RTL Support */
+        .rtl {
+        direction: rtl;
+        text-align: right;
+        font-family: 'Arial', 'Tahoma', sans-serif;
+    }
+    .rtl input::placeholder {
+    font-family: 'Arial', 'Tahoma', sans-serif;
+}
+
+.rtl .register-header h1 {
+    font-family: 'Arial', 'Tahoma', sans-serif;
+    letter-spacing: normal;
+}
+.rtl .error-message {
+    margin-right: 0;
+    padding-right: 0;
+}
+
+.rtl .form-input.is-invalid {
+    border-color: #e53e3e;
+    padding-right: 1rem;
+    padding-left: 2.5rem;
+    background-position: left 0.75rem center;
+}
+
+.rtl .form-label,
+.rtl .form-input,
+.rtl .error-message,
+.rtl .login-link,
+.rtl .register-button {
+    font-family: 'Arial', 'Tahoma', sans-serif;
+    letter-spacing: normal;
+}
+    .rtl .form-input {
+        text-align: right;
+    }
+
+    .rtl .error-message {
+        text-align: right;
+    }
+
+    .rtl .form-footer {
+        flex-direction: row-reverse;
+        justify-content: space-between; /* Add this */
+    }
+
+    .rtl .register-button {
+    order: 1; /* Pull the register button to the left */
+    margin: 0;
+}
+
+    .rtl .form-label {
+        text-align: right;
+    }
+
+    .rtl .password-strength {
+        text-align: right;
+    }
+
+    .rtl .strength-meter div {
+        float: right;
+    }
+
+    /* Adjust padding and margins for RTL */
+    .rtl .form-input {
+        padding: 0.75rem 1rem;
+    }
+
+    .rtl .register-button {
+        padding: 0.75rem 2rem;
+    }
+
 </style>
 @endpush
 
 @section('content')
 <section class="register-section">
-    <div class="register-container">
+<div class="register-container {{ app()->getLocale() === 'ar' ? 'rtl' : '' }}">
         <div class="register-header">
-            <h1>Create Account</h1>
-            <p>Join our community and start exploring</p>
+            <h1>{{ __('auth.Create Account') }}</h1>
+            <p>{{ __('auth.Join our community and start exploring') }}</p>
         </div>
 
         <form method="POST" action="{{ route('register') }}">
             @csrf
 
             <div class="form-group">
-                <label for="name" class="form-label">Full Name</label>
+                <label for="name" class="form-label">{{ __('auth.Full Name') }}</label>
                 <input id="name" 
                        type="text" 
                        name="name" 
@@ -206,7 +302,7 @@
             </div>
 
             <div class="form-group">
-                <label for="email" class="form-label">Email Address</label>
+                <label for="email" class="form-label">{{ __('auth.Email Address') }}</label>
                 <input id="email" 
                        type="email" 
                        name="email" 
@@ -219,7 +315,7 @@
             </div>
 
             <div class="form-group">
-                <label for="password" class="form-label">Password</label>
+                <label for="password" class="form-label">{{ __('auth.Password') }}</label>
                 <input id="password" 
                        type="password" 
                        name="password" 
@@ -236,7 +332,7 @@
             </div>
 
             <div class="form-group">
-                <label for="password_confirmation" class="form-label">Confirm Password</label>
+                <label for="password_confirmation" class="form-label">{{ __('auth.Confirm Password') }}</label>
                 <input id="password_confirmation" 
                        type="password" 
                        name="password_confirmation" 
@@ -246,10 +342,10 @@
 
             <div class="form-footer">
                 <a href="{{ route('login') }}" class="login-link">
-                    Already have an account? Sign in
+                {{ __('auth.Already have an account? Sign in') }}
                 </a>
                 <button type="submit" class="register-button">
-                    Create Account
+                {{ __('auth.Create Account') }}
                 </button>
             </div>
         </form>

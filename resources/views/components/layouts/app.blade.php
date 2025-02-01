@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}" 
-class="h-full">
+      dir="{{ in_array(app()->getLocale(), ['ar']) ? 'rtl' : 'ltr' }}" 
+      class="h-full">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -19,6 +20,158 @@ class="h-full">
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 
     <style>
+        /* RTL Styles for Navbar and Footer */
+        [dir="rtl"] .navbar-container,
+html[lang="ar"] .navbar-container {
+    flex-direction: row-reverse;
+    justify-content: space-between; /* Add this */
+}
+[dir="rtl"] .nav-links,
+html[lang="ar"] .nav-links {
+    flex-direction: row-reverse;
+    margin-left: 0;
+    margin-right: auto;
+    order: 1; /* Add this */
+}
+[dir="rtl"] .logo,
+html[lang="ar"] .logo {
+    margin-left: auto; /* Add this */
+    margin-right: 0; /* Add this */
+    order: 2; /* Add this */
+}
+
+/* Profile dropdown RTL adjustments */
+[dir="rtl"] .profile-dropdown,
+html[lang="ar"] .profile-dropdown {
+    margin-left: auto; /* Change this */
+    margin-right: 1rem;
+    order: 0; /* Add this */
+}
+[dir="rtl"] .profile-dropdown-content,
+html[lang="ar"] .profile-dropdown-content {
+    left: 0;
+    right: auto;
+
+}
+[dir="rtl"] .profile-button,
+html[lang="ar"] .profile-button {
+    flex-direction: row-reverse;
+}
+
+[dir="rtl"] .profile-button i,
+html[lang="ar"] .profile-button i {
+    margin-right: 0.5rem;
+    margin-left: 0;
+}
+/* Language switcher RTL adjustments */
+dir=["rtl"] .language-switcher,
+html[lang="ar"] .language-switcher {
+    margin-left: auto; /* Change this */
+    margin-right: 1rem;
+    order: 0; /* Add this */
+}
+
+[dir="rtl"] .language-dropdown,
+html[lang="ar"] .language-dropdown {
+    left: 0;
+    right: auto;
+}
+
+[dir="rtl"] .dropdown-item,
+html[lang="ar"] .dropdown-item {
+    text-align: right;
+}
+[dir="rtl"] .dropdown-item-content,
+html[lang="ar"] .dropdown-item-content {
+    left: 0;
+    right: auto;
+    text-align: right;
+}
+
+[dir="rtl"] .profile-dropdown-content,
+html[lang="ar"] .profile-dropdown-content {
+    left: 0;
+    right: auto;
+    text-align: right;
+    
+}
+
+[dir="rtl"] .dropdown-item i,
+html[lang="ar"] .dropdown-item i {
+    margin-left: 0.5rem;
+    margin-right: 0;
+}
+
+/* RTL Footer Styles */
+[dir="rtl"] .footer-grid,
+html[lang="ar"] .footer-grid {
+    direction: rtl;
+    text-align: right;
+}
+
+[dir="rtl"] .social-links,
+html[lang="ar"] .social-links {
+    justify-content: flex-start;
+}
+
+[dir="rtl"] .footer-column h4,
+html[lang="ar"] .footer-column h4 {
+    text-align: right;
+}
+
+[dir="rtl"] .footer-links,
+html[lang="ar"] .footer-links {
+    padding-right: 0;
+}
+
+
+
+.main-nav-links {
+    display: flex;
+    gap: 2rem;
+    align-items: center;
+}
+
+[dir="rtl"] .main-nav-links,
+html[lang="ar"] .main-nav-links {
+    flex-direction: row-reverse;
+}
+
+[dir="rtl"] .nav-links,
+html[lang="ar"] .nav-links {
+    flex-direction: row-reverse;
+    margin-left: 0;
+    margin-right: auto;
+    order: 1;
+}
+/* Nav Links Container */
+.nav-links-container {
+    display: flex;
+    align-items: center;
+    gap: 2rem;
+    width: 100%;
+    justify-content: flex-end;
+}
+
+.main-nav-group {
+    display: flex;
+    align-items: center;
+    gap: 2rem;
+}
+
+/* RTL Styles */
+[dir="rtl"] .nav-links-container,
+html[lang="ar"] .nav-links-container {
+    flex-direction: row-reverse;
+    justify-content: flex-start;
+}
+
+[dir="rtl"] .main-nav-group,
+html[lang="ar"] .main-nav-group {
+    flex-direction: row;
+}
+
+
         /* Reset & Base Styles */
         :root {
             --primary-color: #5865F2;
@@ -129,21 +282,26 @@ class="h-full">
         .profile-dropdown.active .profile-dropdown-content {
             display: block;
         }
-
-        .dropdown-item {
-            display: flex;
-            align-items: center;
-            padding: 0.75rem 1rem;
-            color: var(--secondary-color);
-            text-decoration: none;
-            transition: background-color 0.3s ease;
-            border: none;
-            width: 100%;
-            text-align: left;
-            font-size: 0.875rem;
-            cursor: pointer;
-            background: none;
-        }
+        .dropdown-item-content {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    width: 100%;
+}
+.dropdown-item {
+    display: flex;
+    align-items: center;
+    padding: 0.75rem 1rem;
+    color: var(--secondary-color);
+    text-decoration: none;
+    transition: background-color 0.3s ease;
+    border: none;
+    width: 100%;
+    text-align: left;
+    font-size: 0.875rem;
+    cursor: pointer;
+    background: none;
+}
 
         .dropdown-item:hover {
             background-color: var(--background-color);
@@ -327,62 +485,142 @@ class="h-full">
             .footer-grid {
                 grid-template-columns: 1fr;
             }
+            [dir="rtl"] .profile-dropdown-content,
+    html[lang="ar"] .profile-dropdown-content {
+        width: 100%;
+    }
+            [dir="rtl"] .nav-links,
+    html[lang="ar"] .nav-links {
+        text-align: right;
+        align-items: flex-end; /* Change this */
+        right: 0;
+        left: 0;
+    }
+
+
+    [dir="rtl"] .mobile-menu-button,
+    html[lang="ar"] .mobile-menu-button {
+        margin-left: auto;
+        margin-right: 0;
+        order: 0; /* Add this */
+    }
+    
+    [dir="rtl"] .language-switcher,
+    html[lang="ar"] .language-switcher {
+        margin-right: 0;
+    }
+    [dir="rtl"] .nav-links > *,
+    html[lang="ar"] .nav-links > * {
+        width: 100%;
+        text-align: right;
+    }
+    .main-nav-links {
+        flex-direction: column;
+        width: 100%;
+        gap: 1rem;
+    }
+
+    [dir="rtl"] .main-nav-links,
+    html[lang="ar"] .main-nav-links {
+        align-items: flex-end;
+    }
+
+
+      .nav-links-container {
+        flex-direction: column;
+        width: 100%;
+    }
+
+    .main-nav-group {
+        flex-direction: column;
+        width: 100%;
+        gap: 1rem;
+    }
+
+    [dir="rtl"] .nav-links-container,
+    html[lang="ar"] .nav-links-container {
+        align-items: flex-end;
+    }
+
+    [dir="rtl"] .main-nav-group,
+    html[lang="ar"] .main-nav-group {
+        align-items: flex-end;
+    }
         }
     </style>
 
     @stack('styles')
 </head>
 <body class="antialiased">
+<button id="scrollToTop" class="scroll-to-top">
+    <i class="fas fa-arrow-up"></i>
+</button>
     @auth
-        <nav class="guest-navbar">
+    <nav class="guest-navbar">
             <div class="navbar-container">
+                <!-- Logo -->
                 <a href="/" class="logo">{{ config('app.name') }}</a>
                 
+                <!-- Mobile Menu Button -->
                 <button class="mobile-menu-button">
                     <i class="fas fa-bars"></i>
                 </button>
 
+                <!-- Navigation Links -->
                 <div class="nav-links">
+            <div class="nav-links-container">
+                <div class="main-nav-group">
+               
+
+                    <!-- Dashboard Link -->
                     <a href="{{ route('dashboard') }}" class="nav-link">{{ __('messages.Dashboard') }}</a>
+                    
+                    <!-- Admin Link -->
                     @if(auth()->user()->hasRole('admin'))
                         <a href="{{ route('admin') }}" class="nav-link">{{ __('messages.Admin') }}</a>
                     @endif
                     
+                    <!-- Profile Dropdown -->
                     <div class="profile-dropdown">
                         <button class="profile-button nav-link">
                             {{ Auth::user()->name }}
-                            <i class="fas fa-chevron-down ml-2"></i>
+                            <i class="fas fa-chevron-down {{ app()->getLocale() === 'ar' ? 'fa-flip-horizontal' : '' }} ml-2"></i>
                         </button>
                         <div class="profile-dropdown-content">
-                            <a href="{{ route('profile.edit') }}" class="dropdown-item">
-                                <i class="fas fa-user mr-2"></i> {{ __('messages.Profile') }}
-                            </a>
-                            <form method="POST" action="{{ route('logout') }}">
-                                @csrf
-                                <button type="submit" class="dropdown-item">
-                                    <i class="fas fa-sign-out-alt mr-2"></i> {{ __('messages.Log Out') }}
-                                </button>
-                            </form>
-                        </div>
-                    </div>
-
-                    <div class="language-switcher">
-    <button class="language-button">
-        <i class="fas fa-globe"></i>
-        <span>{{ strtoupper(Session::get('locale', 'en')) }}</span>
-    </button>
-    <div class="language-dropdown">
-        @php($languages = ['en' => 'English', 'fr' => 'Français', 'ar' => 'العربية'])
-        @foreach($languages as $code => $name)
-            <a href="{{ route('change.lang', ['lang' => $code]) }}" 
-               class="language-option {{ Session::get('locale') === $code ? 'active' : '' }}">
-                {{ $name }}
-            </a>
-        @endforeach
-    </div>
+    <a href="{{ route('profile.edit') }}" class="dropdown-item">
+        <span class="dropdown-item-content">
+            <i class="fas fa-user"></i>
+            <span>{{ __('messages.Profile') }}</span>
+        </span>
+    </a>
+    <form method="POST" action="{{ route('logout') }}">
+        @csrf
+        <button type="submit" class="dropdown-item">
+            <span class="dropdown-item-content">
+                <i class="fas fa-sign-out-alt"></i>
+                <span>{{ __('messages.Log Out') }}</span>
+            </span>
+        </button>
+    </form>
 </div>
-
-
+                    </div>
+                    <div class="language-switcher">
+                    <button class="language-button">
+                        <i class="fas fa-globe"></i>
+                        <span>{{ strtoupper(Session::get('locale', 'en')) }}</span>
+                    </button>
+                    <div class="language-dropdown">
+                        @php($languages = ['en' => 'English', 'fr' => 'Français', 'ar' => 'العربية'])
+                        @foreach($languages as $code => $name)
+                            <a href="{{ route('change.lang', ['lang' => $code]) }}" 
+                               class="language-option {{ Session::get('locale') === $code ? 'active' : '' }}">
+                                {{ $name }}
+                            </a>
+                        @endforeach
+                    </div>
+                </div>
+                       </div>
+                    </div>
                 </div>
             </div>
         </nav>
@@ -453,52 +691,98 @@ class="h-full">
             <main class="mt-16">
                 @yield('content')
             </main>
+              <footer class="footer">
+            <div class="footer-grid">
+                <div class="footer-brand">
+                    <h3>{{ config('app.name') }}<br>YOUR BEST COMPANY</h3>
+                    <div class="social-links">
+                        <a href="#"><i class="fab fa-twitter"></i></a>
+                        <a href="#"><i class="fab fa-instagram"></i></a>
+                        <a href="#"><i class="fab fa-facebook"></i></a>
+                        <a href="#"><i class="fab fa-youtube"></i></a>
+                    </div>
+                </div>
+                
+                <div class="footer-column">
+                    <h4>Product</h4>
+                    <ul class="footer-links">
+                        <li><a href="#download">Download</a></li>
+                        <li><a href="#pricing">Pricing</a></li>
+                        <li><a href="#features">Features</a></li>
+                    </ul>
+                </div>
+
+                <div class="footer-column">
+                    <h4>Company</h4>
+                    <ul class="footer-links">
+                        <li><a href="#">About</a></li>
+                        <li><a href="#">Careers</a></li>
+                        <li><a href="#">Blog</a></li>
+                    </ul>
+                </div>
+
+                <div class="footer-column">
+                    <h4>Resources</h4>
+                    <ul class="footer-links">
+                        <li><a href="#">Support</a></li>
+                        <li><a href="#">Documentation</a></li>
+                        <li><a href="#">Security</a></li>
+                    </ul>
+                </div>
+
+                <div class="footer-column">
+                    <h4>Legal</h4>
+                    <ul class="footer-links">
+                        <li><a href="#">Terms</a></li>
+                        <li><a href="#">Privacy</a></li>
+                        <li><a href="#">Guidelines</a></li>
+                    </ul>
+                </div>
+            </div>
+        </footer>
         @endif
     @else
-        <nav class="guest-navbar">
-            <div class="navbar-container">
-                <a href="/" class="logo">{{ config('app.name') }}</a>
-                
-                <button class="mobile-menu-button">
-                    <i class="fas fa-bars"></i>
-                </button>
+    <nav class="guest-navbar">
+    <div class="navbar-container">
+        <a href="/" class="logo">{{ config('app.name') }}</a>
+        
+        <button class="mobile-menu-button">
+            <i class="fas fa-bars"></i>
+        </button>
 
-                <div class="nav-links">
+        <div class="nav-links">
+            <div class="nav-links-container">
+                <div class="main-nav-group">
+            
                     <a href="#features" class="nav-link">{{ __('messages.Features') }}</a>
                     <a href="#download" class="nav-link">{{ __('messages.Download') }}</a>
                     <a href="#pricing" class="nav-link">{{ __('messages.Pricing') }}</a>
                     <a href="#" class="nav-link">{{ __('messages.Support') }}</a>
-                    
                     <a href="{{ route('login') }}" class="nav-link">{{ __('messages.Login') }}</a>
                     <a href="{{ route('register') }}" class="nav-link">{{ __('messages.Sign Up') }}</a>
-
-
-
-
                     <div class="language-switcher">
-    <button class="language-button">
-        <i class="fas fa-globe"></i>
-        <span>{{ strtoupper(Session::get('locale', 'en')) }}</span>
-    </button>
-    <div class="language-dropdown">
-        @php($languages = ['en' => 'English', 'fr' => 'Français', 'ar' => 'العربية'])
-        @foreach($languages as $code => $name)
-            <a href="{{ route('change.lang', ['lang' => $code]) }}" 
-               class="language-option {{ Session::get('locale') === $code ? 'active' : '' }}">
-                {{ $name }}
-            </a>
-        @endforeach
-    </div>
-</div>
-
-
-
-
-
-
+                    <button class="language-button">
+                        <i class="fas fa-globe"></i>
+                        <span>{{ strtoupper(Session::get('locale', 'en')) }}</span>
+                    </button>
+                    <div class="language-dropdown">
+                        @php($languages = ['en' => 'English', 'fr' => 'Français', 'ar' => 'العربية'])
+                        @foreach($languages as $code => $name)
+                            <a href="{{ route('change.lang', ['lang' => $code]) }}" 
+                               class="language-option {{ Session::get('locale') === $code ? 'active' : '' }}">
+                                {{ $name }}
+                            </a>
+                        @endforeach
+                    </div>
                 </div>
+                </div>
+
+            
             </div>
-        </nav>
+        </div>
+    </div>
+</nav>
+
 
         <main>
             @yield('content')

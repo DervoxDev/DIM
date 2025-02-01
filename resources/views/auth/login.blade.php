@@ -1,9 +1,76 @@
 @extends('components.layouts.app')
 
-@section('title', 'Login')
+
+@section('title', __('auth.Login'))
 
 @push('styles')
 <style>
+    .rtl {
+    direction: rtl;
+    text-align: right;
+    font-family: 'Arial', 'Tahoma', sans-serif;
+}
+
+.rtl .form-input {
+    text-align: right;
+}
+
+.rtl .form-label {
+    text-align: right;
+}
+
+.rtl .remember-me {
+    justify-content: flex-end; /* Pushes the content to the right */
+    flex-direction: row-reverse; /* Puts checkbox after label */
+}
+
+.rtl .remember-me input[type="checkbox"] {
+    margin: 0 0 0 0.5rem; /* Space between checkbox and label */
+    order: 2; /* Checkbox appears after label */
+}
+.rtl .remember-me label {
+    margin-left: 0.5rem; /* Adds space between label and checkbox */
+}
+
+.rtl .form-footer {
+    flex-direction: row; /* Change to row instead of row-reverse */
+}
+
+.rtl .forgot-password {
+    order: 2; /* Push forgot password link to the right */
+}
+
+.rtl .login-button {
+    order: 1; /* Pull login button to the left */
+    margin: 0;
+}
+
+.rtl .register-link {
+    text-align: center;
+}
+
+/* Error messages in RTL */
+.rtl .text-red-600 {
+    text-align: right;
+}
+.rtl input::placeholder {
+    font-family: 'Arial', 'Tahoma', sans-serif;
+}
+
+.rtl .login-header h1 {
+    font-family: 'Arial', 'Tahoma', sans-serif;
+    letter-spacing: normal;
+}
+.rtl .form-label,
+.rtl .form-input,
+.rtl .remember-me label,
+.rtl .forgot-password,
+.rtl .login-button,
+.rtl .register-link {
+    font-family: 'Arial', 'Tahoma', sans-serif;
+    letter-spacing: normal;
+}
+/* Mob
     /* Login Form Styles */
     .login-section {
         min-height: calc(100vh - 80px); /* Adjust for navbar height */
@@ -71,10 +138,10 @@
     }
 
     .remember-me {
-        display: flex;
-        align-items: center;
-        gap: 0.5rem;
-    }
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
 
     .remember-me input[type="checkbox"] {
         width: 1rem;
@@ -161,15 +228,36 @@
     .dark .login-header p {
         color: #e2e8f0;
     }
+    @media (max-width: 640px) {
+    .rtl .form-footer {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .rtl .login-button,
+    .rtl .forgot-password {
+        width: 100%;
+        text-align: center;
+        margin: 0.5rem 0;
+    }
+
+    .rtl .forgot-password {
+        order: 1; /* In mobile, forgot password goes above */
+    }
+
+    .rtl .login-button {
+        order: 2; /* In mobile, button goes below */
+    }
+}
 </style>
 @endpush
 
 @section('content')
 <section class="login-section">
-    <div class="login-container">
+<div class="login-container {{ app()->getLocale() === 'ar' ? 'rtl' : '' }}">
         <div class="login-header">
-            <h1>Welcome Back</h1>
-            <p>Sign in to continue to your account</p>
+            <h1>{{ __('auth.Welcome Back') }}</h1>
+            <p>{{ __('auth.Sign in to continue to your account') }}</p>
         </div>
 
         <!-- Session Status -->
@@ -183,7 +271,7 @@
             @csrf
 
             <div class="form-group">
-                <label for="email" class="form-label">Email Address</label>
+                <label for="email" class="form-label">{{ __('auth.Email Address') }}</label>
                 <input id="email" 
                        type="email" 
                        name="email" 
@@ -197,7 +285,7 @@
             </div>
 
             <div class="form-group">
-                <label for="password" class="form-label">Password</label>
+                <label for="password" class="form-label">{{ __('auth.Password') }}</label>
                 <input id="password" 
                        type="password" 
                        name="password" 
@@ -210,25 +298,25 @@
 
             <div class="remember-me">
                 <input type="checkbox" id="remember_me" name="remember">
-                <label for="remember_me">Remember me</label>
+                <label for="remember_me">{{ __('auth.Remember me') }}</label>
             </div>
 
             <div class="form-footer">
                 @if (Route::has('password.request'))
                     <a href="{{ route('password.request') }}" class="forgot-password">
-                        Forgot your password?
+                    {{ __('auth.Forgot your password?') }}
                     </a>
                 @endif
 
                 <button type="submit" class="login-button">
-                    Log in
+                {{ __('auth.Log in') }}
                 </button>
             </div>
         </form>
 
         <div class="register-link">
-            Don't have an account? 
-            <a href="{{ route('register') }}">Create one now</a>
+        {{ __("auth.Don't have an account?") }}
+            <a href="{{ route('register') }}">{{ __('auth.Create one now') }}</a>
         </div>
     </div>
 </section>

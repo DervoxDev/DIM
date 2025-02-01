@@ -1,9 +1,59 @@
 @extends('components.layouts.app')
 
-@section('title', 'Forgot Password')
+@section('title', __('auth.Forgot Password?'))
 
 @push('styles')
 <style>
+    .rtl {
+    direction: rtl;
+    text-align: right;
+    font-family: 'Arial', 'Tahoma', sans-serif;
+}
+
+.rtl .forgot-password-header {
+    text-align: right;
+}
+
+.rtl .forgot-password-header h1,
+.rtl .forgot-password-header p {
+    text-align: right;
+}
+.rtl .form-label {
+    text-align: right;
+}
+
+.rtl .form-input {
+    text-align: right;
+    direction: rtl;
+}
+
+
+.rtl .status-message {
+    text-align: right;
+}
+
+.rtl input::placeholder {
+    text-align: right;
+}
+
+.rtl .back-to-login {
+    text-align: right;
+}
+
+/* Font adjustments for Arabic */
+.rtl,
+.rtl input,
+.rtl button,
+.rtl .forgot-password-header h1,
+.rtl .forgot-password-header p,
+.rtl .form-label,
+.rtl .form-input,
+.rtl .status-message,
+.rtl .back-to-login {
+    font-family: 'Arial', 'Tahoma', sans-serif;
+    letter-spacing: normal;
+}
+
     /* Forgot Password Styles */
     .forgot-password-section {
         min-height: calc(100vh - 80px);
@@ -171,16 +221,19 @@
         .forgot-password-header h1 {
             font-size: 1.75rem;
         }
+        .rtl .forgot-password-container {
+        padding: 1.5rem;
+    }
     }
 </style>
 @endpush
 
 @section('content')
 <section class="forgot-password-section">
-    <div class="forgot-password-container">
+<div class="forgot-password-container {{ app()->getLocale() === 'ar' ? 'rtl' : '' }}">
         <div class="forgot-password-header">
-            <h1>Forgot Password?</h1>
-            <p>{{ __('Forgot your password? No problem. Just let us know your email address and we will email you a password reset link that will allow you to choose a new one.') }}</p>
+            <h1>{{ __('auth.Forgot Password?') }}</h1>
+            <p>{{ __('auth.Forgot your password? No problem. Just let us know your email address and we will email you a password reset link that will allow you to choose a new one.') }}</p>
         </div>
 
         @if (session('status'))
@@ -193,7 +246,7 @@
             @csrf
 
             <div class="form-group">
-                <label for="email" class="form-label">Email Address</label>
+                <label for="email" class="form-label">{{ __('auth.Email Address') }}</label>
                 <input id="email" 
                        type="email" 
                        name="email" 
@@ -209,11 +262,11 @@
             </div>
 
             <button type="submit" class="submit-button">
-                {{ __('Send Password Reset Link') }}
+                {{ __('auth.Send Password Reset Link') }}
             </button>
 
             <a href="{{ route('login') }}" class="back-to-login">
-                Back to Login
+            {{ __('auth.Back to Login') }}
             </a>
         </form>
     </div>

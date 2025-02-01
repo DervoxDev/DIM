@@ -605,6 +605,44 @@
 .dark .custom-price {
     color: #e2e8f0;
 }
+.scroll-to-top {
+    position: fixed;
+    right: 25px;
+    top: 50%; /* Change from bottom to top */
+    transform: translateY(-50%); /* Add this to center vertically */
+    width: 45px;
+    height: 45px;
+    border-radius: 50%;
+    background-color: #007bff; /* Use a specific color instead of var() */
+    color: #ffffff;
+    text-align: center;
+    line-height: 45px;
+    font-size: 20px;
+    cursor: pointer;
+    border: none;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    display: none;
+    z-index: 9999;
+    transition: all 0.3s ease;
+    opacity: 0.9;
+}
+
+.scroll-to-top:hover {
+    background-color: #0056b3;
+    transform: translateY(-50%) scale(1.1); /* Modified to maintain vertical centering */
+    opacity: 1;
+    box-shadow: 0 6px 15px rgba(0, 0, 0, 0.2);
+}
+
+/* Dark mode support if needed */
+.dark .scroll-to-top {
+    background-color: var(--light-color);
+    color: var(--primary-color);
+}
+
+.dark .scroll-to-top:hover {
+    background-color: var(--background-color);
+}
     /* CTA Section */
     .cta {
         padding: 100px 20px;
@@ -644,6 +682,14 @@
 
         .hero {
         padding: 80px 20px 60px;
+    }
+
+    .scroll-to-top {
+        right: 20px;
+        width: 40px;
+        height: 40px;
+        line-height: 40px;
+        font-size: 18px;
     }
 
     .hero h1 {
@@ -721,7 +767,7 @@
             <p>{{ __('messages.Streamline your operations, boost productivity, and scale your business with our powerful platform.') }}</p>
         </div>
         <div class="laptop-with-overlay">
-    <img class="laptop" src="https://kde.org/reusable-assets/laptop.svg" alt="Laptop" width="2000" height="1220">
+    <img class="laptop" src="{{ Vite::asset('resources/images/laptop.svg') }}"  alt="Laptop" width="2000" height="1220">
     <div class="laptop-overlay">
         <div id="imageCompare">
             <!-- The first div will be the front element -->
@@ -922,11 +968,44 @@
         <a href="{{ route('register') }}" class="button primary-button">{{ __('messages.Start Free Trial') }}</a>
     </div>
 </section>
+
 @endsection
 
 @push('scripts')
 <script>
 document.addEventListener('DOMContentLoaded', function() {
+
+
+
+    const scrollToTopButton = document.getElementById('scrollToTop');
+    
+    // Show/hide button with smooth fade
+    window.onscroll = function() {
+        if (document.body.scrollTop > 100 || document.documentElement.scrollTop > 100) {
+            scrollToTopButton.style.display = 'block';
+            setTimeout(() => {
+                scrollToTopButton.style.opacity = '0.9';
+            }, 10);
+        } else {
+            scrollToTopButton.style.opacity = '0';
+            setTimeout(() => {
+                scrollToTopButton.style.display = 'none';
+            }, 300);
+        }
+    };
+
+    // Smooth scroll to top with easing
+    scrollToTopButton.addEventListener('click', function() {
+        const scrollStep = -window.scrollY / (500 / 15);
+        
+        const scrollInterval = setInterval(function() {
+            if (window.scrollY !== 0) {
+                window.scrollBy(0, scrollStep);
+            } else {
+                clearInterval(scrollInterval);
+            }
+        }, 15);
+    });
     // Initialize image compare
     $('#imageCompare').imagesCompare({
     initVisibleRatio: 0.5,
@@ -1015,6 +1094,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
         statsObserver.observe(statsSection);
     }
+    
 });
 
 </script>

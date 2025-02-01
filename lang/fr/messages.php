@@ -62,7 +62,67 @@ return [
     'Start Free Trial' => "Commencer l'essai gratuit",
     'Contact Sales' => 'Contacter les ventes',
 
+
+    'Available Now' => 'Disponible Maintenant',
+    'Free Trial' => 'Essai Gratuit',
+    'Full Access to All Features' => 'Accès complet à toutes les fonctionnalités',
+    'Up to 5 Team Members' => "Jusqu'à 5 membres d'équipe",
+    'Priority Support' => 'Support prioritaire',
+    '14-Day Trial Period' => "Période d'essai de 14 jours",
+    'Coming Soon' => 'Bientôt Disponible',
+    'Price TBA' => 'Prix à venir',
+    'Sign up to be notified' => "S'inscrire pour être notifié",
+    'All Trial Features' => "Toutes les fonctionnalités d'essai",
+    'Advanced Analytics' => 'Analyses avancées',
+    'All Pro Features' => 'Toutes les fonctionnalités Pro',
+    'Custom Integration' => 'Intégration personnalisée',
+    'Start with our free trial and grow with us' => 'Commencez avec notre essai gratuit et évoluez avec nous',
+
+
+
+
     // CTA Section
     'Ready to Get Started?' => 'Prêt à commencer ?',
     'Join thousands of satisfied customers who trust our platform.' => 'Rejoignez des milliers de clients satisfaits qui font confiance à notre plateforme.',
+   
+   
+     // Profile Page
+    'Profile' => 'Profil',
+    'Profile Information' => 'Informations du profil',
+    "Update your account's profile information and email address." => "Mettez à jour les informations de votre profil et votre adresse e-mail.",
+    'Name' => 'Nom',
+    'Email' => 'E-mail',
+    'Save' => 'Enregistrer',
+    'Saved.' => 'Enregistré.',
+    'Your email address is unverified.' => "Votre adresse e-mail n'est pas vérifiée.",
+    'Click here to re-send the verification email.' => 'Cliquez ici pour renvoyer l\'e-mail de vérification.',
+    'A new verification link has been sent to your email address.' => 'Un nouveau lien de vérification a été envoyé à votre adresse e-mail.',
+
+    // Password Update
+    'Update Password' => 'Mettre à jour le mot de passe',
+    'Ensure your account is using a long, random password to stay secure.' => 'Assurez-vous que votre compte utilise un mot de passe long et aléatoire pour rester sécurisé.',
+    'Current Password' => 'Mot de passe actuel',
+    'New Password' => 'Nouveau mot de passe',
+    'Confirm Password' => 'Confirmer le mot de passe',
+
+    // Account Deletion
+    'Delete Account' => 'Supprimer le compte',
+    'Once your account is deleted, all of its resources and data will be permanently deleted. Before deleting your account, please download any data or information that you wish to retain.' => 'Une fois votre compte supprimé, toutes ses ressources et données seront définitivement supprimées. Avant de supprimer votre compte, veuillez télécharger les données ou informations que vous souhaitez conserver.',
+    'Are you sure you want to delete your account?' => 'Êtes-vous sûr de vouloir supprimer votre compte ?',
+    'Once your account is deleted, all of its resources and data will be permanently deleted. Please enter your password to confirm you would like to permanently delete your account.' => 'Une fois votre compte supprimé, toutes ses ressources et données seront définitivement supprimées. Veuillez entrer votre mot de passe pour confirmer que vous souhaitez supprimer définitivement votre compte.',
+    'Password' => 'Mot de passe',
+    'Cancel' => 'Annuler',
+
+    'Team Name' => 'Nom d\'équipe',
+    'No name' => 'Sans nom',
+    'Subscription' => 'Abonnement',
+    'Expires On' => 'Expire le',
+    'Team Workers' => 'Membres de l\'équipe',
+    'Add Worker' => 'Ajouter un membre',
+    'No workers found' => 'Aucun membre trouvé dans l\'équipe.',
+    'Upgrade' => 'Améliorer',
+    'N/A' => 'N/D',
+    'Trial' => 'Essai',
+  
+
 ];
