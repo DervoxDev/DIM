@@ -19,7 +19,7 @@ use Illuminate\Support\Facades\Route;
     Route::get('lang', [LanguageController::class, 'change'])->name('change.lang');
     
     Route::get('/dashboard', [DashboardController::class, 'index'])
-         ->middleware(['auth', 'verified'])
+         ->middleware(['auth'])
          ->name('dashboard');
 
     Route::get('/a/admin', function(){

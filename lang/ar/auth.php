@@ -48,4 +48,7 @@ return [
     // Secure Area
     'This is a secure area of the application. Please confirm your password before continuing.' => 'هذه منطقة آمنة من التطبيق. يرجى تأكيد كلمة المرور قبل المتابعة.',
     'Confirm' => 'تأكيد',
+    'Verify Email' => 'تحقق من البريد الإلكتروني',
+    'Thanks for signing up! Before getting started, could you verify your email address by clicking on the link we just emailed to you? If you didn\'t receive the email, we will gladly send you another.' => 'شكراً لتسجيلك! قبل البدء، هل يمكنك التحقق من عنوان بريدك الإلكتروني من خلال النقر على الرابط الذي أرسلناه إليك للتو؟ إذا لم تتلقَ البريد الإلكتروني، سنرسل لك رسالة أخرى بكل سرور.',
+    'A new verification link has been sent to the email address you provided during registration' => 'تم إرسال رابط تحقق جديد إلى عنوان البريد الإلكتروني الذي قدمته أثناء التسجيل.',
 ];

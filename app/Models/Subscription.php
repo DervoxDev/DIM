@@ -24,7 +24,10 @@
             'subscription_startDate' => 'date',
             'subscription_expiredDate' => 'date',
         ];
-
+        protected $dates = [
+            'subscription_expiredDate',
+            'last_notification_sent_at'
+        ];
         public function team(): BelongsTo
         {
             return $this->belongsTo(Team::class);
@@ -90,5 +93,29 @@
                 ]);
             }
             throw new \Exception("Trial plan not found.");
+        }
+
+
+        public function shouldSendNotification(): bool
+        {
+            if (!$this->last_notification_sent_at) {
+                return true;
+            }
+    
+            $daysUntilExpiration = now()->diffInDays($this->subscription_expiredDate, false);
+            $lastNotificationDays = now()->diffInDays($this->last_notification_sent_at);
+    
+            // Send notification at 3 days, 2 days, and 1 day before expiration
+            return match ($daysUntilExpiration) {
+                3 => $lastNotificationDays >= 1, // Ensure at least 1 day has passed since last notification
+                2 => $lastNotificationDays >= 1,
+                1 => $lastNotificationDays >= 1,
+                default => false,
+            };
+        }
+    
+        public function updateNotificationSent(): void
+        {
+            $this->update(['last_notification_sent_at' => now()]);
         }
     }

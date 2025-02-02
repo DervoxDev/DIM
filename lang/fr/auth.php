@@ -46,5 +46,8 @@ return [
     // Secure Area
     'This is a secure area of the application. Please confirm your password before continuing.' => 'Ceci est une zone sécurisée de l\'application. Veuillez confirmer votre mot de passe avant de continuer.',
     'Confirm' => 'Confirmer',
+    'Verify Email' => 'Vérifier l\'e-mail',
+    'Thanks for signing up! Before getting started, could you verify your email address by clicking on the link we just emailed to you? If you didn\'t receive the email, we will gladly send you another.' => 'Merci de votre inscription ! Avant de commencer, pourriez-vous vérifier votre adresse e-mail en cliquant sur le lien que nous venons de vous envoyer ? Si vous n\'avez pas reçu l\'e-mail, nous vous en enverrons volontiers un autre.',
+    'A new verification link has been sent to the email address you provided during registration.' => 'Un nouveau lien de vérification a été envoyé à l\'adresse e-mail que vous avez fournie lors de l\'inscription.',
 ];
     

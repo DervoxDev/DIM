@@ -1,66 +1,56 @@
 <?php
 
-    namespace App\Mail;
+namespace App\Mail;
 
-    use Illuminate\Bus\Queueable;
-    use Illuminate\Contracts\Queue\ShouldQueue;
-    use Illuminate\Mail\Mailable;
-    use Illuminate\Mail\Mailables\Content;
-    use Illuminate\Mail\Mailables\Envelope;
-    use Illuminate\Queue\SerializesModels;
-    use App\Models\Subscription;
-    class SubscriptionExpirationNotice extends Mailable
+use Illuminate\Bus\Queueable;
+use Illuminate\Mail\Mailable;
+use Illuminate\Mail\Mailables\Content;
+use Illuminate\Mail\Mailables\Envelope;
+use Illuminate\Queue\SerializesModels;
+use App\Models\Subscription;
+use Carbon\Carbon;
+
+class SubscriptionExpirationNotice extends Mailable
+{
+    use Queueable, SerializesModels;
+
+    public $subscription;
+    public $daysRemaining;
+
+    public function __construct(Subscription $subscription, int $daysRemaining)
     {
-        use Queueable, SerializesModels;
-
-        /**
-         * Create a new message instance.
-         */
-
-        public $subscription;
-        public $daysRemaining;
-
-        /**
-         * Create a new message instance.
-         */
-        public function __construct(Subscription $subscription, int $daysRemaining)
-        {
-            $this->subscription = $subscription;
-            $this->daysRemaining = $daysRemaining;
-        }
-        /**
-         * Get the message envelope.
-         */
-        public function envelope(): Envelope
-        {
-            return new Envelope(
-                subject: 'Subscription Expiration Notice - ' . $this->daysRemaining . ' Days Remaining',
-            );
-        }
-
-        /**
-         * Get the message content definition.
-         */
-        public function content(): Content
-        {
-            return new Content(
-                view: 'emails.subscription_expiration',
-                with: [
-                    'teamName' => $this->subscription->team->name,
-                    'expirationDate' => $this->subscription->subscription_expiredDate->format('Y-m-d'),
-                    'daysRemaining' => $this->daysRemaining,
-                    'planName' => $this->subscription->plan->name,
-                ]
-            );
-        }
-
-        /**
-         * Get the attachments for the message.
-         *
-         * @return array<int, \Illuminate\Mail\Mailables\Attachment>
-         */
-        public function attachments(): array
-        {
-            return [];
-        }
+        $this->subscription = $subscription;
+        $this->daysRemaining = $daysRemaining;
     }
+
+    public function envelope(): Envelope
+    {
+        return new Envelope(
+            subject: "Subscription Expiration Notice - {$this->daysRemaining} Days Remaining",
+        );
+    }
+
+    public function content(): Content
+    {
+        // Ensure we're using the same days calculation
+        $daysRemaining = Carbon::now()->startOfDay()->diffInDays(
+            Carbon::parse($this->subscription->subscription_expiredDate)->startOfDay(),
+            false
+        );
+
+        return new Content(
+            view: 'emails.subscription_expiration',
+            with: [
+                'teamName' => $this->subscription->team->name,
+                'expirationDate' => $this->subscription->subscription_expiredDate->format('Y-m-d'),
+                'daysRemaining' => $daysRemaining,
+                'planName' => $this->subscription->plan->name,
+            ]
+        );
+    }
+
+    public function attachments(): array
+    {
+        return [];
+    }
+}

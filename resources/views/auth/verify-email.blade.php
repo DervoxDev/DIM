@@ -1,6 +1,6 @@
 @extends('components.layouts.app')
 
-@section('title', 'Verify Email')
+@section('title', __('auth.Verify Email'))
 
 @push('styles')
 <style>
@@ -166,16 +166,16 @@
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
                       d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
             </svg>
-            <h1>Verify Your Email Address</h1>
+            <h1> {{ __('auth.Verify Your Email Address') }}</h1>
         </div>
 
         <div class="verify-email-content">
-            {{ __('Thanks for signing up! Before getting started, could you verify your email address by clicking on the link we just emailed to you? If you didn\'t receive the email, we will gladly send you another.') }}
+            {{ __('auth.Thanks for signing up! Before getting started, could you verify your email address by clicking on the link we just emailed to you? If you didn\'t receive the email, we will gladly send you another.') }}
         </div>
 
         @if (session('status') == 'verification-link-sent')
             <div class="status-message">
-                {{ __('A new verification link has been sent to the email address you provided during registration.') }}
+                {{ __('auth.A new verification link has been sent to the email address you provided during registration.') }}
             </div>
         @endif
 
@@ -187,14 +187,14 @@
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
                               d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
                     </svg>
-                    {{ __('Resend Verification Email') }}
+                    {{ __('auth.Resend Verification Email') }}
                 </button>
             </form>
 
             <form method="POST" action="{{ route('logout') }}" class="w-full">
                 @csrf
                 <button type="submit" class="logout-button w-full">
-                    {{ __('Log Out') }}
+                    {{ __('auth.Log Out') }}
                 </button>
             </form>
         </div>
