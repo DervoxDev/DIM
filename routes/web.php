@@ -11,7 +11,23 @@ use App\Http\Controllers\LanguageController;
 use App\Models\Subscription;
 use Illuminate\Support\Facades\Route;
     
-  
+// Routes for dervox.com
+//Route::domain('dervox.com')->group(function () {
+    Route::get('/', function () {
+        return view('dervox');
+    })->name('dervox');  // Named route for home
+    Route::get('/about', function () {
+        return view('about');
+    })->name('about');  // Named route for about
+    Route::get('/services', function () {
+        return view('services');
+    })->name('services');
+    Route::get('/solutions', function () {
+        return view('solutions');
+    })->name('solutions');
+//});
+
+Route::domain('dim.dervox.com')->group(function () {
     Route::get('/', function () {
         return view('welcome');
     });
@@ -56,4 +72,4 @@ Route::prefix('policies')->group(function () {
     Route::get('/moderation', [App\Http\Controllers\PolicyController::class, 'moderation'])->name('policies.moderation');
 }); 
 
-    
+}); 

@@ -1,12 +1,40 @@
 {
+  "resources/css/about.css": {
+    "file": "assets/about-DvJGjzP-.css",
+    "src": "resources/css/about.css",
+    "isEntry": true
+  },
   "resources/css/app.css": {
     "file": "assets/app-HVDilNkJ.css",
     "src": "resources/css/app.css",
     "isEntry": true
   },
+  "resources/css/dervox.css": {
+    "file": "assets/dervox-CdZ5Z0Ve.css",
+    "src": "resources/css/dervox.css",
+    "isEntry": true
+  },
+  "resources/css/services.css": {
+    "file": "assets/services-Q4cfXdDB.css",
+    "src": "resources/css/services.css",
+    "isEntry": true
+  },
+  "resources/css/solutions.css": {
+    "file": "assets/solutions-P9uus4SB.css",
+    "src": "resources/css/solutions.css",
+    "isEntry": true
+  },
+  "resources/images/about-img.png": {
+    "file": "assets/about-img-uPdxcTQE.png",
+    "src": "resources/images/about-img.png"
+  },
   "resources/images/dark.png": {
     "file": "assets/dark-D3Eva1LA.png",
     "src": "resources/images/dark.png"
+  },
+  "resources/images/header-img.png": {
+    "file": "assets/header-img-rA7YSRLv.png",
+    "src": "resources/images/header-img.png"
   },
   "resources/images/laptop.svg": {
     "file": "assets/laptop-CP9rpVzO.svg",
@@ -15,6 +43,14 @@
   "resources/images/light.png": {
     "file": "assets/light-BbAMzzqM.png",
     "src": "resources/images/light.png"
+  },
+  "resources/images/logo.png": {
+    "file": "assets/logo-BsH8uX0e.png",
+    "src": "resources/images/logo.png"
+  },
+  "resources/images/logo_full.png": {
+    "file": "assets/logo_full-CxJyffC2.png",
+    "src": "resources/images/logo_full.png"
   },
   "resources/js/app.js": {
     "file": "assets/app-l0sNRNKZ.js",

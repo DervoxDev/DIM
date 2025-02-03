@@ -1,0 +1,216 @@
+/* Process Work Section */
+.process-work {
+    padding: 175px 0 100px;
+    background-color: var(--light-color);
+}
+
+.section-title {
+    text-align: center;
+    margin-bottom: 60px;
+}
+
+.section-title .title-top {
+    color: #05346b;
+    font-weight: 600;
+    margin-bottom: 10px;
+}
+
+.section-title h3 {
+    font-size: 36px;
+    font-weight: 800;
+    color: var(--secondary-color);
+}
+
+/* Center all content */
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.process-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 30px;
+    width: 100%;
+    max-width: 1000px;
+    margin: 0 auto;
+}
+
+.process-item {
+    border-radius: 10px;
+    height: 250px; /* Fixed height for all process items */
+}
+
+.process-item .content {
+    text-align: center;
+    padding: 30px;
+    transition: 0.3s;
+    height: 100%;
+}
+
+/* Adjust vertical positions */
+.process-item:nth-child(1),
+.process-item:nth-child(3) {
+    margin-top: -50px; /* Move 1 and 3 up */
+}
+
+.process-item:nth-child(2),
+.process-item:nth-child(4) {
+    margin-top: 50px;
+    background-color: #05346b;
+}
+
+/* Style for items 2 and 4 */
+.process-item:nth-child(2) .content,
+.process-item:nth-child(4) .content {
+    color: white;
+}
+
+.process-item:nth-child(2) .content h5,
+.process-item:nth-child(4) .content h5,
+.process-item:nth-child(2) .content p,
+.process-item:nth-child(4) .content p,
+.process-item:nth-child(2) .content i,
+.process-item:nth-child(4) .content i {
+    color: white;
+}
+
+.process-item .content:hover {
+    transform: translateY(-10px);
+}
+
+.process-item .content i {
+    font-size: 48px;
+    color: #05346b;
+    margin-bottom: 20px;
+}
+
+.process-item .content h5 {
+    font-size: 20px;
+    font-weight: 700;
+    margin-bottom: 15px;
+    color: var(--secondary-color);
+}
+
+.process-item .content p {
+    color: var(--text-color);
+    font-size: 15px;
+    line-height: 1.6;
+}
+
+/* Services Section */
+.services {
+    padding: 100px 0;
+    background-color: var(--background-color);
+}
+
+.services-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 30px;
+    width: 100%;
+    max-width: 1000px;
+    margin: 0 auto;
+}
+
+.service-item .content {
+    background: var(--light-color);
+    padding: 40px 30px;
+    border-radius: 10px;
+    text-align: center;
+    transition: 0.3s;
+    height: 280px; /* Fixed height for all service items */
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+.service-item .content:hover {
+    transform: translateY(-10px);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+    background-color: #05346b;
+}
+
+/* Change colors on hover */
+.service-item .content:hover h5,
+.service-item .content:hover p,
+.service-item .content:hover .serv-icon i {
+    color: white;
+}
+
+.serv-icon {
+    position: relative;
+    display: inline-block;
+    margin-bottom: 25px;
+}
+
+.serv-icon i {
+    font-size: 40px;
+    color: #05346b;
+}
+
+.clone-icon {
+    position: absolute;
+    top: 0;
+    left: 0;
+    opacity: 0;
+    transform: scale(1.5);
+    transition: 0.3s;
+}
+
+.service-item .content:hover .clone-icon {
+    opacity: 0.2;
+    transform: scale(2);
+    color: white;
+}
+
+.service-item h5 {
+    font-size: 20px;
+    font-weight: 700;
+    margin-bottom: 15px;
+    color: var(--secondary-color);
+}
+
+.service-item p {
+    color: var(--text-color);
+    font-size: 15px;
+    line-height: 1.6;
+}
+
+/* Responsive Styles */
+@media (max-width: 991px) {
+    .process-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .services-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    /* Reset margins on mobile */
+    .process-item:nth-child(1),
+    .process-item:nth-child(2),
+    .process-item:nth-child(3),
+    .process-item:nth-child(4) {
+        margin-top: 0;
+    }
+}
+
+@media (max-width: 767px) {
+    .section-title h3 {
+        font-size: 28px;
+    }
+
+    .process-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .services-grid {
+        grid-template-columns: 1fr;
+    }
+}
