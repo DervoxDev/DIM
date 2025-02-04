@@ -1,6 +1,6 @@
 @extends('components.layouts.dervox')
 
-@section('title', 'Services - Dervox')
+@section('title', __('services.title'))
 
 @push('styles')
     @vite(['resources/css/dervox.css', 'resources/css/services.css'])
@@ -11,36 +11,36 @@
     <div id="process-work" class="process-work section">
         <div class="container">
             <div class="section-title">
-                <h5 class="title-top">Process</h5>
-                <h3>Process Our Work</h3>
+                <h5 class="title-top">{{ __('services.process.title') }}</h5>
+                <h3>{{ __('services.process.subtitle') }}</h3>
             </div>
             <div class="process-grid">
                 <div class="process-item">
                     <div class="content">
                         <i class="icon ion-ios-chatboxes"></i>
-                        <h5>Chat</h5>
-                        <p>Engage in meaningful conversations to understand your needs.</p>
+                        <h5>{{ __('services.process.items.chat.title') }}</h5>
+                        <p>{{ __('services.process.items.chat.description') }}</p>
                     </div>
                 </div>
                 <div class="process-item">
                     <div class="content">
                         <i class="icon ion-ios-cash"></i>
-                        <h5>Transaction</h5>
-                        <p>Seamless transactions ensuring efficiency and security.</p>
+                        <h5>{{ __('services.process.items.transaction.title') }}</h5>
+                        <p>{{ __('services.process.items.transaction.description') }}</p>
                     </div>
                 </div>
                 <div class="process-item">
                     <div class="content">
                         <i class="icon ion-ios-search"></i>
-                        <h5>Research</h5>
-                        <p>In-depth research driving informed decisions and innovation.</p>
+                        <h5>{{ __('services.process.items.research.title') }}</h5>
+                        <p>{{ __('services.process.items.research.description') }}</p>
                     </div>
                 </div>
                 <div class="process-item">
                     <div class="content">
                         <i class="icon ion-ios-checkmark-circle"></i>
-                        <h5>Deal</h5>
-                        <p>Negotiating successful deals that drive mutual growth.</p>
+                        <h5>{{ __('services.process.items.deal.title') }}</h5>
+                        <p>{{ __('services.process.items.deal.description') }}</p>
                     </div>
                 </div>
             </div>
@@ -50,11 +50,12 @@
     <!-- Services Section -->
     <div id="services" class="services section-bottom-only">
         <div class="section-title">
-            <h5 class="title-top">Services</h5>
-            <h3>Our The Best Services</h3>
+            <h5 class="title-top">{{ __('services.services.title') }}</h5>
+            <h3>{{ __('services.services.subtitle') }}</h3>
         </div>
         <div class="container">
             <div class="services-grid">
+                <!-- Programming Service -->
                 <div class="service-item">
                     <div class="content">
                         <div class="serv-icon">
@@ -63,10 +64,12 @@
                                 <i class="fa-solid fa-terminal"></i>
                             </span>
                         </div>
-                        <h5>Cutting-Edge Programming</h5>
-                        <p>Elevate your business with innovative, scalable software solutions.</p>
+                        <h5>{{ __('services.services.items.programming.title') }}</h5>
+                        <p>{{ __('services.services.items.programming.description') }}</p>
                     </div>
                 </div>
+
+                <!-- End-to-End Service -->
                 <div class="service-item">
                     <div class="content">
                         <div class="serv-icon">
@@ -75,10 +78,12 @@
                                 <i class="fa-solid fa-desktop"></i>
                             </span>
                         </div>
-                        <h5>End-to-End Services</h5>
-                        <p>Complete services from start to finish, tailored to your needs.</p>
+                        <h5>{{ __('services.services.items.end_to_end.title') }}</h5>
+                        <p>{{ __('services.services.items.end_to_end.description') }}</p>
                     </div>
                 </div>
+
+                <!-- Enterprise Solutions -->
                 <div class="service-item">
                     <div class="content">
                         <div class="serv-icon">
@@ -87,10 +92,12 @@
                                 <i class="fas fa-cogs"></i>
                             </span>
                         </div>
-                        <h5>Enterprise Solutions</h5>
-                        <p>Tailored solutions to empower your business at every level.</p>
+                        <h5>{{ __('services.services.items.enterprise.title') }}</h5>
+                        <p>{{ __('services.services.items.enterprise.description') }}</p>
                     </div>
                 </div>
+
+                <!-- Project Management -->
                 <div class="service-item">
                     <div class="content">
                         <div class="serv-icon">
@@ -99,10 +106,12 @@
                                 <i class="fas fa-tasks"></i>
                             </span>
                         </div>
-                        <h5>Project Management Excellence</h5>
-                        <p>Delivering exceptional project management for seamless execution.</p>
+                        <h5>{{ __('services.services.items.project_management.title') }}</h5>
+                        <p>{{ __('services.services.items.project_management.description') }}</p>
                     </div>
                 </div>
+
+                <!-- Marketing -->
                 <div class="service-item">
                     <div class="content">
                         <div class="serv-icon">
@@ -111,10 +120,12 @@
                                 <i class="fas fa-bullhorn"></i>
                             </span>
                         </div>
-                        <h5>Marketing with Impact</h5>
-                        <p>Driving impactful marketing strategies that deliver results.</p>
+                        <h5>{{ __('services.services.items.marketing.title') }}</h5>
+                        <p>{{ __('services.services.items.marketing.description') }}</p>
                     </div>
                 </div>
+
+                <!-- Design -->
                 <div class="service-item">
                     <div class="content">
                         <div class="serv-icon">
@@ -123,20 +134,23 @@
                                 <i class="fas fa-paint-brush"></i>
                             </span>
                         </div>
-                        <h5>Design That Speaks</h5>
-                        <p>Delivering tailored solutions for your business needs.</p>
+                        <h5>{{ __('services.services.items.design.title') }}</h5>
+                        <p>{{ __('services.services.items.design.description') }}</p>
                     </div>
                 </div>
             </div>
         </div>
     </div>
 @endsection
+
 @push('styles')
     <link href="https://cdnjs.cloudflare.com/ajax/libs/ionicons/4.5.6/css/ionicons.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+@endpush
+
+@push('scripts')
     <script>
-       // Show loader when navigating
-       document.addEventListener('DOMContentLoaded', function() {
+        document.addEventListener('DOMContentLoaded', function() {
             const links = document.querySelectorAll('a');
             links.forEach(link => {
                 link.addEventListener('click', function(e) {
@@ -145,10 +159,10 @@
                         document.getElementById('loader').style.display = 'flex';
                         setTimeout(() => {
                             window.location = this.href;
-                        }, 500); // Adjust time as needed
+                        }, 500);
                     }
                 });
             });
         });
-</script>
+    </script>
 @endpush

@@ -7,12 +7,13 @@ use App\Http\Controllers\PolicyController;
 use App\Http\Controllers\DownloadController;
 use App\Http\Controllers\PricingController;
 use App\Http\Controllers\LanguageController;
+use App\Http\Controllers\ContactController;
 
 use App\Models\Subscription;
 use Illuminate\Support\Facades\Route;
     
 // Routes for dervox.com
-Route::domain('dervox.com')->group(function () {
+//Route::domain('dervox.com')->group(function () {
     Route::get('/', function () {
         return view('dervox');
     })->name('dervox');  // Named route for home
@@ -25,8 +26,12 @@ Route::domain('dervox.com')->group(function () {
     Route::get('/solutions', function () {
         return view('solutions');
     })->name('solutions');
+
     Route::get('lang', [LanguageController::class, 'change'])->name('dervox.change.lang');
-});
+    Route::get('/contact', [ContactController::class, 'show'])->name('contact');
+    Route::post('/contact', [ContactController::class, 'send'])->name('contact.send');
+
+//});
 
 Route::domain('dim.dervox.com')->group(function () {
     Route::get('/', function () {

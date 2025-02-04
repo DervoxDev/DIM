@@ -1,6 +1,6 @@
 @extends('components.layouts.dervox')
 
-@section('title', 'Dervox - Your Tech Solutions Partner')
+@section('title', __('home.title'))
 
 @push('styles')
     @vite(['resources/css/dervox.css'])
@@ -12,13 +12,12 @@
         <div class="container">
             <div class="row">
                 <div class="content">
-                    <h2><span class="color-highlight">Welcome to Dervox</span></h2>
-                    <h2>Your Tech Solutions <span class="color-highlight">Partner</span></h2>
+                    <h2><span class="color-highlight">{{ __('home.welcome') }}</span></h2>
+                    <h2>{{ __('home.partner_title') }} <span class="color-highlight">{{ __('home.partner_highlight') }}</span></h2>
                     <p>
-                        At Dervox, we go beyond being a mere technology 
-                        provider—we are your dedicated ally in mastering the digital world. Our expertise lies in crafting customized solutions designed to address the specific challenges and demands of businesses and enterprises.
+                        {{ __('home.description') }}
                     </p>
-                    <a href="#contact" class="button">Contact Us</a>
+                    <a href="#contact" class="button">{{ __('home.contact_us') }}</a>
                 </div>
                 <div class="content-image">
                     <img src="{{ Vite::asset('resources/images/header-img.png') }}" alt="Hero Image" />
@@ -33,20 +32,21 @@
             <div class="content">
                 <div class="row">
                     <div class="words-wrap">
-                        <h4>Let's work together on your</h4>
-                        <h4>best project</h4>
+                        <h4>{{ __('home.work_together') }}</h4>
+                        <h4>{{ __('home.best_project') }}</h4>
                     </div>
                     <div class="button-wrap">
-                        <a href="#contact" class="button">Contact Us</a>
+                        <a href="#contact" class="button">{{ __('home.contact_us') }}</a>
                     </div>
                 </div>
             </div>
         </div>
     </div>
 @endsection
+
 @push('scripts')
     <script>
-            document.addEventListener('DOMContentLoaded', function() {
+        document.addEventListener('DOMContentLoaded', function() {
             const links = document.querySelectorAll('a');
             links.forEach(link => {
                 link.addEventListener('click', function(e) {
@@ -55,7 +55,7 @@
                         document.getElementById('loader').style.display = 'flex';
                         setTimeout(() => {
                             window.location = this.href;
-                        }, 500); // Adjust time as needed
+                        }, 500);
                     }
                 });
             });

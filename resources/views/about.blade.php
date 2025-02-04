@@ -1,6 +1,6 @@
 @extends('components.layouts.dervox')
 
-@section('title', 'About - Dervox')
+@section('title', __('about.title'))
 
 @push('styles')
     @vite(['resources/css/dervox.css', 'resources/css/about.css'])
@@ -13,19 +13,19 @@
             <div class="row">
                 <div class="image-side">
                     <div class="content-image">
-                        <img src="{{ Vite::asset('resources/images/about-img.png') }}" alt="About Us" />
+                        <img src="{{ Vite::asset('resources/images/about-img.png') }}" alt="{{ __('about.title') }}" />
                     </div>
                 </div>
                 <div class="content-side">
                     <div class="content">
-                        <h3>Why Choose Us?</h3>
+                        <h3>{{ __('about.why_choose_us') }}</h3>
                         <p>
-                            At Dervox, we harness the power of technology to drive growth and innovation. Our tailored solutions help businesses overcome challenges, optimize processes, and stay competitive. We're committed to delivering sustainable, impactful results that support your long-term success, making us more than just a technology provider— we're your strategic partner in shaping the future.
+                            {{ __('about.main_content') }}
                         </p>
                         <ul>
-                            <li><span class="circle-list"></span>Innovative solutions tailored to your needs</li>
-                            <li><span class="circle-list"></span>Cutting-edge technology to keep you ahead</li>
-                            <li><span class="circle-list"></span>Dedicated support for long-term success</li>
+                            <li><span class="circle-list"></span>{{ __('about.features.innovative') }}</li>
+                            <li><span class="circle-list"></span>{{ __('about.features.cutting_edge') }}</li>
+                            <li><span class="circle-list"></span>{{ __('about.features.dedicated') }}</li>
                         </ul>
                     </div>
                 </div>
@@ -36,8 +36,6 @@
 
 @push('scripts')
     <script>
-
-        // Show loader when navigating
         document.addEventListener('DOMContentLoaded', function() {
             const links = document.querySelectorAll('a');
             links.forEach(link => {
@@ -47,7 +45,7 @@
                         document.getElementById('loader').style.display = 'flex';
                         setTimeout(() => {
                             window.location = this.href;
-                        }, 500); // Adjust time as needed
+                        }, 500);
                     }
                 });
             });

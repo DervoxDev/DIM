@@ -10,6 +10,7 @@ export default defineConfig({
                 'resources/css/about.css',
                 'resources/css/services.css',
                 'resources/css/solutions.css',
+                'resources/css/contact.css',
                 'resources/js/app.js',
                 'resources/js/images.js',
             ],

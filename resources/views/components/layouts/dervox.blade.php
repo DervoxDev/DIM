@@ -384,10 +384,11 @@ html[lang="ar"] .main-nav-group {
         }
 
         .footer-brand h3 {
-            font-size: 1.5rem;
-            margin-bottom: 1rem;
-            color: #074b98;
-        }
+    color: #fff;
+    font-size: 1.2rem;
+    margin: 0;
+    text-align: left; /* Explicitly set left alignment for LTR */
+}
 
         .social-links {
             display: flex;
@@ -463,6 +464,65 @@ html[lang="ar"] .main-nav-group {
     font-size: 1.5rem;
     color: var(--secondary-color);
 }
+.footer-logo-container {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+    width: 100%; /* Add this to ensure full width */
+}
+
+.footer-logo {
+    height: 90px; /* Adjust based on your logo size */
+    width: auto;
+}
+
+
+
+.footer-copyright {
+    margin-top: 3rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    text-align: center;
+    color: #717e96;
+    font-size: 0.9rem;
+}
+
+[dir="rtl"] .footer-logo-container,
+html[lang="ar"] .footer-logo-container {
+    align-items: flex-end;
+    flex-direction: column; /* Ensure column direction */
+    width: 100%;
+}
+
+[dir="rtl"] .footer-brand,
+html[lang="ar"] .footer-brand {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    width: 100%;
+}
+
+[dir="rtl"] .footer-logo,
+html[lang="ar"] .footer-logo {
+    margin-right: 0;
+    margin-left: auto;
+}
+
+[dir="rtl"] .footer-brand h3,
+html[lang="ar"] .footer-brand h3 {
+    text-align: right;
+    width: 100%;
+}
+
+[dir="rtl"] .social-links,
+html[lang="ar"] .social-links {
+
+    margin-right: 0;
+    margin-left: auto;
+}
+
 
         /* Mobile Styles */
         @media (max-width: 768px) {
@@ -551,6 +611,43 @@ html[lang="ar"] .main-nav-group {
     html[lang="ar"] .main-nav-group {
         align-items: flex-end;
     }
+    .footer-logo-container {
+        align-items: center;
+    }
+    
+    .footer-brand h3 {
+        text-align: center;
+    }
+
+    .footer-copyright {
+        margin-top: 2rem;
+        padding: 1rem 15px;
+    }
+
+    .footer-logo-container,
+    [dir="rtl"] .footer-logo-container,
+    html[lang="ar"] .footer-logo-container {
+        align-items: center;
+    }
+
+    .footer-brand,
+    [dir="rtl"] .footer-brand,
+    html[lang="ar"] .footer-brand {
+        align-items: center;
+    }
+
+    .footer-brand h3,
+    [dir="rtl"] .footer-brand h3,
+    html[lang="ar"] .footer-brand h3 {
+        text-align: center;
+    }
+
+    .social-links,
+    [dir="rtl"] .social-links,
+    html[lang="ar"] .social-links {
+        justify-content: center;
+    }
+ 
         }
     </style>
 
@@ -559,7 +656,7 @@ html[lang="ar"] .main-nav-group {
 <body class="antialiased">
 <div id="loader">
     <div class="loader-content">
-        <img src="{{ Vite::asset('resources/images/logo_full.png') }}" alt="Loading..." class="loader-logo">
+    <img src="{{ Vite::asset('resources/images/logo_full.png') }}" alt="{{ __('layout.loading') }}" class="loader-logo">
     </div>
 </div>
 <nav class="guest-navbar">
@@ -575,11 +672,11 @@ html[lang="ar"] .main-nav-group {
             <div class="nav-links-container">
                 <div class="main-nav-group">
             
-                <a href="{{ route('dervox') }}" class="nav-link">Home</a>
-                <a href="{{ route('about') }}" class="nav-link">About</a>
-                <a href="{{ route('solutions') }}" class="nav-link">Solutions</a>
-                <a href="{{ route('services') }}" class="nav-link">Services</a>
-                <a href="#contact" class="nav-link">Contact us</a>
+                <a href="{{ route('dervox') }}" class="nav-link">{{ __('layout.menu.home') }}</a>
+            <a href="{{ route('about') }}" class="nav-link">{{ __('layout.menu.about') }}</a>
+            <a href="{{ route('solutions') }}" class="nav-link">{{ __('layout.menu.solutions') }}</a>
+            <a href="{{ route('services') }}" class="nav-link">{{ __('layout.menu.services') }}</a>
+            <a a href="{{ route('contact') }}" class="nav-link">{{ __('layout.menu.contact') }}</a>
                     <div class="language-switcher">
                     <button class="language-button">
                         <i class="fas fa-globe"></i>
@@ -611,7 +708,10 @@ html[lang="ar"] .main-nav-group {
         <footer class="footer">
             <div class="footer-grid">
                 <div class="footer-brand">
-                    <h3>{{ config('app.name') }}<br>YOUR BEST COMPANY</h3>
+                <div class="footer-logo-container">
+                <img src="{{ Vite::asset('resources/images/logo_full.png') }}" alt="Dervox" class="footer-logo">
+                <h3>{{ __('layout.footer.slogan') }}</h3>
+            </div>
                     <div class="social-links">
                         <a href="#"><i class="fab fa-twitter"></i></a>
                         <a href="#"><i class="fab fa-instagram"></i></a>
@@ -621,41 +721,44 @@ html[lang="ar"] .main-nav-group {
                 </div>
                 
                 <div class="footer-column">
-                    <h4>Product</h4>
-                    <ul class="footer-links">
-                        <li><a href="#download">Download</a></li>
-                        <li><a href="#pricing">Pricing</a></li>
-                        <li><a href="#features">Features</a></li>
-                    </ul>
+                <h4>{{ __('layout.footer.columns.product.title') }}</h4>
+            <ul class="footer-links">
+                <li><a href="#download">{{ __('layout.footer.columns.product.download') }}</a></li>
+                <li><a href="#pricing">{{ __('layout.footer.columns.product.pricing') }}</a></li>
+                <li><a href="#features">{{ __('layout.footer.columns.product.features') }}</a></li>
+            </ul>
                 </div>
 
                 <div class="footer-column">
-                    <h4>Company</h4>
-                    <ul class="footer-links">
-                        <li><a href="#">About</a></li>
-                        <li><a href="#">Careers</a></li>
-                        <li><a href="#">Blog</a></li>
-                    </ul>
+                <h4>{{ __('layout.footer.columns.company.title') }}</h4>
+            <ul class="footer-links">
+                <li><a href="#">{{ __('layout.footer.columns.company.about') }}</a></li>
+                <li><a href="#">{{ __('layout.footer.columns.company.careers') }}</a></li>
+                <li><a href="#">{{ __('layout.footer.columns.company.blog') }}</a></li>
+            </ul>
                 </div>
 
                 <div class="footer-column">
-                    <h4>Resources</h4>
-                    <ul class="footer-links">
-                        <li><a href="#">Support</a></li>
-                        <li><a href="#">Documentation</a></li>
-                        <li><a href="#">Security</a></li>
-                    </ul>
+                <h4>{{ __('layout.footer.columns.resources.title') }}</h4>
+            <ul class="footer-links">
+                <li><a href="#">{{ __('layout.footer.columns.resources.support') }}</a></li>
+                <li><a href="#">{{ __('layout.footer.columns.resources.documentation') }}</a></li>
+                <li><a href="#">{{ __('layout.footer.columns.resources.security') }}</a></li>
+            </ul>
                 </div>
 
                 <div class="footer-column">
-                    <h4>Legal</h4>
-                    <ul class="footer-links">
-                        <li><a href="#">Terms</a></li>
-                        <li><a href="#">Privacy</a></li>
-                        <li><a href="#">Guidelines</a></li>
-                    </ul>
+                <h4>{{ __('layout.footer.columns.legal.title') }}</h4>
+            <ul class="footer-links">
+                <li><a href="#">{{ __('layout.footer.columns.legal.terms') }}</a></li>
+                <li><a href="#">{{ __('layout.footer.columns.legal.privacy') }}</a></li>
+                <li><a href="#">{{ __('layout.footer.columns.legal.guidelines') }}</a></li>
+            </ul>
                 </div>
             </div>
+            <div class="footer-copyright">
+        <p>© {{ date('Y') }} {{ "Dervox"}}. {{ __('layout.footer.copyright') }}</p>
+    </div>
         </footer>
         @stack('scripts')
     <!-- Scripts -->

@@ -1,6 +1,6 @@
 @extends('components.layouts.dervox')
 
-@section('title', 'Solutions - Dervox')
+@section('title', __('solutions.title'))
 
 @push('styles')
     @vite(['resources/css/dervox.css', 'resources/css/solutions.css'])
@@ -10,8 +10,8 @@
     <!-- Solutions Hero Section -->
     <div class="solutions-hero">
         <div>
-            <h1>Our Solutions</h1>
-            <p>Discover our innovative SaaS solutions designed to transform your business operations and drive growth</p>
+            <h1>{{ __('solutions.hero.title') }}</h1>
+            <p>{{ __('solutions.hero.description') }}</p>
         </div>
     </div>
 
@@ -37,79 +37,51 @@
 
             <!-- Solution Content -->
             <div class="solution-content">
-                <h1>DIM - Digital Inventory Management</h1>
+                <h1>{{ __('solutions.dim.title') }}</h1>
                 <p class="solution-description">
-                    A comprehensive digital inventory management solution that streamlines your business operations and enhances efficiency. Our platform provides real-time insights and powerful tools to optimize your inventory management process.
+                    {{ __('solutions.dim.description') }}
                 </p>
                 
                 <!-- Features and Benefits Grid -->
                 <div class="features-benefits-container">
                     <!-- Key Features Card -->
                     <div class="feature-benefit-card">
-                        <h4>Key Features:</h4>
+                        <h4>{{ __('solutions.dim.features.title') }}</h4>
                         <ul>
+                            @foreach(['tracking', 'alerts', 'analytics', 'multi_location', 'integration'] as $feature)
                             <li>
                                 <i class="icon ion-ios-checkmark-circle"></i>
-                                Real-time inventory tracking
+                                {{ __("solutions.dim.features.items.$feature") }}
                             </li>
-                            <li>
-                                <i class="icon ion-ios-checkmark-circle"></i>
-                                Automated stock alerts
-                            </li>
-                            <li>
-                                <i class="icon ion-ios-checkmark-circle"></i>
-                                Analytics and reporting
-                            </li>
-                            <li>
-                                <i class="icon ion-ios-checkmark-circle"></i>
-                                Multi-location support
-                            </li>
-                            <li>
-                                <i class="icon ion-ios-checkmark-circle"></i>
-                                Integration capabilities
-                            </li>
+                            @endforeach
                         </ul>
                     </div>
                     
                     <!-- Benefits Card -->
                     <div class="feature-benefit-card">
-                        <h4>Benefits:</h4>
+                        <h4>{{ __('solutions.dim.benefits.title') }}</h4>
                         <ul>
+                            @foreach(['efficiency', 'cost', 'decision', 'accuracy', 'time'] as $benefit)
                             <li>
                                 <i class="icon ion-ios-star"></i>
-                                Increased efficiency
+                                {{ __("solutions.dim.benefits.items.$benefit") }}
                             </li>
-                            <li>
-                                <i class="icon ion-ios-star"></i>
-                                Cost reduction
-                            </li>
-                            <li>
-                                <i class="icon ion-ios-star"></i>
-                                Better decision making
-                            </li>
-                            <li>
-                                <i class="icon ion-ios-star"></i>
-                                Improved accuracy
-                            </li>
-                            <li>
-                                <i class="icon ion-ios-star"></i>
-                                Time savings
-                            </li>
+                            @endforeach
                         </ul>
                     </div>
                 </div>
 
                 <!-- Call to Action -->
                 <div class="solution-cta">
-                    <a href="https://dim.dervox.com" class="button">Learn More</a>
+                    <a href="https://dim.dervox.com" class="button">{{ __('solutions.learn_more') }}</a>
                 </div>
             </div>
         </div>
 
         <!-- Coming Soon Section -->
         <div class="coming-soon-section">
-            <h3>More Solutions Coming Soon</h3>
-            <p>We're constantly developing new solutions to meet your business needs. Stay tuned!</p>
+            <h3>{{ __('solutions.coming_soon.title') }}</h3>
+            <p>{{ __('solutions.coming_soon.description') }}</p>
         </div>
     </div>
 @endsection
