@@ -51,16 +51,35 @@
                 </div>
 
                 <!-- Contact Form -->
-                <div class="contact-form">
-                    @if(session('success'))
-                        <div class="alert alert-success fade-in">
-                            <i class="fas fa-check-circle"></i>
-                            {{ session('success') }}
-                            <button type="button" class="close-alert" onclick="this.parentElement.style.display='none'">
-                                <i class="fas fa-times"></i>
-                            </button>
-                        </div>
-                    @endif
+                        <!-- Contact Form -->
+                        <div class="contact-form">
+                            <!-- Alerts Container -->
+                            <div class="alerts-container">
+                                @if(session('success'))
+                                    <div class="alert alert-success fade-in">
+                                        <i class="fas fa-check-circle"></i>
+                                        {{ session('success') }}
+                                        <button type="button" class="close-alert" onclick="this.parentElement.style.display='none'">
+                                            <i class="fas fa-times"></i>
+                                        </button>
+                                    </div>
+                                @endif
+
+                                @if($errors->any())
+                                    <div class="alert alert-error fade-in">
+                                        <i class="fas fa-exclamation-circle"></i>
+                                        <ul>
+                                            @foreach($errors->all() as $error)
+                                                <li>{{ $error }}</li>
+                                            @endforeach
+                                        </ul>
+                                        <button type="button" class="close-alert" onclick="this.parentElement.style.display='none'">
+                                            <i class="fas fa-times"></i>
+                                        </button>
+                                    </div>
+                                @endif
+                            </div>
+
 
                     <form action="{{ route('contact.send') }}" method="POST">
                         @csrf
@@ -166,14 +185,24 @@
 
         // Auto-hide alerts after 5 seconds
         const alerts = document.querySelectorAll('.alert');
-        alerts.forEach(alert => {
+    alerts.forEach(alert => {
+        setTimeout(() => {
+            alert.style.opacity = '0';
             setTimeout(() => {
-                alert.style.opacity = '0';
-                setTimeout(() => {
-                    alert.style.display = 'none';
-                }, 300);
-            }, 5000);
+                alert.style.display = 'none';
+            }, 300);
+        }, 5000);
+    });
+        const closeButtons = document.querySelectorAll('.close-alert');
+    closeButtons.forEach(button => {
+        button.addEventListener('click', function() {
+            const alert = this.parentElement;
+            alert.style.opacity = '0';
+            setTimeout(() => {
+                alert.style.display = 'none';
+            }, 300);
         });
+    });
     });
 
     // reCAPTCHA handlers
