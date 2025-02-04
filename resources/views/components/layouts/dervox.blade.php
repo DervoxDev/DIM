@@ -575,7 +575,7 @@ html[lang="ar"] .social-links {
     [dir="rtl"] .mobile-menu-button,
     html[lang="ar"] .mobile-menu-button {
         margin-left: auto;
-        margin-right: 0;
+        margin-left: 0;
         order: 0; /* Add this */
     }
     
@@ -618,7 +618,9 @@ html[lang="ar"] .social-links {
 
     [dir="rtl"] .main-nav-group,
     html[lang="ar"] .main-nav-group {
-        align-items: flex-end;
+        flex-direction: column;
+        width: 100%;
+        gap: 1rem;
     }
     .footer-logo-container {
         align-items: center;

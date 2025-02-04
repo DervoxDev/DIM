@@ -13,7 +13,7 @@ use App\Models\Subscription;
 use Illuminate\Support\Facades\Route;
     
 // Routes for dervox.com
-//Route::domain('dervox.com')->group(function () {
+Route::domain('dervox.com')->group(function () {
     Route::get('/', function () {
         return view('dervox');
     })->name('dervox');  // Named route for home
@@ -31,7 +31,7 @@ use Illuminate\Support\Facades\Route;
     Route::get('/contact', [ContactController::class, 'show'])->name('contact');
     Route::post('/contact', [ContactController::class, 'send'])->name('contact.send');
 
-//});
+});
 
 Route::domain('dim.dervox.com')->group(function () {
     Route::get('/', function () {

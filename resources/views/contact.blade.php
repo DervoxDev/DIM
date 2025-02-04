@@ -2,11 +2,9 @@
 
 @section('title', __('contact.title'))
 
-
 @push('styles')
     @vite(['resources/css/dervox.css', 'resources/css/contact.css'])
 @endpush
-
 
 @section('content')
     <!-- Contact Hero -->
@@ -55,18 +53,12 @@
                 <!-- Contact Form -->
                 <div class="contact-form">
                     @if(session('success'))
-                        <div class="alert alert-success">
+                        <div class="alert alert-success fade-in">
+                            <i class="fas fa-check-circle"></i>
                             {{ session('success') }}
-                        </div>
-                    @endif
-
-                    @if($errors->any())
-                        <div class="alert alert-error">
-                            <ul>
-                                @foreach($errors->all() as $error)
-                                    <li>{{ $error }}</li>
-                                @endforeach
-                            </ul>
+                            <button type="button" class="close-alert" onclick="this.parentElement.style.display='none'">
+                                <i class="fas fa-times"></i>
+                            </button>
                         </div>
                     @endif
 
@@ -74,76 +66,131 @@
                         @csrf
                         <div class="form-group">
                             <input type="text" 
-                                   class="form-control" 
+                                   class="form-control @error('name') is-invalid @enderror" 
                                    name="name" 
                                    placeholder="{{ __('contact.form.name') }}"
                                    value="{{ old('name') }}" 
                                    required>
+                            @error('name')
+                                <div class="alert alert-error fade-in">
+                                    <i class="fas fa-exclamation-circle"></i>
+                                    {{ $message }}
+                                </div>
+                            @enderror
                         </div>
 
                         <div class="form-group">
                             <input type="email" 
-                                   class="form-control" 
+                                   class="form-control @error('email') is-invalid @enderror" 
                                    name="email" 
                                    placeholder="{{ __('contact.form.email') }}"
                                    value="{{ old('email') }}" 
                                    required>
+                            @error('email')
+                                <div class="alert alert-error fade-in">
+                                    <i class="fas fa-exclamation-circle"></i>
+                                    {{ $message }}
+                                </div>
+                            @enderror
                         </div>
 
                         <div class="form-group">
                             <input type="text" 
-                                   class="form-control" 
+                                   class="form-control @error('subject') is-invalid @enderror" 
                                    name="subject" 
                                    placeholder="{{ __('contact.form.subject') }}"
                                    value="{{ old('subject') }}" 
                                    required>
+                            @error('subject')
+                                <div class="alert alert-error fade-in">
+                                    <i class="fas fa-exclamation-circle"></i>
+                                    {{ $message }}
+                                </div>
+                            @enderror
                         </div>
 
                         <div class="form-group">
-                            <textarea class="form-control" 
+                            <textarea class="form-control @error('message') is-invalid @enderror" 
                                       name="message" 
                                       rows="5"
                                       placeholder="{{ __('contact.form.message') }}"
                                       required>{{ old('message') }}</textarea>
-                        </div>
-                        <div class="recaptcha-container">
-                            <div class="g-recaptcha" 
-                                data-sitekey="{{ config('services.recaptcha.site_key') }}">
-                            </div>
-                         </div>
-                         @error('g-recaptcha-response')
-                        <div class="alert alert-error">
+                            @error('message')
+                                <div class="alert alert-error fade-in">
+                                    <i class="fas fa-exclamation-circle"></i>
                                     {{ $message }}
                                 </div>
-                          @enderror
+                            @enderror
+                        </div>
 
-                            <button type="submit" class="submit-button">
-                                {{ __('contact.form.submit') }}
-                     </button>
+                        <div class="recaptcha-container">
+                            <div class="g-recaptcha" 
+                                data-sitekey="{{ config('services.recaptcha.site_key') }}"
+                                data-callback="onRecaptchaSuccess"
+                                data-expired-callback="onRecaptchaExpired">
+                            </div>
+                            @error('g-recaptcha-response')
+                                <div class="alert alert-error fade-in">
+                                    <i class="fas fa-exclamation-circle"></i>
+                                    {{ $message }}
+                                </div>
+                            @enderror
+                        </div>
+
+                        <button type="submit" class="submit-button">
+                            {{ __('contact.form.submit') }}
+                        </button>
                     </form>
                 </div>
             </div>
         </div>
     </section>
 @endsection
+
 @push('scripts')
 <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            const links = document.querySelectorAll('a');
-            links.forEach(link => {
-                link.addEventListener('click', function(e) {
-                    if (!this.href.includes('#')) {
-                        e.preventDefault();
-                        document.getElementById('loader').style.display = 'flex';
-                        setTimeout(() => {
-                            window.location = this.href;
-                        }, 500);
-                    }
-                });
+    document.addEventListener('DOMContentLoaded', function() {
+        // Link click handler
+        const links = document.querySelectorAll('a');
+        links.forEach(link => {
+            link.addEventListener('click', function(e) {
+                if (!this.href.includes('#')) {
+                    e.preventDefault();
+                    document.getElementById('loader').style.display = 'flex';
+                    setTimeout(() => {
+                        window.location = this.href;
+                    }, 500);
+                }
             });
         });
-    </script>
-    <!-- Add reCAPTCHA Script -->
-     
-    <script src="https://www.google.com/recaptcha/api.js" async defer></script>
+
+        // Auto-hide alerts after 5 seconds
+        const alerts = document.querySelectorAll('.alert');
+        alerts.forEach(alert => {
+            setTimeout(() => {
+                alert.style.opacity = '0';
+                setTimeout(() => {
+                    alert.style.display = 'none';
+                }, 300);
+            }, 5000);
+        });
+    });
+
+    // reCAPTCHA handlers
+    function onRecaptchaSuccess() {
+        console.log('reCAPTCHA validated successfully');
+    }
+
+    function onRecaptchaExpired() {
+        grecaptcha.reset();
+    }
+
+    // Reset reCAPTCHA after form submission
+    document.querySelector('form').addEventListener('submit', function() {
+        setTimeout(() => {
+            grecaptcha.reset();
+        }, 1000);
+    });
+</script>
+<script src="https://www.google.com/recaptcha/api.js" async defer></script>
 @endpush

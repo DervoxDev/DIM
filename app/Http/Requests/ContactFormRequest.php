@@ -4,6 +4,7 @@ namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 
 class ContactFormRequest extends FormRequest
 {
@@ -44,12 +45,40 @@ class ContactFormRequest extends FormRequest
 
     protected function validateRecaptcha(): bool
     {
-        $response = Http::asForm()->post('https://www.google.com/recaptcha/api/siteverify', [
-            'secret' => config('services.recaptcha.secret_key'),
-            'response' => $this->get('g-recaptcha-response'),
-            'remoteip' => $this->ip()
-        ]);
+        try {
+            $response = Http::asForm()->post('https://www.google.com/recaptcha/api/siteverify', [
+                'secret' => config('services.recaptcha.secret_key'),
+                'response' => $this->get('g-recaptcha-response'),
+                'remoteip' => $this->ip()
+            ]);
 
-        return $response->json('success');
+            $body = $response->json();
+            
+            // Log the response for debugging
+            Log::info('reCAPTCHA Response:', [
+                'status' => $response->status(),
+                'body' => $body,
+                'secret_key_length' => strlen(config('services.recaptcha.secret_key')),
+                'response_token_length' => strlen($this->get('g-recaptcha-response')),
+                'ip' => $this->ip()
+            ]);
+
+            if (!$response->successful()) {
+                Log::error('reCAPTCHA HTTP Request Failed', [
+                    'status' => $response->status(),
+                    'body' => $response->body()
+                ]);
+                return false;
+            }
+
+            return $body['success'] ?? false;
+
+        } catch (\Exception $e) {
+            Log::error('reCAPTCHA Validation Error', [
+                'message' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            return false;
+        }
     }
 }
