@@ -100,26 +100,67 @@
 }
 
 .form-group {
-    margin-bottom: 20px;
+    position: relative;
+    margin-bottom: 1.5rem;
+}
+.form-label {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.5rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--secondary-color);
+    transition: all 0.3s ease;
+}
+.label-error {
+    color: #dc2626;
+    font-size: 0.75rem;
+    font-weight: normal;
 }
 
 .form-control {
     width: 100%;
-    padding: 12px 15px;
-    border: 1px solid #ddd;
-    border-radius: 5px;
-    font-size: 1rem;
-    transition: border-color 0.3s ease;
+    padding: 0.75rem 1rem;
+    border: 1px solid #e2e8f0;
+    border-radius: 4px;
+    transition: all 0.3s ease;
+    background-color: white;
+}
+/* Invalid state */
+.form-label.is-invalid {
+    color: #dc2626;
+}
+
+.form-control.is-invalid {
+    border-color: #dc2626;
+    background-color: #fff5f5;
+}
+
+/* Valid state */
+.form-label.is-valid {
+    color: #059669;
+}
+
+.form-control.is-valid {
+    border-color: #059669;
+    background-color: #f0fdf4;
 }
 
 .form-control:focus {
-    border-color: #05346b;
     outline: none;
+    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1);
 }
-
 textarea.form-control {
     min-height: 120px;
     resize: vertical;
+}
+.form-control.is-invalid:focus {
+    box-shadow: 0 0 0 2px rgba(220, 38, 38, 0.1);
+}
+
+.form-control.is-valid:focus {
+    box-shadow: 0 0 0 2px rgba(5, 150, 105, 0.1);
 }
 
 /* Submit Button */
@@ -320,4 +361,8 @@ textarea.form-control {
     display: flex;
     justify-content: center;
     margin-bottom: 20px;
+}
+[dir="rtl"] .form-label,
+html[lang="ar"] .form-label {
+    text-align: right;
 }
