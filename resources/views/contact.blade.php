@@ -53,57 +53,37 @@
     <form action="{{ route('contact.send') }}" method="POST">
         @csrf
         <div class="form-group">
-            <label class="form-label {{ $errors->has('name') ? 'is-invalid' : (old('name') ? 'is-valid' : '') }}">
-                {{ __('contact.form.name') }}
-                @error('name')
-                    <span class="label-error">{{ $message }}</span>
-                @enderror
-            </label>
             <input type="text" 
                    class="form-control {{ $errors->has('name') ? 'is-invalid' : (old('name') ? 'is-valid' : '') }}" 
                    name="name" 
+                   placeholder="{{ __('contact.form.name') }}"
                    value="{{ old('name') }}" 
                    required>
         </div>
 
         <div class="form-group">
-            <label class="form-label {{ $errors->has('email') ? 'is-invalid' : (old('email') ? 'is-valid' : '') }}">
-                {{ __('contact.form.email') }}
-                @error('email')
-                    <span class="label-error">{{ $message }}</span>
-                @enderror
-            </label>
             <input type="email" 
                    class="form-control {{ $errors->has('email') ? 'is-invalid' : (old('email') ? 'is-valid' : '') }}" 
                    name="email" 
+                   placeholder="{{ __('contact.form.email') }}"
                    value="{{ old('email') }}" 
                    required>
         </div>
 
         <div class="form-group">
-            <label class="form-label {{ $errors->has('subject') ? 'is-invalid' : (old('subject') ? 'is-valid' : '') }}">
-                {{ __('contact.form.subject') }}
-                @error('subject')
-                    <span class="label-error">{{ $message }}</span>
-                @enderror
-            </label>
             <input type="text" 
                    class="form-control {{ $errors->has('subject') ? 'is-invalid' : (old('subject') ? 'is-valid' : '') }}" 
                    name="subject" 
+                   placeholder="{{ __('contact.form.subject') }}"
                    value="{{ old('subject') }}" 
                    required>
         </div>
 
         <div class="form-group">
-            <label class="form-label {{ $errors->has('message') ? 'is-invalid' : (old('message') ? 'is-valid' : '') }}">
-                {{ __('contact.form.message') }}
-                @error('message')
-                    <span class="label-error">{{ $message }}</span>
-                @enderror
-            </label>
             <textarea class="form-control {{ $errors->has('message') ? 'is-invalid' : (old('message') ? 'is-valid' : '') }}" 
                       name="message" 
                       rows="5"
+                      placeholder="{{ __('contact.form.message') }}"
                       required>{{ old('message') }}</textarea>
         </div>
 
@@ -113,11 +93,6 @@
                 data-callback="onRecaptchaSuccess"
                 data-expired-callback="onRecaptchaExpired">
             </div>
-            @error('g-recaptcha-response')
-                <label class="form-label is-invalid">
-                    <span class="label-error">{{ $message }}</span>
-                </label>
-            @enderror
         </div>
 
         <button type="submit" class="submit-button">
