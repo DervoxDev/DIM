@@ -50,6 +50,27 @@
                     </div>
                 </div>
                 <div class="contact-form">
+                <div class="form-messages">
+    @if(session('success'))
+        <div class="form-message success">
+            <i class="fas fa-check-circle"></i>
+            {{ session('success') }}
+            <button type="button" class="close-message" onclick="this.parentElement.remove()">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+    @endif
+    
+    @if($errors->any())
+        <div class="form-message error">
+            <i class="fas fa-exclamation-circle"></i>
+            {{ $errors->first() }}
+            <button type="button" class="close-message" onclick="this.parentElement.remove()">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+    @endif
+</div>
     <form action="{{ route('contact.send') }}" method="POST">
         @csrf
         <div class="form-group">
@@ -112,17 +133,17 @@
     document.addEventListener('DOMContentLoaded', function() {
         // Link click handler
         const links = document.querySelectorAll('a');
-        links.forEach(link => {
-            link.addEventListener('click', function(e) {
-                if (!this.href.includes('#')) {
-                    e.preventDefault();
-                    document.getElementById('loader').style.display = 'flex';
-                    setTimeout(() => {
-                        window.location = this.href;
-                    }, 500);
-                }
-            });
+    links.forEach(link => {
+        link.addEventListener('click', function(e) {
+            if (!this.href.includes('#')) {
+                e.preventDefault();
+                document.getElementById('loader').style.display = 'flex';
+                setTimeout(() => {
+                    window.location = this.href;
+                }, 500);
+            }
         });
+    });
 
  // reCAPTCHA handlers
  window.onRecaptchaSuccess = function() {
