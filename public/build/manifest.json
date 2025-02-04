@@ -37,6 +37,34 @@
     "file": "assets/dark-D3Eva1LA.png",
     "src": "resources/images/dark.png"
   },
+  "resources/images/favicon/apple-touch-icon.png": {
+    "file": "assets/apple-touch-icon-_DKh92K4.png",
+    "src": "resources/images/favicon/apple-touch-icon.png"
+  },
+  "resources/images/favicon/favicon-96x96.png": {
+    "file": "assets/favicon-96x96-DonAg5P0.png",
+    "src": "resources/images/favicon/favicon-96x96.png"
+  },
+  "resources/images/favicon/favicon.ico": {
+    "file": "assets/favicon-Wq8gnSvR.ico",
+    "src": "resources/images/favicon/favicon.ico"
+  },
+  "resources/images/favicon/favicon.svg": {
+    "file": "assets/favicon-CBg_quCN.svg",
+    "src": "resources/images/favicon/favicon.svg"
+  },
+  "resources/images/favicon/site.webmanifest": {
+    "file": "assets/site-exgCcGGr.webmanifest",
+    "src": "resources/images/favicon/site.webmanifest"
+  },
+  "resources/images/favicon/web-app-manifest-192x192.png": {
+    "file": "assets/web-app-manifest-192x192-DP-QiTxq.png",
+    "src": "resources/images/favicon/web-app-manifest-192x192.png"
+  },
+  "resources/images/favicon/web-app-manifest-512x512.png": {
+    "file": "assets/web-app-manifest-512x512-C_dclYNj.png",
+    "src": "resources/images/favicon/web-app-manifest-512x512.png"
+  },
   "resources/images/header-img.png": {
     "file": "assets/header-img-rA7YSRLv.png",
     "src": "resources/images/header-img.png"
