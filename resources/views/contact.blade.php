@@ -136,78 +136,49 @@
 <script>
     document.addEventListener('DOMContentLoaded', function() {
         const form = document.querySelector('form');
-    const submitButton = document.getElementById('submitButton');
-    const formInputs = form.querySelectorAll('input, textarea, button');
+        const submitButton = document.getElementById('submitButton');
+        const formInputs = form.querySelectorAll('input, textarea, button');
 
-    // Form submission handler
-    form.addEventListener('submit', function(e) {
-        // Disable form and show loading state
-        submitButton.classList.add('loading');
-        formInputs.forEach(input => {
-            input.disabled = true;
+        // Form submission handler
+        form.addEventListener('submit', function(e) {
+            // Disable form and show loading state
+            submitButton.classList.add('loading');
+            formInputs.forEach(input => {
+                input.disabled = true;
+            });
+            form.classList.add('form-loading');
         });
-        form.classList.add('form-loading');
 
-        // Submit form
-        setTimeout(() => {
-            grecaptcha.reset();
-        }, 1000);
-    });
+        // Link click handler
+        const links = document.querySelectorAll('a');
+        links.forEach(link => {
+            link.addEventListener('click', function(e) {
+                if (!this.href.includes('#')) {
+                    e.preventDefault();
+                    document.getElementById('loader').style.display = 'flex';
+                    setTimeout(() => {
+                        window.location = this.href;
+                    }, 500);
+                }
+            });
+        });
 
-    // Link click handler
-    const links = document.querySelectorAll('a');
-    links.forEach(link => {
-        link.addEventListener('click', function(e) {
-            if (!this.href.includes('#')) {
-                e.preventDefault();
-                document.getElementById('loader').style.display = 'flex';
-                setTimeout(() => {
-                    window.location = this.href;
-                }, 500);
+        // reCAPTCHA handlers
+        window.onRecaptchaSuccess = function() {
+            const recaptchaError = document.querySelector('.g-recaptcha + .form-label.is-invalid');
+            if (recaptchaError) {
+                recaptchaError.remove();
             }
-        });
-    });
+        };
 
- // reCAPTCHA handlers
- window.onRecaptchaSuccess = function() {
-        const recaptchaError = document.querySelector('.g-recaptcha + .form-label.is-invalid');
-        if (recaptchaError) {
-            recaptchaError.remove();
-        }
-    };
-
-    window.onRecaptchaExpired = function() {
-        grecaptcha.reset();
-    };
-
-    // Reset reCAPTCHA after form submission
-    const form = document.querySelector('form');
-    form.addEventListener('submit', function() {
-        setTimeout(() => {
+        window.onRecaptchaExpired = function() {
             grecaptcha.reset();
-        }, 1000);
+        };
     });
-
-    });
-
-    // reCAPTCHA handlers
-    // function onRecaptchaSuccess() {
-    //     console.log('reCAPTCHA validated successfully');
-    // }
-
-    // function onRecaptchaExpired() {
-    //     grecaptcha.reset();
-    // }
-
-    // // Reset reCAPTCHA after form submission
-    // document.querySelector('form').addEventListener('submit', function() {
-    //     setTimeout(() => {
-    //         grecaptcha.reset();
-    //     }, 1000);
-    // });
 </script>
 <script src="https://www.google.com/recaptcha/api.js" async defer></script>
 @endpush
+
 @if(session('form_submitted'))
 <script>
     document.addEventListener('DOMContentLoaded', function() {
@@ -224,3 +195,4 @@
     });
 </script>
 @endif
+
