@@ -123,6 +123,7 @@
     </span>
 </button>
 
+
     </form>
 </div>
 
@@ -135,33 +136,14 @@
 @push('scripts')
 <script>
     document.addEventListener('DOMContentLoaded', function() {
-        const form = document.querySelector('form');
         const submitButton = document.getElementById('submitButton');
-        const formInputs = form.querySelectorAll('input, textarea, button');
-
-        // Form submission handler
-        form.addEventListener('submit', function(e) {
-            // Disable form and show loading state
+        
+        // Add loading state on form submit
+        document.querySelector('form').addEventListener('submit', function() {
             submitButton.classList.add('loading');
-            formInputs.forEach(input => {
-                input.disabled = true;
-            });
-            form.classList.add('form-loading');
+            submitButton.disabled = true;
         });
 
-        // Link click handler
-        const links = document.querySelectorAll('a');
-        links.forEach(link => {
-            link.addEventListener('click', function(e) {
-                if (!this.href.includes('#')) {
-                    e.preventDefault();
-                    document.getElementById('loader').style.display = 'flex';
-                    setTimeout(() => {
-                        window.location = this.href;
-                    }, 500);
-                }
-            });
-        });
 
         // reCAPTCHA handlers
         window.onRecaptchaSuccess = function() {
