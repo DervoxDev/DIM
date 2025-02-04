@@ -116,9 +116,13 @@
             </div>
         </div>
 
-        <button type="submit" class="submit-button">
-            {{ __('contact.form.submit') }}
-        </button>
+        <button type="submit" class="submit-button" id="submitButton">
+    <span class="button-text">{{ __('contact.form.submit') }}</span>
+    <span class="button-loader" style="display: none;">
+        <i class="fas fa-spinner fa-spin"></i>
+    </span>
+</button>
+
     </form>
 </div>
 
@@ -131,8 +135,27 @@
 @push('scripts')
 <script>
     document.addEventListener('DOMContentLoaded', function() {
-        // Link click handler
-        const links = document.querySelectorAll('a');
+        const form = document.querySelector('form');
+    const submitButton = document.getElementById('submitButton');
+    const formInputs = form.querySelectorAll('input, textarea, button');
+
+    // Form submission handler
+    form.addEventListener('submit', function(e) {
+        // Disable form and show loading state
+        submitButton.classList.add('loading');
+        formInputs.forEach(input => {
+            input.disabled = true;
+        });
+        form.classList.add('form-loading');
+
+        // Submit form
+        setTimeout(() => {
+            grecaptcha.reset();
+        }, 1000);
+    });
+
+    // Link click handler
+    const links = document.querySelectorAll('a');
     links.forEach(link => {
         link.addEventListener('click', function(e) {
             if (!this.href.includes('#')) {
@@ -185,3 +208,19 @@
 </script>
 <script src="https://www.google.com/recaptcha/api.js" async defer></script>
 @endpush
+@if(session('form_submitted'))
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const form = document.querySelector('form');
+        const submitButton = document.getElementById('submitButton');
+        const formInputs = form.querySelectorAll('input, textarea, button');
+
+        // Re-enable form
+        submitButton.classList.remove('loading');
+        formInputs.forEach(input => {
+            input.disabled = false;
+        });
+        form.classList.remove('form-loading');
+    });
+</script>
+@endif

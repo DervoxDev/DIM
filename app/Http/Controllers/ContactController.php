@@ -20,9 +20,15 @@ class ContactController extends Controller
             
             Mail::send(new ContactFormMail($validatedData));
             
-            return back()->with('success', __('contact.messages.success'));
+            return back()
+                ->with('success', __('contact.messages.success'))
+                ->with('form_submitted', true);
         } catch (\Exception $e) {
-            return back()->with('error', __('contact.messages.error'))->withInput();
+            return back()
+                ->with('error', __('contact.messages.error'))
+                ->with('form_submitted', true)
+                ->withInput();
         }
     }
+    
 }
