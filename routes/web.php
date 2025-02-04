@@ -25,6 +25,7 @@ Route::domain('dervox.com')->group(function () {
     Route::get('/solutions', function () {
         return view('solutions');
     })->name('solutions');
+    Route::get('lang', [LanguageController::class, 'change'])->name('dervox.change.lang');
 });
 
 Route::domain('dim.dervox.com')->group(function () {

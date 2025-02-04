@@ -588,10 +588,10 @@ html[lang="ar"] .main-nav-group {
                     <div class="language-dropdown">
                         @php($languages = ['en' => 'English', 'fr' => 'Français', 'ar' => 'العربية'])
                         @foreach($languages as $code => $name)
-                            <a href="{{ route('change.lang', ['lang' => $code]) }}" 
-                               class="language-option {{ Session::get('locale') === $code ? 'active' : '' }}">
-                                {{ $name }}
-                            </a>
+                        <a href="{{ route('dervox.change.lang', ['lang' => $code]) }}" 
+                             class="language-option {{ Session::get('locale') === $code ? 'active' : '' }}">
+                              {{ $name }}
+                          </a>
                         @endforeach
                     </div>
                 </div>
