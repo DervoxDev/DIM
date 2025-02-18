@@ -1,8 +1,8 @@
 <!DOCTYPE html>
-<html>
+<html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
 <head>
     <meta charset="utf-8">
-    <title>Receipt {{ $sale->reference_number }}</title>
+    <title>{{ __('receipt.receipt_number') }} {{ $sale->reference_number }}</title>
     <style>
         /* Thermal receipt style */
         body {
@@ -11,6 +11,7 @@
             margin: 0 auto;
             padding: 10px;
             font-size: 9pt;
+            direction: {{ in_array(app()->getLocale(), ['ar']) ? 'rtl' : 'ltr' }};
         }
         .header { 
             text-align: center; 
@@ -29,14 +30,18 @@
             border-collapse: collapse;
         }
         .items th {
-            border-top: 1px solid #000;
-            border-bottom: 1px solid #000;
-            padding: 3px 0;
-        }
-        .items td { 
-            padding: 3px 0;
-            font-size: 8pt;
-        }
+        border-top: 1px solid #000;
+        border-bottom: 1px solid #000;
+        padding: 3px 0;
+        text-align: left; /* Align header text to left */
+    }
+    
+    .items td {
+        padding: 3px 0;
+        padding-left: 3px; /* Add left padding to content cells */
+        font-size: 8pt;
+        text-align: left; /* Align content to left */
+    }
         .totals { 
             margin: 10px 0; 
             text-align: right;
@@ -58,24 +63,26 @@
 </head>
 <body>
     <div class="header">
-        <h2>{{ $sale->team->name }}</h2>
+    <h2>{{ $sale->team->name }}</h2>
         <p>{{ $sale->team->address }}</p>
-        <p>Tel: {{ $sale->team->phone }}</p>
-        <p>Receipt #: {{ $sale->reference_number }}</p>
-        <p>Date: {{ $sale->sale_date->format('d/m/Y H:i') }}</p>
+        <p>{{ __('receipt.tel') }}: {{ $sale->team->phone }}</p>
+        <p>{{ __('receipt.receipt_number') }}: {{ $sale->reference_number }}</p>
+        <p>{{ __('receipt.date') }}: {{ $sale->sale_date->format('d/m/Y H:i') }}</p>
     </div>
 
     <table class="items">
         <tr>
-            <th>Item</th>
-            <th>Qty</th>
-            <th>Price</th>
-            <th>Total</th>
+        <th>{{ __('receipt.item') }}</th>
+            <th>{{ __('receipt.quantity') }}</th>
+            <th>{{ __('receipt.tax') }}</th>
+            <th>{{ __('receipt.price') }}</th>
+            <th>{{ __('receipt.total') }}</th>
         </tr>
         @foreach($sale->items as $item)
         <tr>
             <td>{{ $item->product->name }}</td>
             <td>{{ $item->quantity }}</td>
+            <td>{{ number_format($item->tax_amount, 2) }}</td>
             <td>{{ number_format($item->unit_price, 2) }}</td>
             <td>{{ number_format($item->total_price, 2) }}</td>
         </tr>
@@ -83,16 +90,16 @@
     </table>
 
     <div class="totals">
-        <p>Subtotal: {{ number_format($sale->total_amount - $sale->tax_amount, 2) }}</p>
-        <p>Tax: {{ number_format($sale->tax_amount, 2) }}</p>
+        <p>{{ __('receipt.subtotal') }}: {{ number_format($sale->total_amount - $sale->tax_amount, 2) }} {{ __('receipt.currency') }}</p>
+        <p>{{ __('receipt.tax') }}: {{ number_format($sale->tax_amount, 2) }} {{ __('receipt.currency') }}</p>
         @if($sale->discount_amount > 0)
-        <p>Discount: -{{ number_format($sale->discount_amount, 2) }}</p>
+        <p>{{ __('receipt.discount') }}: -{{ number_format($sale->discount_amount, 2) }} {{ __('receipt.currency') }}</p>
         @endif
-        <p><strong>Total: {{ number_format($sale->total_amount, 2) }}</strong></p>
+        <p><strong>{{ __('receipt.total') }}: {{ number_format($sale->total_amount, 2) }} {{ __('receipt.currency') }}</strong></p>
     </div>
 
     <div class="footer">
-        <p>Thank you for your purchase!</p>
+        <p>{{ __('receipt.thank_you') }}</p>
     </div>
 </body>
 </html>

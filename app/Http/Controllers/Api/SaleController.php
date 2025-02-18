@@ -729,60 +729,83 @@ class SaleController extends Controller
     }
     
     public function generateReceipt(Request $request, $id)
-{
-    $user = $request->user();
-    $sale = Sale::where('team_id', $user->team->id)
-                ->with(['items.product', 'team'])
-                ->findOrFail($id);
-
-    try {
-        // Generate HTML
-        $html = View::make('receipts.pdf', [
-            'sale' => $sale
-        ])->render();
-
-        // Create filename
-        $filename = "receipt-{$sale->reference_number}.pdf";
-        $tempPath = storage_path('app/public/temp');
-        
-        if (!file_exists($tempPath)) {
-            mkdir($tempPath, 0755, true);
+    {
+        $user = $request->user();
+        $sale = Sale::where('team_id', $user->team->id)
+                    ->with(['items.product', 'team'])
+                    ->findOrFail($id);
+    
+        try {
+            // Set locale based on team's preference
+            $locale = $sale->team->locale ?? config('app.locale');
+            app()->setLocale($locale);
+    
+            // Number formatter for the current locale
+            $numberFormatter = new \NumberFormatter($locale, \NumberFormatter::DECIMAL);
+            
+            // Format sale date according to locale
+            $dateFormatter = new \IntlDateFormatter(
+                $locale,
+                \IntlDateFormatter::LONG,
+                \IntlDateFormatter::SHORT
+            );
+    
+            // Generate HTML
+            $html = View::make('receipts.pdf', [
+                'sale' => $sale,
+                'numberFormatter' => $numberFormatter,
+                'dateFormatter' => $dateFormatter
+            ])->render();
+    
+            // Create filename with locale
+            $filename = "receipt-{$sale->reference_number}-{$locale}.pdf";
+            $tempPath = storage_path('app/public/temp');
+            
+            if (!file_exists($tempPath)) {
+                mkdir($tempPath, 0755, true);
+            }
+            
+            $pdfPath = $tempPath . '/' . $filename;
+    
+            // Configure Browsershot
+            $browsershot = Browsershot::html($html)
+                ->setChromePath('/usr/bin/google-chrome-stable')
+                ->format('A4')
+                ->windowSize(302, 1122)
+                ->margins(5, 5, 5, 5)
+                ->showBackground();
+    
+            // Add RTL support if needed
+            if (in_array($locale, ['ar'])) {
+                $browsershot->setOption('isRtl', true);
+            }
+    
+            $browsershot->savePdf($pdfPath);
+    
+            // Log activity with locale information
+            ActivityLog::create([
+                'log_type' => 'Generate',
+                'model_type' => 'Receipt',
+                'model_id' => $sale->id,
+                'model_identifier' => $sale->reference_number,
+                'user_identifier' => $user->name,
+                'description' => "Generated receipt for sale {$sale->reference_number} in {$locale}",
+                'meta_data' => ['locale' => $locale]
+            ]);
+    
+            return response()->download($pdfPath, $filename, [
+                'Content-Type' => 'application/pdf'
+            ])->deleteFileAfterSend(true);
+    
+        } catch (\Exception $e) {
+            \Log::error('Receipt generation error: ' . $e->getMessage());
+            return response()->json([
+                'error' => true,
+                'message' => 'Error generating receipt: ' . $e->getMessage()
+            ], 500);
         }
-        
-        $pdfPath = $tempPath . '/' . $filename;
-
-        // Generate PDF using Browsershot with custom width
-        Browsershot::html($html)
-            ->setChromePath('/usr/bin/google-chrome-stable') // Specify Chrome path
-            ->format('A4') // Use standard A4 format
-            ->windowSize(302, 1122) // 80mm ≈ 302px at 96 DPI
-            ->margins(5, 5, 5, 5)
-            ->showBackground()
-            ->savePdf($pdfPath);
-
-        // Log activity
-        ActivityLog::create([
-            'log_type' => 'Generate',
-            'model_type' => 'Receipt',
-            'model_id' => $sale->id,
-            'model_identifier' => $sale->reference_number,
-            'user_identifier' => $user->name,
-            'description' => "Generated receipt for sale {$sale->reference_number}"
-        ]);
-
-        return response()->download($pdfPath, $filename, [
-            'Content-Type' => 'application/pdf'
-        ])->deleteFileAfterSend(true);
-
-    } catch (\Exception $e) {
-        \Log::error('Receipt generation error: ' . $e->getMessage());
-        return response()->json([
-            'error' => true,
-            'message' => 'Error generating receipt: ' . $e->getMessage()
-        ], 500);
     }
-}
-
+    
     public function getSummary(Request $request)
     {
         $user = $request->user();

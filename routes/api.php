@@ -15,7 +15,8 @@
     use App\Http\Controllers\Api\InvoiceController;
     use App\Http\Controllers\Api\DashboardAnalyticsController;
     use App\Http\Controllers\Api\TeamController;
-    
+    use App\Http\Controllers\LanguageController;
+
     Route::group(['prefix' =>'v1'], function () {
         Route::post('login', [AuthController::class, 'login']);
         Route::post('register', [AuthController::class, 'register']);
@@ -109,7 +110,7 @@
             Route::post('/invoices/{id}/send', [InvoiceController::class, 'send']);
             Route::post('/invoices/{id}/mark-as-paid', [InvoiceController::class, 'markAsPaid']);
             Route::get('/invoices/{id}/download', [InvoiceController::class, 'download']);
-
+       
             Route::prefix('teams')->group(function () {
                 Route::get('/', [TeamController::class, 'index']);
                 Route::get('/{id}', [TeamController::class, 'show']);
@@ -118,6 +119,8 @@
                 Route::delete('/{id}', [TeamController::class, 'destroy']);
                 Route::post('/{id}/image', [TeamController::class, 'uploadImage']);
                 Route::delete('/{id}/image', [TeamController::class, 'removeImage']);
+                Route::post('/{id}/language', [LanguageController::class, 'changeInvoiceLanguage']);
+                Route::get('/{id}/language', [LanguageController::class, 'getInvoiceLanguage']);
             });
             Route::prefix('dashboard')->group(function () {
                 Route::get('/sales-analytics', [DashboardAnalyticsController::class, 'getSaleAnalytics']);

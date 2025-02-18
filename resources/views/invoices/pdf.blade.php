@@ -2,7 +2,7 @@
 <html>
 <head>
     <meta charset="utf-8">
-    <title>{{ $invoice->invoiceable_type === 'App\Models\Sale' ? 'Invoice' : 'Bill' }} {{ $invoice->reference_number }}</title>
+    <title>{{ __('invoice.' . ($invoice->invoiceable_type === 'App\Models\Sale' ? 'invoice' : 'bill')) }} {{ $invoice->reference_number }}</title>
     <style>
     :root {
         --primary-color: #2563eb;
@@ -213,27 +213,27 @@
     <div class="invoice">
         <!-- Header Section -->
         <div class="header">
-            <div class="company-details">
-            <div class="logo-container">
-            @if($invoice->team->image_path)
-                <img class="logo" src="{{ storage_path('app/public/' . $invoice->team->image_path) }}" alt="Company Logo">
-            @endif
-        </div>
-                <h2>{{ $invoice->team->name }}</h2>
-                <p>{{ $invoice->team->address ?? '' }}</p>
-                <p>{{ $invoice->team->phone ?? '' }}</p>
-                <p>{{ $invoice->team->email ?? '' }}</p>
-                @if($invoice->team->tax_number)
-                    <p>Tax Number: {{ $invoice->team->tax_number }}</p>
-                @endif
-            </div>
-            <div class="document-info">
-                <h1>{{ $invoice->invoiceable_type === 'App\Models\Sale' ? 'INVOICE' : 'BILL' }}</h1>
-                <p><strong>Reference #:</strong> {{ $invoice->reference_number }}</p>
-                <span class="status-badge status-{{ $invoice->status }}">
-                    {{ ucfirst($invoice->status) }}
-                </span>
-            </div>
+        <div class="company-details">
+    <div class="logo-container">
+        @if($invoice->team->image_path)
+            <img class="logo" src="{{ storage_path('app/public/' . $invoice->team->image_path) }}" alt="Company Logo">
+        @endif
+    </div>
+    <h2>{{ $invoice->team->name }}</h2>
+    <p>{{ $invoice->team->address ?? '' }}</p>
+    <p>{{ $invoice->team->phone ?? '' }}</p>
+    <p>{{ $invoice->team->email ?? '' }}</p>
+    @if($invoice->team->tax_number)
+        <p>{{ __('invoice.tax_number') }}: {{ $invoice->team->tax_number }}</p>
+    @endif
+</div>
+<div class="document-info">
+    <h1>{{ __('invoice.' . ($invoice->invoiceable_type === 'App\Models\Sale' ? 'invoice' : 'bill')) }}</h1>
+    <p><strong>{{ __('invoice.reference_number') }}:</strong> {{ $invoice->reference_number }}</p>
+    <span class="status-badge status-{{ $invoice->status }}">
+        {{ __('invoice.status.' . $invoice->status) }}
+    </span>
+</div>
         </div>
 
        <!-- Entity Details (Client/Supplier) -->
@@ -245,76 +245,76 @@
 @if($hasClient || $hasSupplier)
 <div class="entities">
     <div class="entity-box">
-        <h3>{{ $invoice->invoiceable_type === 'App\Models\Sale' ? 'Bill To:' : 'Supplier:' }}</h3>
+    <h3>{{ $invoice->invoiceable_type === 'App\Models\Sale' ? __('invoice.bill_to') : __('invoice.supplier') }}:</h3>
         @if($hasClient)
             @php $client = $invoice->invoiceable->client @endphp
             <p><strong>{{ $client->name }}</strong></p>
             @if($client->contact_person)
-                <p>Attn: {{ $client->contact_person }}</p>
+                <p>{{ __('invoice.attn') }}: {{ $client->contact_person }}</p>
             @endif
             @if($client->address)
                 <p>{{ $client->address }}</p>
             @endif
             @if($client->email)
-                <p>Email: {{ $client->email }}</p>
+                <p>{{ __('invoice.email') }}: {{ $client->email }}</p>
             @endif
             @if($client->phone)
-                <p>Phone: {{ $client->phone }}</p>
+                <p>{{ __('invoice.phone') }}: {{ $client->phone }}</p>
             @endif
             @if($client->tax_number)
-                <p>Tax Number: {{ $client->tax_number }}</p>
+                <p>{{ __('invoice.tax_number') }}: {{ $client->tax_number }}</p>
             @endif
-        @elseif($hasSupplier)
-            @php $supplier = $invoice->invoiceable->supplier @endphp
-            <p><strong>{{ $supplier->name }}</strong></p>
-            @if($supplier->contact_person)
-                <p>Attn: {{ $supplier->contact_person }}</p>
-            @endif
-            @if($supplier->address)
-                <p>{{ $supplier->address }}</p>
-            @endif
-            @if($supplier->email)
-                <p>Email: {{ $supplier->email }}</p>
-            @endif
-            @if($supplier->phone)
-                <p>Phone: {{ $supplier->phone }}</p>
-            @endif
-            @if($supplier->tax_number)
-                <p>Tax Number: {{ $supplier->tax_number }}</p>
-            @endif
-        @endif
+            @elseif($hasSupplier)
+    @php $supplier = $invoice->invoiceable->supplier @endphp
+    <p><strong>{{ $supplier->name }}</strong></p>
+    @if($supplier->contact_person)
+        <p>{{ __('invoice.attn') }}: {{ $supplier->contact_person }}</p>
+    @endif
+    @if($supplier->address)
+        <p>{{ $supplier->address }}</p>
+    @endif
+    @if($supplier->email)
+        <p>{{ __('invoice.email') }}: {{ $supplier->email }}</p>
+    @endif
+    @if($supplier->phone)
+        <p>{{ __('invoice.phone') }}: {{ $supplier->phone }}</p>
+    @endif
+    @if($supplier->tax_number)
+        <p>{{ __('invoice.tax_number') }}: {{ $supplier->tax_number }}</p>
+    @endif
+@endif
     </div>
 </div>
 @endif
 
         <!-- Dates and Status -->
         <div class="dates-and-status">
-            <div class="date-box">
-                <strong>Issue Date</strong><br>
-                {{ $invoice->issue_date->format('d/m/Y') }}
-            </div>
-            <div class="date-box">
-                <strong>Due Date</strong><br>
-                {{ $invoice->due_date->format('d/m/Y') }}
-            </div>
-            @if($invoice->meta_data['payment_terms'] ?? false)
-            <div class="date-box">
-                <strong>Payment Terms</strong><br>
-                {{ $invoice->meta_data['payment_terms'] }}
-            </div>
-            @endif
-        </div>
+    <div class="date-box">
+        <strong>{{ __('invoice.issue_date') }}</strong><br>
+        {{ $invoice->issue_date->format('d/m/Y') }}
+    </div>
+    <div class="date-box">
+        <strong>{{ __('invoice.due_date') }}</strong><br>
+        {{ $invoice->due_date->format('d/m/Y') }}
+    </div>
+    @if($invoice->meta_data['payment_terms'] ?? false)
+    <div class="date-box">
+        <strong>{{ __('invoice.payment_terms') }}</strong><br>
+        {{ $invoice->meta_data['payment_terms'] }}
+    </div>
+    @endif
+</div>
 
         <!-- Items Table -->
         <table class="items-table">
             <thead>
                 <tr>
-                    <th>Description</th>
-                    <th>Quantity</th>
-                    <th>Unit Price</th>
-                    <th>Tax</th>
-                    <th>Discount</th>
-                    <th>Total</th>
+                <th>{{ __('invoice.description') }}</th>
+            <th>{{ __('invoice.quantity') }}</th>
+            <th>{{ __('invoice.unit_price') }}</th>
+            <th>{{ __('invoice.tax') }}</th>
+            <th>{{ __('invoice.discount') }}</th>
+            <th>{{ __('invoice.total') }}</th>
                 </tr>
             </thead>
             <tbody>
@@ -338,43 +338,43 @@
 
         <!-- Totals -->
         <div class="totals">
-            <table>
-                <tr>
-                    <td>Subtotal:</td>
-                    <td align="right">{{ number_format($invoice->meta_data['subtotal'] ?? 0, 2) }}</td>
-                </tr>
-                @if($invoice->tax_amount > 0)
-                <tr>
-                    <td>Tax:</td>
-                    <td align="right">{{ number_format($invoice->tax_amount, 2) }}</td>
-                </tr>
-                @endif
-                @if($invoice->discount_amount > 0)
-                <tr>
-                    <td>Discount:</td>
-                    <td align="right">-{{ number_format($invoice->discount_amount, 2) }}</td>
-                </tr>
-                @endif
-                <tr class="grand-total">
-                    <td>Total Amount:</td>
-                    <td align="right">{{ number_format($invoice->total_amount, 2) }}</td>
-                </tr>
-            </table>
-        </div>
+    <table>
+        <tr>
+            <td>{{ __('invoice.subtotal') }}:</td>
+            <td align="right">{{ number_format($invoice->meta_data['subtotal'] ?? 0, 2) }} DH</td>
+        </tr>
+        @if($invoice->tax_amount > 0)
+        <tr>
+            <td>{{ __('invoice.tax_amount') }}:</td>
+            <td align="right">{{ number_format($invoice->tax_amount, 2) }} DH</td>
+        </tr>
+        @endif
+        @if($invoice->discount_amount > 0)
+        <tr>
+            <td>{{ __('invoice.discount_amount') }}:</td>
+            <td align="right">-{{ number_format($invoice->discount_amount, 2) }} DH</td>
+        </tr>
+        @endif
+        <tr class="grand-total">
+            <td>{{ __('invoice.total_amount') }}:</td>
+            <td align="right">{{ number_format($invoice->total_amount, 2) }} DH</td>
+        </tr>
+    </table>
+</div>
+
 
         <!-- Notes -->
         @if($invoice->notes)
-        <div class="notes">
-            <h3>Notes:</h3>
-            <p>{{ $invoice->notes }}</p>
-        </div>
-        @endif
-
-        <!-- Footer -->
-        <div class="footer">
-            <p>Thank you for your business!</p>
-            <p>Generated on {{ now()->format('d/m/Y H:i:s') }}</p>
-        </div>
+<div class="notes">
+    <h3>{{ __('invoice.notes') }}:</h3>
+    <p>{{ $invoice->notes }}</p>
+</div>
+@endif
+ 
+<div class="footer">
+    <p>{{ __('invoice.thank_you') }}</p>
+    <p>{{ __('invoice.generated_on') }} {{ now()->format('d/m/Y H:i:s') }}</p>
+</div>
     </div>
 </body>
 </html>

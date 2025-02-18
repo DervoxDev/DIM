@@ -17,6 +17,7 @@
             'phone',
             'address',
             'image_path',
+            'locale' 
         ];
 
         // Add this line to always load the subscription relationship

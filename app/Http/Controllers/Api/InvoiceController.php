@@ -12,6 +12,7 @@ use Illuminate\Support\Facades\Validator;
 use Spatie\Browsershot\Browsershot;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\View;
+use Illuminate\Support\Facades\Session;
 
 class InvoiceController extends Controller
 {
@@ -550,7 +551,6 @@ class InvoiceController extends Controller
                                  'items',
                                  'invoiceable',
                                  'team',
-                                 // Add any other necessary relationships
                              ])
                              ->findOrFail($id);
     
@@ -568,6 +568,14 @@ class InvoiceController extends Controller
                     'message' => 'Invoice data is incomplete'
                 ], 422);
             }
+    
+            // Get team's preferred locale, fallback to default
+            $locale = $invoice->team->locale ?? config('app.locale');
+            
+            // Set locale for this request
+            app()->setLocale($locale);
+    
+            // Handle team logo
             if ($invoice->team->image_path) {
                 $imagePath = storage_path('app/public/' . $invoice->team->image_path);
                 if (file_exists($imagePath)) {
@@ -576,14 +584,66 @@ class InvoiceController extends Controller
                     $invoice->team->logo_data_url = "data:{$imageMime};base64,{$imageData}";
                 }
             }
-            // Generate HTML
-            $html = View::make('invoices.pdf', [
-                'invoice' => $invoice,
-                // Add any other data needed by the template
-            ])->render();
     
-            // Create filename and path
-            $filename = "invoice-{$invoice->reference_number}.pdf";
+            // Format numbers according to locale
+            $numberFormatter = new \NumberFormatter($locale, \NumberFormatter::DECIMAL);
+            $currencyFormatter = new \NumberFormatter($locale, \NumberFormatter::CURRENCY);
+            
+            // Format dates according to locale
+            $dateFormatter = new \IntlDateFormatter(
+                $locale,
+                \IntlDateFormatter::LONG,
+                \IntlDateFormatter::NONE
+            );
+    
+            // Prepare formatted data
+            $formattedInvoice = [
+                'invoice' => $invoice,
+                'formatted' => [
+                    'issue_date' => $dateFormatter->format($invoice->issue_date),
+                    'due_date' => $dateFormatter->format($invoice->due_date),
+                    'subtotal' => $currencyFormatter->format($invoice->meta_data['subtotal'] ?? 0),
+                    'tax_amount' => $currencyFormatter->format($invoice->tax_amount),
+                    'discount_amount' => $currencyFormatter->format($invoice->discount_amount),
+                    'total_amount' => $currencyFormatter->format($invoice->total_amount),
+                ],
+                'items' => $invoice->items->map(function ($item) use ($numberFormatter, $currencyFormatter) {
+                    return [
+                        'description' => $item->description,
+                        'quantity' => $numberFormatter->format($item->quantity),
+                        'unit_price' => $currencyFormatter->format($item->unit_price),
+                        'tax_amount' => $currencyFormatter->format($item->tax_amount ?? 0),
+                        'discount_amount' => $currencyFormatter->format($item->discount_amount ?? 0),
+                        'total_price' => $currencyFormatter->format($item->total_price),
+                    ];
+                }),
+                'translations' => [
+                    'invoice' => __('invoice.invoice'),
+                    'bill' => __('invoice.bill'),
+                    'bill_to' => __('invoice.bill_to'),
+                    'supplier' => __('invoice.supplier'),
+                    'tax_number' => __('invoice.tax_number'),
+                    'issue_date' => __('invoice.issue_date'),
+                    'due_date' => __('invoice.due_date'),
+                    'description' => __('invoice.description'),
+                    'quantity' => __('invoice.quantity'),
+                    'unit_price' => __('invoice.unit_price'),
+                    'tax' => __('invoice.tax'),
+                    'discount' => __('invoice.discount'),
+                    'total' => __('invoice.total'),
+                    'subtotal' => __('invoice.subtotal'),
+                    'total_amount' => __('invoice.total_amount'),
+                    'notes' => __('invoice.notes'),
+                    'thank_you' => __('invoice.thank_you'),
+                ],
+                'rtl' => in_array($locale, ['ar']), // RTL support for Arabic
+            ];
+    
+            // Generate HTML with localized data
+            $html = View::make('invoices.pdf', $formattedInvoice)->render();
+    
+            // Create filename with locale
+            $filename = "invoice-{$invoice->reference_number}-{$locale}.pdf";
             $tempPath = storage_path('app/public/temp');
             
             if (!file_exists($tempPath)) {
@@ -592,15 +652,21 @@ class InvoiceController extends Controller
             
             $pdfPath = $tempPath . '/' . $filename;
     
-            // Generate PDF using Browsershot
-            Browsershot::html($html)
-                ->setChromePath('/usr/bin/google-chrome-stable') // Specify Chrome path
+            // Configure Browsershot with locale-specific settings
+            $browsershot = Browsershot::html($html)
+                ->setChromePath('/usr/bin/google-chrome-stable')
                 ->format('A4')
                 ->margins(16, 16, 16, 16)
-                ->showBackground()
-                ->savePdf($pdfPath);
+                ->showBackground();
     
-            // Log activity
+            // Add RTL support if needed
+            if (in_array($locale, ['ar'])) {
+                $browsershot->setOption('isRtl', true);
+            }
+    
+            $browsershot->savePdf($pdfPath);
+    
+            // Log activity with locale information
             ActivityLog::create([
                 'log_type' => 'Download',
                 'model_type' => "Invoice",
@@ -611,10 +677,10 @@ class InvoiceController extends Controller
                 'user_email' => $user?->email,
                 'ip_address' => $request->ip(),
                 'user_agent' => $request->userAgent(),
-                'description' => "Downloaded invoice {$invoice->reference_number}",
+                'description' => "Downloaded invoice {$invoice->reference_number} in {$locale}",
+                'meta_data' => ['locale' => $locale],
             ]);
     
-            // Return file download response
             return response()->download($pdfPath, $filename, [
                 'Content-Type' => 'application/pdf',
             ])->deleteFileAfterSend(true);
@@ -628,5 +694,6 @@ class InvoiceController extends Controller
             ], 500);
         }
     }
+    
     
 }
