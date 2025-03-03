@@ -245,44 +245,47 @@
 @if($hasClient || $hasSupplier)
 <div class="entities">
     <div class="entity-box">
-    <h3>{{ $invoice->invoiceable_type === 'App\Models\Sale' ? __('invoice.bill_to') : __('invoice.supplier') }}:</h3>
-        @if($hasClient)
-            @php $client = $invoice->invoiceable->client @endphp
-            <p><strong>{{ $client->name }}</strong></p>
-            @if($client->contact_person)
-                <p>{{ __('invoice.attn') }}: {{ $client->contact_person }}</p>
-            @endif
-            @if($client->address)
-                <p>{{ $client->address }}</p>
-            @endif
-            @if($client->email)
-                <p>{{ __('invoice.email') }}: {{ $client->email }}</p>
-            @endif
-            @if($client->phone)
-                <p>{{ __('invoice.phone') }}: {{ $client->phone }}</p>
-            @endif
-            @if($client->tax_number)
-                <p>{{ __('invoice.tax_number') }}: {{ $client->tax_number }}</p>
-            @endif
-            @elseif($hasSupplier)
-    @php $supplier = $invoice->invoiceable->supplier @endphp
-    <p><strong>{{ $supplier->name }}</strong></p>
-    @if($supplier->contact_person)
-        <p>{{ __('invoice.attn') }}: {{ $supplier->contact_person }}</p>
-    @endif
-    @if($supplier->address)
-        <p>{{ $supplier->address }}</p>
-    @endif
-    @if($supplier->email)
-        <p>{{ __('invoice.email') }}: {{ $supplier->email }}</p>
-    @endif
-    @if($supplier->phone)
-        <p>{{ __('invoice.phone') }}: {{ $supplier->phone }}</p>
-    @endif
-    @if($supplier->tax_number)
-        <p>{{ __('invoice.tax_number') }}: {{ $supplier->tax_number }}</p>
-    @endif
-@endif
+        <h3>{{ $invoice->invoiceable_type === 'App\Models\Sale' ? __('invoice.bill_to') : __('invoice.supplier') }}:</h3>
+        @php
+            // Get entity data from meta_data if invoiceable is null
+            $entityData = null;
+            if ($invoice->invoiceable_type === 'App\Models\Sale') {
+                $entityData = $invoice->invoiceable?->client ?? (object) ($invoice->meta_data['client'] ?? [
+                    'name' => $invoice->meta_data['client_name'] ?? '[Deleted Client]',
+                    'contact_person' => $invoice->meta_data['client_contact_person'] ?? '',
+                    'address' => $invoice->meta_data['client_address'] ?? '',
+                    'email' => $invoice->meta_data['client_email'] ?? '',
+                    'phone' => $invoice->meta_data['client_phone'] ?? '',
+                    'tax_number' => $invoice->meta_data['client_tax_number'] ?? ''
+                ]);
+            } else {
+                $entityData = $invoice->invoiceable?->supplier ?? (object) ($invoice->meta_data['supplier'] ?? [
+                    'name' => $invoice->meta_data['supplier_name'] ?? '[Deleted Supplier]',
+                    'contact_person' => $invoice->meta_data['supplier_contact_person'] ?? '',
+                    'address' => $invoice->meta_data['supplier_address'] ?? '',
+                    'email' => $invoice->meta_data['supplier_email'] ?? '',
+                    'phone' => $invoice->meta_data['supplier_phone'] ?? '',
+                    'tax_number' => $invoice->meta_data['supplier_tax_number'] ?? ''
+                ]);
+            }
+        @endphp
+
+        <p><strong>{{ $entityData->name }}</strong></p>
+        @if($entityData->contact_person)
+            <p>{{ __('invoice.attn') }}: {{ $entityData->contact_person }}</p>
+        @endif
+        @if($entityData->address)
+            <p>{{ $entityData->address }}</p>
+        @endif
+        @if($entityData->email)
+            <p>{{ __('invoice.email') }}: {{ $entityData->email }}</p>
+        @endif
+        @if($entityData->phone)
+            <p>{{ __('invoice.phone') }}: {{ $entityData->phone }}</p>
+        @endif
+        @if($entityData->tax_number)
+            <p>{{ __('invoice.tax_number') }}: {{ $entityData->tax_number }}</p>
+        @endif
     </div>
 </div>
 @endif
@@ -291,11 +294,19 @@
         <div class="dates-and-status">
     <div class="date-box">
         <strong>{{ __('invoice.issue_date') }}</strong><br>
-        {{ $invoice->issue_date->format('d/m/Y') }}
+        @if($invoice->issue_date)
+            {{ $invoice->issue_date instanceof \DateTime ? $invoice->issue_date->format('d/m/Y') : date('d/m/Y', strtotime($invoice->issue_date)) }}
+        @else
+            -
+        @endif
     </div>
     <div class="date-box">
         <strong>{{ __('invoice.due_date') }}</strong><br>
-        {{ $invoice->due_date->format('d/m/Y') }}
+        @if($invoice->due_date)
+            {{ $invoice->due_date instanceof \DateTime ? $invoice->due_date->format('d/m/Y') : date('d/m/Y', strtotime($invoice->due_date)) }}
+        @else
+            -
+        @endif
     </div>
     @if($invoice->meta_data['payment_terms'] ?? false)
     <div class="date-box">

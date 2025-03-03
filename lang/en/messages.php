@@ -110,5 +110,19 @@ return [
    'Upgrade' => 'Upgrade',
    'N/A' => 'N/A',
    'Trial' => 'Trial',
+// Cookie Consent
+'Cookie Consent' => 'Cookie Consent',
+'cookie_message' => 'This website uses cookies to enhance your browsing experience, analyze site traffic, and personalize content. By clicking "Accept All", you consent to the use of all cookies. You can manage your preferences or decline non-essential cookies by clicking "Cookie Settings".',
+'Accept All' => 'Accept All',
+'Decline' => 'Decline',
+'Cookie Settings' => 'Cookie Settings',
+'cookie_settings_intro' => 'You can choose which cookies you allow us to use. Necessary cookies will always be enabled as they are essential for the website to function properly.',
+'Necessary Cookies' => 'Necessary Cookies',
+'necessary_cookies_description' => 'These cookies are essential for the website to function properly and cannot be disabled.',
+'Analytics Cookies' => 'Analytics Cookies',
+'analytics_cookies_description' => 'These cookies help us understand how visitors interact with our website. They help us improve our services and user experience.',
+'Marketing Cookies' => 'Marketing Cookies',
+'marketing_cookies_description' => 'These cookies are used to track visitors across websites. They are used to display ads that are relevant and engaging for individual users.',
+'Save Preferences' => 'Save Preferences',
 
 ];

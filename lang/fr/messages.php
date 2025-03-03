@@ -124,5 +124,19 @@ return [
     'N/A' => 'N/D',
     'Trial' => 'Essai',
   
+// Cookie Consent
+'Cookie Consent' => 'Consentement aux Cookies',
+'cookie_message' => 'Ce site utilise des cookies pour améliorer votre expérience de navigation, analyser le trafic du site et personnaliser le contenu. En cliquant sur "Tout accepter", vous consentez à l\'utilisation de tous les cookies. Vous pouvez gérer vos préférences ou refuser les cookies non essentiels en cliquant sur "Paramètres des cookies".',
+'Accept All' => 'Tout accepter',
+'Decline' => 'Refuser',
+'Cookie Settings' => 'Paramètres des cookies',
+'cookie_settings_intro' => 'Vous pouvez choisir quels cookies vous nous autorisez à utiliser. Les cookies nécessaires seront toujours activés car ils sont essentiels au bon fonctionnement du site.',
+'Necessary Cookies' => 'Cookies nécessaires',
+'necessary_cookies_description' => 'Ces cookies sont essentiels au bon fonctionnement du site web et ne peuvent pas être désactivés.',
+'Analytics Cookies' => 'Cookies d\'analyse',
+'analytics_cookies_description' => 'Ces cookies nous aident à comprendre comment les visiteurs interagissent avec notre site web. Ils nous aident à améliorer nos services et l\'expérience utilisateur.',
+'Marketing Cookies' => 'Cookies marketing',
+'marketing_cookies_description' => 'Ces cookies sont utilisés pour suivre les visiteurs sur les sites web. Ils sont utilisés pour afficher des publicités pertinentes et engageantes pour chaque utilisateur.',
+'Save Preferences' => 'Enregistrer les préférences',
 
 ];

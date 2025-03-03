@@ -1,105 +1,130 @@
 <!DOCTYPE html>
-<html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
+<html>
 <head>
     <meta charset="utf-8">
-    <title>{{ __('receipt.receipt_number') }} {{ $sale->reference_number }}</title>
+    <title>Receipt {{ $sale->reference_number }}</title>
     <style>
-        /* Thermal receipt style */
+        @page {
+            margin: 40pt 10pt 10pt 10pt; /* Extra large top margin */
+        }
+        
         body {
-            font-family: 'Courier New', monospace;
-            width: 302px; /* 80mm at 96 DPI */
-            margin: 0 auto;
-            padding: 10px;
-            font-size: 9pt;
-            direction: {{ in_array(app()->getLocale(), ['ar']) ? 'rtl' : 'ltr' }};
+            font-family: Courier, monospace;
+            font-size: 10pt;
+            line-height: 1.2;
+            padding: 0;
+            margin: 0;
         }
-        .header { 
-            text-align: center; 
-            margin-bottom: 10px; 
+        
+        .receipt-content {
+            padding-top: 50pt; /* Extreme top padding */
         }
+        
+        .text-center {
+            text-align: center;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 10pt 0;
+        }
+        
+        .header {
+            margin-bottom: 10pt;
+            padding-top: 30pt; /* Additional top padding */
+        }
+        
         .header h2 {
-            margin: 5px 0;
+            margin: 5pt 0;
             font-size: 12pt;
         }
+        
         .header p {
-            margin: 3px 0;
+            margin: 3pt 0;
         }
-        .items { 
-            width: 100%; 
-            margin: 10px 0;
-            border-collapse: collapse;
-        }
+        
         .items th {
-        border-top: 1px solid #000;
-        border-bottom: 1px solid #000;
-        padding: 3px 0;
-        text-align: left; /* Align header text to left */
-    }
-    
-    .items td {
-        padding: 3px 0;
-        padding-left: 3px; /* Add left padding to content cells */
-        font-size: 8pt;
-        text-align: left; /* Align content to left */
-    }
-        .totals { 
-            margin: 10px 0; 
+            border-top: 1pt solid #000;
+            border-bottom: 1pt solid #000;
+            padding: 3pt 1pt;
+            text-align: left;
+            font-size: 9pt;
+        }
+        
+        .items td {
+            padding: 3pt 1pt;
+            font-size: 8pt;
+        }
+        
+        .totals {
             text-align: right;
-            border-top: 1px solid #000;
-            padding-top: 5px;
+            margin-top: 10pt;
+            border-top: 1pt solid #000;
+            padding-top: 5pt;
         }
+        
         .totals p {
-            margin: 3px 0;
+            margin: 3pt 0;
         }
-        .footer { 
-            text-align: center; 
-            font-size: 8pt; 
-            margin-top: 10px;
-            border-top: 1px solid #000;
-            padding-top: 5px;
+        
+        .footer {
+            text-align: center;
+            margin-top: 15pt;
+            border-top: 1pt solid #000;
+            padding-top: 5pt;
         }
-        /* Add more styles as needed */
+        
+        /* Multiple spacers for extra safety */
+        .spacer-1 { height: 20pt; }
+        .spacer-2 { height: 20pt; }
+        .spacer-3 { height: 20pt; }
     </style>
 </head>
 <body>
-    <div class="header">
-    <h2>{{ $sale->team->name }}</h2>
-        <p>{{ $sale->team->address }}</p>
-        <p>{{ __('receipt.tel') }}: {{ $sale->team->phone }}</p>
-        <p>{{ __('receipt.receipt_number') }}: {{ $sale->reference_number }}</p>
-        <p>{{ __('receipt.date') }}: {{ $sale->sale_date->format('d/m/Y H:i') }}</p>
-    </div>
-
-    <table class="items">
-        <tr>
-        <th>{{ __('receipt.item') }}</th>
-            <th>{{ __('receipt.quantity') }}</th>
-            <th>{{ __('receipt.tax') }}</th>
-            <th>{{ __('receipt.price') }}</th>
-            <th>{{ __('receipt.total') }}</th>
-        </tr>
-        @foreach($sale->items as $item)
-        <tr>
-            <td>{{ $item->product->name }}</td>
-            <td>{{ $item->quantity }}</td>
-            <td>{{ number_format($item->tax_amount, 2) }}</td>
-            <td>{{ number_format($item->unit_price, 2) }}</td>
-            <td>{{ number_format($item->total_price, 2) }}</td>
-        </tr>
-        @endforeach
-    </table>
-
-    <div class="totals">
-        <p>{{ __('receipt.subtotal') }}: {{ number_format($sale->total_amount - $sale->tax_amount, 2) }} {{ __('receipt.currency') }}</p>
-        <p>{{ __('receipt.tax') }}: {{ number_format($sale->tax_amount, 2) }} {{ __('receipt.currency') }}</p>
-        @if($sale->discount_amount > 0)
-        <p>{{ __('receipt.discount') }}: -{{ number_format($sale->discount_amount, 2) }} {{ __('receipt.currency') }}</p>
-        @endif
-        <p><strong>{{ __('receipt.total') }}: {{ number_format($sale->total_amount, 2) }} {{ __('receipt.currency') }}</strong></p>
-    </div>
-
-    <div class="footer">
-        <p>{{ __('receipt.thank_you') }}</p>
+    <!-- Multiple spacer divs to push content down -->
+    <div class="spacer-1"></div>
+    <div class="spacer-2"></div>
+    <div class="spacer-3"></div>
+    
+    <div class="receipt-content">
+        <div class="header text-center">
+            <h2>{{ $sale->team->name }}</h2>
+            <p>{{ $sale->team->address }}</p>
+            <p>Tel: {{ $sale->team->phone }}</p>
+            <p>Receipt #: {{ $sale->reference_number }}</p>
+            <p>Date: {{ $sale->sale_date->format('d/m/Y H:i') }}</p>
+        </div>
+        
+        <table class="items">
+            <tr>
+                <th>Item</th>
+                <th>Qty</th>
+                <th>Price</th>
+                <th>Total</th>
+            </tr>
+            @foreach($sale->items as $item)
+            <tr>
+                <td>{{ $item->product->name }}</td>
+                <td>{{ $item->quantity }}</td>
+                <td>{{ number_format($item->unit_price, 2) }}</td>
+                <td>{{ number_format($item->total_price, 2) }}</td>
+            </tr>
+            @endforeach
+        </table>
+        
+        <div class="totals">
+            <p>Subtotal: {{ number_format($sale->total_amount - $sale->tax_amount, 2) }} DH</p>
+            <p>Tax: {{ number_format($sale->tax_amount, 2) }} DH</p>
+            @if($sale->discount_amount > 0)
+            <p>Discount: -{{ number_format($sale->discount_amount, 2) }} DH</p>
+            @endif
+            <p><strong>Total: {{ number_format($sale->total_amount, 2) }} DH</strong></p>
+        </div>
+        
+        <div class="footer">
+            <p>Thank you for your business</p>
+        </div>
     </div>
 </body>
 </html>

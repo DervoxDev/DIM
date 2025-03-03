@@ -575,13 +575,52 @@ class InvoiceController extends Controller
             // Set locale for this request
             app()->setLocale($locale);
     
-            // Handle team logo
+            // Process logo for DomPDF
             if ($invoice->team->image_path) {
                 $imagePath = storage_path('app/public/' . $invoice->team->image_path);
                 if (file_exists($imagePath)) {
-                    $imageData = base64_encode(file_get_contents($imagePath));
-                    $imageMime = mime_content_type($imagePath);
-                    $invoice->team->logo_data_url = "data:{$imageMime};base64,{$imageData}";
+                    try {
+                        // Get image info
+                        $imgInfo = getimagesize($imagePath);
+                        
+                        // Calculate max dimensions
+                        $maxWidth = 150; // pixels
+                        $maxHeight = 60; // pixels
+                        
+                        // Check if we need to resize
+                        if ($imgInfo[0] > $maxWidth || $imgInfo[1] > $maxHeight) {
+                            // Convert the image to base64
+                            $logoData = file_get_contents($imagePath);
+                            $logoBase64 = 'data:' . mime_content_type($imagePath) . ';base64,' . base64_encode($logoData);
+                            
+                            // Provide the base64 image and dimensions to the view
+                            $invoice->team->logo_data_url = $logoBase64;
+                            
+                            // Also provide dimensions for the img tag
+                            if ($imgInfo[0] > $maxWidth) {
+                                $ratio = $maxWidth / $imgInfo[0];
+                                $width = $maxWidth;
+                                $height = $imgInfo[1] * $ratio;
+                            } else {
+                                $ratio = $maxHeight / $imgInfo[1];
+                                $height = $maxHeight;
+                                $width = $imgInfo[0] * $ratio;
+                            }
+                            
+                            $invoice->team->logo_width = round($width);
+                            $invoice->team->logo_height = round($height);
+                        } else {
+                            // Image is already small enough, convert to base64
+                            $logoData = file_get_contents($imagePath);
+                            $logoBase64 = 'data:' . mime_content_type($imagePath) . ';base64,' . base64_encode($logoData);
+                            $invoice->team->logo_data_url = $logoBase64;
+                            $invoice->team->logo_width = $imgInfo[0];
+                            $invoice->team->logo_height = $imgInfo[1];
+                        }
+                    } catch (\Exception $e) {
+                        \Log::warning("Error processing invoice logo: " . $e->getMessage());
+                        // Continue without logo
+                    }
                 }
             }
     
@@ -596,12 +635,50 @@ class InvoiceController extends Controller
                 \IntlDateFormatter::NONE
             );
     
-            // Prepare formatted data
+            // Define hard-coded fallbacks for missing translations
+            $fallbacks = [
+                'payment_information' => 'Payment Information',
+                'payment_method' => 'Payment Method',
+                'bank_transfer' => 'Bank Transfer',
+                'bank_account' => 'Bank Account',
+                'payment_terms' => 'Payment Terms',
+                'payment_date' => 'Payment Date', 
+                'invoice_number' => 'Invoice Number',
+                'address' => 'Address',
+                'name' => 'Name',
+                'standard_payment_terms' => 'Payment is due within',
+                'days' => 'days',
+                'status' => 'Status'
+            ];
+    
+            // Prepare translations with fallbacks
+            $translations = [];
+            foreach ([
+                'invoice', 'bill', 'bill_to', 'supplier', 'from', 'tax_number',
+                'issue_date', 'due_date', 'description', 'quantity', 'unit_price',
+                'tax', 'discount', 'total', 'subtotal', 'total_amount', 'notes',
+                'thank_you', 'generated_on', 'reference_number', 'attn', 'email', 'phone',
+                'payment_information', 'payment_method', 'bank_transfer', 'bank_account',
+                'payment_terms', 'invoice_number', 'address', 'name', 'standard_payment_terms', 
+                'days', 'status'
+            ] as $key) {
+                $translationKey = "invoice.$key";
+                $translated = __($translationKey);
+                
+                // If translation doesn't exist (returns the key itself), use fallback
+                if ($translated === $translationKey && isset($fallbacks[$key])) {
+                    $translations[$key] = $fallbacks[$key];
+                } else {
+                    $translations[$key] = $translated;
+                }
+            }
+    
+            // Prepare formatted data with proper translations
             $formattedInvoice = [
                 'invoice' => $invoice,
                 'formatted' => [
-                    'issue_date' => $dateFormatter->format($invoice->issue_date),
-                    'due_date' => $dateFormatter->format($invoice->due_date),
+                    'issue_date' => $invoice->issue_date ? $dateFormatter->format($invoice->issue_date) : '',
+                    'due_date' => $invoice->due_date ? $dateFormatter->format($invoice->due_date) : '',
                     'subtotal' => $currencyFormatter->format($invoice->meta_data['subtotal'] ?? 0),
                     'tax_amount' => $currencyFormatter->format($invoice->tax_amount),
                     'discount_amount' => $currencyFormatter->format($invoice->discount_amount),
@@ -617,31 +694,9 @@ class InvoiceController extends Controller
                         'total_price' => $currencyFormatter->format($item->total_price),
                     ];
                 }),
-                'translations' => [
-                    'invoice' => __('invoice.invoice'),
-                    'bill' => __('invoice.bill'),
-                    'bill_to' => __('invoice.bill_to'),
-                    'supplier' => __('invoice.supplier'),
-                    'tax_number' => __('invoice.tax_number'),
-                    'issue_date' => __('invoice.issue_date'),
-                    'due_date' => __('invoice.due_date'),
-                    'description' => __('invoice.description'),
-                    'quantity' => __('invoice.quantity'),
-                    'unit_price' => __('invoice.unit_price'),
-                    'tax' => __('invoice.tax'),
-                    'discount' => __('invoice.discount'),
-                    'total' => __('invoice.total'),
-                    'subtotal' => __('invoice.subtotal'),
-                    'total_amount' => __('invoice.total_amount'),
-                    'notes' => __('invoice.notes'),
-                    'thank_you' => __('invoice.thank_you'),
-                ],
                 'rtl' => in_array($locale, ['ar']), // RTL support for Arabic
             ];
-    
-            // Generate HTML with localized data
-            $html = View::make('invoices.pdf', $formattedInvoice)->render();
-    
+            
             // Create filename with locale
             $filename = "invoice-{$invoice->reference_number}-{$locale}.pdf";
             $tempPath = storage_path('app/public/temp');
@@ -652,21 +707,28 @@ class InvoiceController extends Controller
             
             $pdfPath = $tempPath . '/' . $filename;
     
-            // Configure Browsershot with locale-specific settings
-            $browsershot = Browsershot::html($html)
-                ->setChromePath('/usr/bin/google-chrome-stable')
-                ->format('A4')
-                ->margins(16, 16, 16, 16)
-                ->showBackground();
+            // Generate HTML content 
+            $html = View::make('invoices.dompdf', $formattedInvoice)->render();
     
-            // Add RTL support if needed
-            if (in_array($locale, ['ar'])) {
-                $browsershot->setOption('isRtl', true);
-            }
-    
-            $browsershot->savePdf($pdfPath);
-    
-            // Log activity with locale information
+            // Configure DomPDF
+            $options = new \Dompdf\Options();
+            $options->set('isHtml5ParserEnabled', true);
+            $options->set('isRemoteEnabled', true); // For images
+            $options->set('isPhpEnabled', false);   // Security
+            $options->set('defaultFont', 'Arial');  
+            $options->set('defaultMediaType', 'screen'); // Better for CSS styles
+            $options->set('isFontSubsettingEnabled', true); // Better font handling
+            
+            // Create DomPDF instance
+            $dompdf = new \Dompdf\Dompdf($options);
+            $dompdf->loadHtml($html);
+            $dompdf->setPaper('A4');
+            $dompdf->render();
+            
+            // Save PDF to file
+            file_put_contents($pdfPath, $dompdf->output());
+            
+            // Log activity
             ActivityLog::create([
                 'log_type' => 'Download',
                 'model_type' => "Invoice",
@@ -681,19 +743,38 @@ class InvoiceController extends Controller
                 'meta_data' => ['locale' => $locale],
             ]);
     
+            // Free up memory by removing references to large objects
+            $dompdf = null;
+            $html = null;
+            $formattedInvoice = null;
+            $invoice = null;
+            
+            // Garbage collection
+            if (function_exists('gc_collect_cycles')) {
+                gc_collect_cycles();
+            }
+            
+            // Return PDF
             return response()->download($pdfPath, $filename, [
                 'Content-Type' => 'application/pdf',
             ])->deleteFileAfterSend(true);
     
         } catch (\Exception $e) {
-            \Log::error('PDF Generation Error: ' . $e->getMessage());
+            \Log::error('PDF Generation Error: ' . $e->getMessage(), [
+                'invoice_id' => $id ?? null,
+                'user_id' => $request->user()->id ?? null,
+                'trace' => $e->getTraceAsString()
+            ]);
+            
             return response()->json([
                 'error' => true,
                 'message' => 'Error generating invoice PDF: ' . $e->getMessage(),
-                'details' => $e->getTrace()
+                'details' => config('app.debug') ? $e->getTrace() : null
             ], 500);
         }
     }
+    
+    
     
     
 }

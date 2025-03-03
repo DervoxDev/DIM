@@ -730,34 +730,17 @@ class SaleController extends Controller
     
     public function generateReceipt(Request $request, $id)
     {
-        $user = $request->user();
-        $sale = Sale::where('team_id', $user->team->id)
-                    ->with(['items.product', 'team'])
-                    ->findOrFail($id);
-    
         try {
+            $user = $request->user();
+            $sale = Sale::where('team_id', $user->team->id)
+                        ->with(['items.product', 'team'])
+                        ->findOrFail($id);
+    
             // Set locale based on team's preference
             $locale = $sale->team->locale ?? config('app.locale');
             app()->setLocale($locale);
-    
-            // Number formatter for the current locale
-            $numberFormatter = new \NumberFormatter($locale, \NumberFormatter::DECIMAL);
             
-            // Format sale date according to locale
-            $dateFormatter = new \IntlDateFormatter(
-                $locale,
-                \IntlDateFormatter::LONG,
-                \IntlDateFormatter::SHORT
-            );
-    
-            // Generate HTML
-            $html = View::make('receipts.pdf', [
-                'sale' => $sale,
-                'numberFormatter' => $numberFormatter,
-                'dateFormatter' => $dateFormatter
-            ])->render();
-    
-            // Create filename with locale
+            // Create filename
             $filename = "receipt-{$sale->reference_number}-{$locale}.pdf";
             $tempPath = storage_path('app/public/temp');
             
@@ -767,28 +750,153 @@ class SaleController extends Controller
             
             $pdfPath = $tempPath . '/' . $filename;
     
-            // Configure Browsershot
-            $browsershot = Browsershot::html($html)
-                ->setChromePath('/usr/bin/google-chrome-stable')
-                ->format('A4')
-                ->windowSize(302, 1122)
-                ->margins(5, 5, 5, 5)
-                ->showBackground();
-    
-            // Add RTL support if needed
-            if (in_array($locale, ['ar'])) {
-                $browsershot->setOption('isRtl', true);
+            // Generate HTML with simplified receipt centered on page
+            $html = '<!DOCTYPE html>
+            <html>
+            <head>
+                <meta charset="utf-8">
+                <title>' . __('receipt.receipt_number') . ': ' . $sale->reference_number . '</title>
+                <style>
+                    body {
+                        font-family: Courier, monospace;
+                        font-size: 10pt;
+                        margin: 0;
+                        padding: 100px 0;
+                        display: flex;
+                        justify-content: center;
+                    }
+                    
+                    .receipt {
+                        width: 300px;
+                        border: 1px dashed #ccc;
+                        padding: 20px;
+                        box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+                        background-color: white;
+                    }
+                    
+                    .header {
+                        text-align: center;
+                        margin-bottom: 20px;
+                    }
+                    
+                    h2 {
+                        margin: 5px 0;
+                        font-size: 12pt;
+                    }
+                    
+                    p {
+                        margin: 3px 0;
+                    }
+                    
+                    table {
+                        width: 100%;
+                        border-collapse: collapse;
+                        margin: 15px 0;
+                    }
+                    
+                    th {
+                        border-top: 1px solid #000;
+                        border-bottom: 1px solid #000;
+                        padding: 5px;
+                        text-align: left;
+                    }
+                    
+                    td {
+                        padding: 5px;
+                    }
+                    
+                    .totals {
+                        text-align: right;
+                        margin-top: 15px;
+                        border-top: 1px solid #000;
+                        padding-top: 10px;
+                    }
+                    
+                    .footer {
+                        text-align: center;
+                        margin-top: 20px;
+                        border-top: 1px solid #000;
+                        padding-top: 10px;
+                    }
+                </style>
+            </head>
+            <body>
+                <div class="receipt">
+                    <div class="header">
+                        <h2>' . $sale->team->name . '</h2>
+                        <p>' . $sale->team->address . '</p>
+                        <p>' . __('receipt.tel') . ': ' . $sale->team->phone . '</p>
+                        <p>' . __('receipt.receipt_number') . ': ' . $sale->reference_number . '</p>
+                        <p>' . __('receipt.date') . ': ' . $sale->sale_date->format('d/m/Y H:i') . '</p>
+                    </div>
+                    
+                    <table>
+                        <tr>
+                            <th>' . __('receipt.item') . '</th>
+                            <th>' . __('receipt.quantity') . '</th>
+                            <th>' . __('receipt.tax') . '</th>
+                            <th>' . __('receipt.price') . '</th>
+                            <th>' . __('receipt.total') . '</th>
+                        </tr>';
+            
+            foreach($sale->items as $item) {
+                $html .= '<tr>
+                    <td>' . $item->product->name . '</td>
+                    <td>' . $item->quantity . '</td>
+                    <td>' . number_format($item->tax_amount, 2) . '</td>
+                    <td>' . number_format($item->unit_price, 2) . '</td>
+                    <td>' . number_format($item->total_price, 2) . '</td>
+                </tr>';
             }
+            
+            $html .= '</table>
+                    
+                    <div class="totals">
+                        <p>' . __('receipt.subtotal') . ': ' . number_format($sale->total_amount - $sale->tax_amount, 2) . ' ' . __('receipt.currency') . '</p>
+                        <p>' . __('receipt.tax') . ': ' . number_format($sale->tax_amount, 2) . ' ' . __('receipt.currency') . '</p>';
+            
+            if($sale->discount_amount > 0) {
+                $html .= '<p>' . __('receipt.discount') . ': -' . number_format($sale->discount_amount, 2) . ' ' . __('receipt.currency') . '</p>';
+            }
+            
+            $html .= '<p><strong>' . __('receipt.total') . ': ' . number_format($sale->total_amount, 2) . ' ' . __('receipt.currency') . '</strong></p>
+                    </div>
+                    
+                    <div class="footer">
+                        <p>' . __('receipt.thank_you') . '</p>
+                    </div>
+                </div>
+            </body>
+            </html>';
     
-            $browsershot->savePdf($pdfPath);
-    
-            // Log activity with locale information
+            // Configure DomPDF
+            $options = new \Dompdf\Options();
+            $options->set('isHtml5ParserEnabled', true);
+            $options->set('defaultFont', 'Courier');
+            
+            // Create DomPDF instance
+            $dompdf = new \Dompdf\Dompdf($options);
+            $dompdf->loadHtml($html);
+            
+            // Use standard A4
+            $dompdf->setPaper('A4');
+            
+            $dompdf->render();
+            
+            // Save PDF to file
+            file_put_contents($pdfPath, $dompdf->output());
+            
+            // Log activity
             ActivityLog::create([
                 'log_type' => 'Generate',
                 'model_type' => 'Receipt',
                 'model_id' => $sale->id,
                 'model_identifier' => $sale->reference_number,
                 'user_identifier' => $user->name,
+                'user_id' => $user->id,
+                'user_email' => $user->email,
+                'ip_address' => $request->ip(),
+                'user_agent' => $request->userAgent(),
                 'description' => "Generated receipt for sale {$sale->reference_number} in {$locale}",
                 'meta_data' => ['locale' => $locale]
             ]);
@@ -798,14 +906,21 @@ class SaleController extends Controller
             ])->deleteFileAfterSend(true);
     
         } catch (\Exception $e) {
-            \Log::error('Receipt generation error: ' . $e->getMessage());
+            \Log::error('Receipt generation error: ' . $e->getMessage(), [
+                'sale_id' => $id ?? null,
+                'user_id' => $request->user()->id ?? null,
+                'trace' => $e->getTraceAsString()
+            ]);
+            
             return response()->json([
                 'error' => true,
-                'message' => 'Error generating receipt: ' . $e->getMessage()
+                'message' => 'Error generating receipt: ' . $e->getMessage(),
+                'details' => config('app.debug') ? $e->getTrace() : null
             ], 500);
         }
     }
     
+
     public function getSummary(Request $request)
     {
         $user = $request->user();

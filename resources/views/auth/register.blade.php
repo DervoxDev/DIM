@@ -1,6 +1,5 @@
 @extends('components.layouts.app')
 
-
 @section('title', __('auth.Register'))
 @push('styles')
 <style>
@@ -167,73 +166,73 @@
         }
 
         .form-footer {
-        flex-direction: column;
-        gap: 1rem;
-        align-items: center;
-    }
+            flex-direction: column;
+            gap: 1rem;
+            align-items: center;
+        }
 
         .register-button {
             width: 100%;
         }
         .rtl .form-footer {
-        flex-direction: column;
-    }
-    .register-button,
-    .rtl .register-button {
-        width: 100%;
-        margin: 0;
-        order: 2; /* In mobile, button goes below */
-    }
+            flex-direction: column;
+        }
         .register-button,
-   .rtl .register-button {
-    order: 1; /* Pull the register button to the left */
-    margin: 0;
-}
+        .rtl .register-button {
+            width: 100%;
+            margin: 0;
+            order: 2; /* In mobile, button goes below */
+        }
+        .register-button,
+        .rtl .register-button {
+            order: 1; /* Pull the register button to the left */
+            margin: 0;
+        }
 
-    .rtl .login-link {
-    order: 2; /* Push the login link to the right */
-}
-.login-link,
-    .rtl .login-link {
-        width: 100%;
-        text-align: center;
-        order: 1; /* In mobile, link goes above */
+        .rtl .login-link {
+            order: 2; /* Push the login link to the right */
+        }
+        .login-link,
+        .rtl .login-link {
+            width: 100%;
+            text-align: center;
+            order: 1; /* In mobile, link goes above */
+        }
     }
-    }
-        /* RTL Support */
-        .rtl {
+    /* RTL Support */
+    .rtl {
         direction: rtl;
         text-align: right;
         font-family: 'Arial', 'Tahoma', sans-serif;
     }
     .rtl input::placeholder {
-    font-family: 'Arial', 'Tahoma', sans-serif;
-}
+        font-family: 'Arial', 'Tahoma', sans-serif;
+    }
 
-.rtl .register-header h1 {
-    font-family: 'Arial', 'Tahoma', sans-serif;
-    letter-spacing: normal;
-}
-.rtl .error-message {
-    margin-right: 0;
-    padding-right: 0;
-}
+    .rtl .register-header h1 {
+        font-family: 'Arial', 'Tahoma', sans-serif;
+        letter-spacing: normal;
+    }
+    .rtl .error-message {
+        margin-right: 0;
+        padding-right: 0;
+    }
 
-.rtl .form-input.is-invalid {
-    border-color: #e53e3e;
-    padding-right: 1rem;
-    padding-left: 2.5rem;
-    background-position: left 0.75rem center;
-}
+    .rtl .form-input.is-invalid {
+        border-color: #e53e3e;
+        padding-right: 1rem;
+        padding-left: 2.5rem;
+        background-position: left 0.75rem center;
+    }
 
-.rtl .form-label,
-.rtl .form-input,
-.rtl .error-message,
-.rtl .login-link,
-.rtl .register-button {
-    font-family: 'Arial', 'Tahoma', sans-serif;
-    letter-spacing: normal;
-}
+    .rtl .form-label,
+    .rtl .form-input,
+    .rtl .error-message,
+    .rtl .login-link,
+    .rtl .register-button {
+        font-family: 'Arial', 'Tahoma', sans-serif;
+        letter-spacing: normal;
+    }
     .rtl .form-input {
         text-align: right;
     }
@@ -248,9 +247,9 @@
     }
 
     .rtl .register-button {
-    order: 1; /* Pull the register button to the left */
-    margin: 0;
-}
+        order: 1; /* Pull the register button to the left */
+        margin: 0;
+    }
 
     .rtl .form-label {
         text-align: right;
@@ -273,12 +272,189 @@
         padding: 0.75rem 2rem;
     }
 
+    /* Checkbox styles */
+    .checkbox-group {
+        display: flex;
+        align-items: flex-start;
+        margin-bottom: 1.5rem;
+    }
+
+    .form-checkbox {
+        margin-right: 10px;
+        margin-top: 2px;
+    }
+
+    .rtl .form-checkbox {
+        margin-right: 0;
+        margin-left: 10px;
+    }
+
+    .checkbox-label {
+        font-size: 0.875rem;
+        color: var(--text-color);
+    }
+
+    .terms-link {
+        color: var(--primary-color);
+        text-decoration: none;
+        font-weight: 600;
+    }
+
+    .terms-link:hover {
+        text-decoration: underline;
+    }
+
+    /* Modal styles */
+    .terms-modal {
+        display: none;
+        position: fixed;
+        z-index: 1000;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        overflow: auto;
+        background-color: rgba(0, 0, 0, 0.5);
+        backdrop-filter: blur(5px);
+    }
+
+    .terms-modal-content {
+        background-color: #ffffff;
+        margin: 5% auto;
+        padding: 0;
+        width: 80%;
+        max-width: 800px;
+        max-height: 80vh;
+        border-radius: 12px;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .terms-modal-header {
+        padding: 1.5rem;
+        border-bottom: 1px solid #e2e8f0;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        background-color: var(--primary-color);
+        color: white;
+    }
+
+    .terms-modal-header h2 {
+        margin: 0;
+        font-size: 1.5rem;
+        font-weight: 600;
+    }
+
+    .close-modal {
+        color: white;
+        font-size: 1.75rem;
+        font-weight: bold;
+        cursor: pointer;
+        transition: color 0.3s;
+    }
+
+    .close-modal:hover {
+        color: #f1f1f1;
+    }
+
+    .terms-modal-body {
+        padding: 2rem;
+        overflow-y: auto;
+        flex-grow: 1;
+        line-height: 1.6;
+    }
+
+    .terms-modal-body h3 {
+        margin-top: 0;
+        color: var(--secondary-color);
+        font-weight: 700;
+        font-size: 1.25rem;
+    }
+
+    .terms-modal-body h4 {
+        margin-top: 1.5rem;
+        margin-bottom: 0.5rem;
+        color: var(--secondary-color);
+        font-weight: 600;
+        font-size: 1.1rem;
+    }
+
+    .terms-modal-body p {
+        margin-bottom: 1rem;
+        font-size: 0.95rem;
+        color: var(--text-color);
+    }
+
+    .terms-modal-footer {
+        padding: 1rem 2rem;
+        background-color: #f8fafc;
+        border-top: 1px solid #e2e8f0;
+        text-align: right;
+    }
+
+    .rtl .terms-modal-footer {
+        text-align: left;
+    }
+
+    .accept-terms-button {
+        background-color: var(--primary-color);
+        color: white;
+        padding: 0.70rem 1.5rem;
+        border: none;
+        border-radius: 8px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s;
+    }
+
+    .accept-terms-button:hover {
+        background-color: var(--accent-color);
+        transform: translateY(-1px);
+    }
+
+    /* Dark mode adjustments */
+    .dark .terms-modal-content {
+        background-color: #1e2022;
+        color: #e2e8f0;
+    }
+
+    .dark .terms-modal-header {
+        border-color: #4a5568;
+    }
+
+    .dark .terms-modal-body h3,
+    .dark .terms-modal-body h4 {
+        color: #e2e8f0;
+    }
+
+    .dark .terms-modal-body p {
+        color: #cbd5e0;
+    }
+
+    .dark .terms-modal-footer {
+        background-color: #2d3748;
+        border-color: #4a5568;
+    }
+
+    @media (max-width: 640px) {
+        .terms-modal-content {
+            width: 95%;
+            margin: 5% auto;
+        }
+        
+        .terms-modal-body {
+            padding: 1rem;
+        }
+    }
 </style>
 @endpush
 
 @section('content')
 <section class="register-section">
-<div class="register-container {{ app()->getLocale() === 'ar' ? 'rtl' : '' }}">
+    <div class="register-container {{ app()->getLocale() === 'ar' ? 'rtl' : '' }}">
         <div class="register-header">
             <h1>{{ __('auth.Create Account') }}</h1>
             <p>{{ __('auth.Join our community and start exploring') }}</p>
@@ -340,22 +516,79 @@
                        required>
             </div>
 
+            <div class="form-group checkbox-group">
+                <input type="checkbox" name="terms" id="terms" class="form-checkbox" required>
+                <label for="terms" class="checkbox-label">
+                    {!! __('auth.I agree to the') !!} <a href="#" class="terms-link" id="openTermsModal">{!! __('auth.Terms and Conditions') !!}</a>
+                </label>
+                @error('terms')
+                    <p class="error-message">{{ $message }}</p>
+                @enderror
+            </div>
+
             <div class="form-footer">
                 <a href="{{ route('login') }}" class="login-link">
-                {{ __('auth.Already have an account? Sign in') }}
+                    {{ __('auth.Already have an account? Sign in') }}
                 </a>
                 <button type="submit" class="register-button">
-                {{ __('auth.Create Account') }}
+                    {{ __('auth.Create Account') }}
                 </button>
             </div>
         </form>
+    </div>
+
+    <!-- Terms and Conditions Modal -->
+    <div class="terms-modal" id="termsModal">
+        <div class="terms-modal-content {{ app()->getLocale() === 'ar' ? 'rtl' : '' }}">
+            <div class="terms-modal-header">
+                <h2>{{ __('auth.Terms and Conditions') }}</h2>
+                <span class="close-modal" id="closeTermsModal">&times;</span>
+            </div>
+            <div class="terms-modal-body">
+                <h3>{{ __('auth.DIM - Inventory Management System') }}</h3>
+                <p>{{ __('auth.Last Updated') }}: {{ date('Y-m-d') }}</p>
+                
+                <h4>1. {{ __('auth.Acceptance of Terms') }}</h4>
+                <p>{!! __('auth.terms_acceptance') !!}</p>
+                
+                <h4>2. {{ __('auth.Description of Service') }}</h4>
+                <p>{!! __('auth.terms_description') !!}</p>
+                
+                <h4>3. {{ __('auth.User Registration') }}</h4>
+                <p>{!! __('auth.terms_registration') !!}</p>
+                
+                <h4>4. {{ __('auth.Subscription and Payments') }}</h4>
+                <p>{!! __('auth.terms_subscription') !!}</p>
+                
+                <h4>5. {{ __('auth.Data Privacy and Security') }}</h4>
+                <p>{!! __('auth.terms_privacy') !!}</p>
+                
+                <h4>6. {{ __('auth.User Responsibilities') }}</h4>
+                <p>{!! __('auth.terms_responsibilities') !!}</p>
+                
+                <h4>7. {{ __('auth.Limitation of Liability') }}</h4>
+                <p>{!! __('auth.terms_liability') !!}</p>
+                
+                <h4>8. {{ __('auth.Termination') }}</h4>
+                <p>{!! __('auth.terms_termination') !!}</p>
+                
+                <h4>9. {{ __('auth.Governing Law') }}</h4>
+                <p>{!! __('auth.terms_law') !!}</p>
+                
+                <h4>10. {{ __('auth.Contact Information') }}</h4>
+                <p>{!! __('auth.terms_contact') !!}</p>
+            </div>
+            <div class="terms-modal-footer">
+                <button id="acceptTerms" class="accept-terms-button">{{ __('auth.I Accept') }}</button>
+            </div>
+        </div>
     </div>
 </section>
 @endsection
 
 @push('scripts')
 <script>
-    // Simple password strength checker
+    // Password strength checker
     document.getElementById('password').addEventListener('input', function() {
         const password = this.value;
         const strengthMeter = document.querySelector('.strength-meter div');
@@ -371,6 +604,38 @@
         if (strength === 1) strengthMeter.classList.add('weak');
         if (strength === 2) strengthMeter.classList.add('medium');
         if (strength === 3) strengthMeter.classList.add('strong');
+    });
+
+    // Terms and conditions modal
+    const modal = document.getElementById('termsModal');
+    const openModalBtn = document.getElementById('openTermsModal');
+    const closeModalBtn = document.getElementById('closeTermsModal');
+    const acceptTermsBtn = document.getElementById('acceptTerms');
+    const termsCheckbox = document.getElementById('terms');
+
+    openModalBtn.addEventListener('click', function(e) {
+        e.preventDefault();
+        modal.style.display = 'block';
+        document.body.style.overflow = 'hidden';
+    });
+
+    closeModalBtn.addEventListener('click', function() {
+        modal.style.display = 'none';
+        document.body.style.overflow = '';
+    });
+
+    acceptTermsBtn.addEventListener('click', function() {
+        termsCheckbox.checked = true;
+        modal.style.display = 'none';
+        document.body.style.overflow = '';
+    });
+
+    // Close modal when clicking outside of it
+    window.addEventListener('click', function(event) {
+        if (event.target === modal) {
+            modal.style.display = 'none';
+            document.body.style.overflow = '';
+        }
     });
 </script>
 @endpush

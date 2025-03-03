@@ -7,6 +7,7 @@ use App\Models\ActivityLog;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
+use Carbon\Carbon;
 
 class ClientController extends Controller
 {
@@ -144,68 +145,120 @@ class ClientController extends Controller
 
     public function update(Request $request, $id)
     {
-        $user = $request->user();
-
-        $client = Client::where('team_id', $user->team->id)->find($id);
-
-        if (!$client) {
-            return response()->json([
-                'error' => true,
-                'message' => 'Client not found'
-            ], 404);
-        }
-
-        $validator = Validator::make($request->all(), [
-            'name' => 'required|string|max:255',
-            'contact_person' => 'nullable|string|max:255',
-            'email' => 'nullable|email|max:255',
-            'phone' => 'nullable|string|max:20',
-            'address' => 'nullable|string',
-            'payment_terms' => 'nullable|string',
-            'tax_number' => 'nullable|string',
-            'notes' => 'nullable|string',
-            'status' => 'nullable|in:active,inactive',
-        ]);
-
-        if ($validator->fails()) {
-            return response()->json([
-                'error' => true,
-                'message' => 'Validation error',
-                'errors' => $validator->errors()
-            ], 422);
-        }
-
         try {
-            $oldData = $client->toArray();
-            $client->update($request->all());
-
-            ActivityLog::create([
-                'log_type' => 'Update',
-                'model_type' => "Client",
-                'model_id' => $client->id,
-                'model_identifier' => $client->name,
-                'user_identifier' => $user?->name,
+            $user = $request->user();
+    
+            \Log::info('Updating client', [
+                'client_id' => $id,
                 'user_id' => $user->id,
-                'user_email' => $user?->email,
-                'ip_address' => $request->ip(),
-                'user_agent' => $request->userAgent(),
-                'description' => "Updated client {$client->name}",
-                'old_values' => $oldData,
-                'new_values' => $client->toArray()
+                'request_data' => $request->all()
             ]);
-
-            return response()->json([
-                'message' => 'Client updated successfully',
-                'client' => $client
+    
+            $client = Client::where('team_id', $user->team->id)->find($id);
+    
+            if (!$client) {
+                \Log::warning('Client not found', [
+                    'client_id' => $id,
+                    'team_id' => $user->team->id
+                ]);
+                
+                return response()->json([
+                    'error' => true,
+                    'message' => 'Client not found'
+                ], 404);
+            }
+    
+            $validator = Validator::make($request->all(), [
+                'name' => 'required|string|max:255',
+                'contact_person' => 'nullable|string|max:255',
+                'email' => 'nullable|email|max:255',
+                'phone' => 'nullable|string|max:20',
+                'address' => 'nullable|string',
+                'payment_terms' => 'nullable|string',
+                'tax_number' => 'nullable|string',
+                'notes' => 'nullable|string',
+                'status' => 'nullable|in:active,inactive',
             ]);
-
+    
+            if ($validator->fails()) {
+                \Log::warning('Validation failed', [
+                    'client_id' => $id,
+                    'errors' => $validator->errors()->toArray()
+                ]);
+    
+                return response()->json([
+                    'error' => true,
+                    'message' => 'Validation error',
+                    'errors' => $validator->errors()
+                ], 422);
+            }
+    
+            try {
+                $oldData = $client->toArray();
+                
+                \Log::info('Before update', [
+                    'client_id' => $id,
+                    'old_data' => $oldData
+                ]);
+    
+                $client->update($request->all());
+    
+                \Log::info('After update', [
+                    'client_id' => $id,
+                    'new_data' => $client->toArray()
+                ]);
+    
+                ActivityLog::create([
+                    'log_type' => 'Update',
+                    'model_type' => "Client",
+                    'model_id' => $client->id,
+                    'model_identifier' => $client->name,
+                    'user_identifier' => $user?->name,
+                    'user_id' => $user->id,
+                    'user_email' => $user?->email,
+                    'ip_address' => $request->ip(),
+                    'user_agent' => $request->userAgent(),
+                    'description' => "Updated client {$client->name}",
+                    'old_values' => $oldData,
+                    'new_values' => $client->toArray()
+                ]);
+    
+                \Log::info('Client updated successfully', [
+                    'client_id' => $id,
+                    'client_name' => $client->name
+                ]);
+    
+                return response()->json([
+                    'message' => 'Client updated successfully',
+                    'client' => $client
+                ]);
+    
+            } catch (\Exception $e) {
+                \Log::error('Error updating client', [
+                    'client_id' => $id,
+                    'error' => $e->getMessage(),
+                    'trace' => $e->getTraceAsString()
+                ]);
+    
+                return response()->json([
+                    'error' => true,
+                    'message' => 'Error updating client: ' . $e->getMessage()
+                ], 500);
+            }
+    
         } catch (\Exception $e) {
+            \Log::error('Unexpected error in update method', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+    
             return response()->json([
                 'error' => true,
-                'message' => 'Error updating client'
+                'message' => 'An unexpected error occurred'
             ], 500);
         }
     }
+    
 
     public function destroy(Request $request, $id)
     {
@@ -301,45 +354,59 @@ class ClientController extends Controller
 
     public function getStatement(Request $request, $id)
     {
-        $user = $request->user();
-
-        $client = Client::where('team_id', $user->team->id)->find($id);
-
-        if (!$client) {
+        try {
+            $user = $request->user();
+            
+            // Find client with team scope
+            $client = Client::where('team_id', $user->team->id)->findOrFail($id);
+    
+            // Set date range from client creation to now
+            $startDate = Carbon::parse($client->created_at)->startOfDay();
+            $endDate = now()->endOfDay();
+    
+            $statement = [
+                'client' => [
+                    'id' => $client->id,
+                    'name' => $client->name,
+                    'current_balance' => $client->getCurrentBalance()
+                ],
+                'period' => [
+                    'start_date' => $startDate->toISOString(),
+                    'end_date' => $endDate->toISOString()
+                ],
+                'opening_balance' => $client->getOpeningBalance($startDate),
+                'closing_balance' => $client->getCurrentBalance(),
+                'transactions' => $client->getStatementTransactions($startDate, $endDate),
+                'summary' => [
+                    'total_sales' => DB::table('sales')
+                        ->where('client_id', $client->id)
+                        ->whereBetween('sale_date', [$startDate, $endDate])
+                        ->sum('total_amount'),
+                    'total_payments' => DB::table('cash_transactions')
+                        ->join('sales', 'cash_transactions.transactionable_id', '=', 'sales.id')
+                        ->where('sales.client_id', $client->id)
+                        ->where('cash_transactions.transactionable_type', 'App\Models\Sale')
+                        ->whereBetween('cash_transactions.transaction_date', [$startDate, $endDate])
+                        ->sum('cash_transactions.amount'),
+                    'outstanding_balance' => $client->getCurrentBalance()
+                ]
+            ];
+    
+            return response()->json([
+                'success' => true,
+                'statement' => $statement
+            ]);
+    
+        } catch (\Exception $e) {
+            \Log::error('Statement generation error: ' . $e->getMessage());
             return response()->json([
                 'error' => true,
-                'message' => 'Client not found'
-            ], 404);
+                'message' => 'An error occurred while generating the statement'
+            ], 500);
         }
-
-        $startDate = $request->input('start_date', now()->subMonths(6));
-        $endDate = $request->input('end_date', now());
-
-        $statement = [
-            'client' => $client,
-            'period' => [
-                'start' => $startDate,
-                'end' => $endDate
-            ],
-            'opening_balance' => $client->getOpeningBalance($startDate),
-            'closing_balance' => $client->balance,
-            'transactions' => $client->getStatementTransactions($startDate, $endDate),
-            'summary' => [
-                'total_sales' => $client->sales()
-                    ->whereBetween('sale_date', [$startDate, $endDate])
-                    ->sum('total_amount'),
-                'total_payments' => $client->sales()
-                    ->whereBetween('sale_date', [$startDate, $endDate])
-                    ->sum('paid_amount'),
-                'total_pending' => $client->sales()
-                    ->whereBetween('sale_date', [$startDate, $endDate])
-                    ->where('payment_status', '!=', 'paid')
-                    ->sum(DB::raw('total_amount - paid_amount'))
-            ]
-        ];
-
-        return response()->json([
-            'statement' => $statement
-        ]);
     }
+    
+    
+    
+    
 }

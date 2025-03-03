@@ -1,48 +1,44 @@
 <?php
 
+// resources/lang/en/invoice.php
 return [
-    // Document Types
     'invoice' => 'Invoice',
     'bill' => 'Bill',
-    
-    // Header
-    'tax_number' => 'Tax Number',
     'bill_to' => 'Bill To',
     'supplier' => 'Supplier',
-    'attn' => 'Attn',
-    'email' => 'Email',
-    'phone' => 'Phone',
-    
-    // Dates and Status
+    'from' => 'From',
+    'tax_number' => 'Tax Number',
     'issue_date' => 'Issue Date',
     'due_date' => 'Due Date',
-    'payment_terms' => 'Payment Terms',
-    
-    // Status
-    'status' => [
-        'draft' => 'Draft',
-        'sent' => 'Sent',
-        'paid' => 'Paid',
-        'cancelled' => 'Cancelled',
-    ],
-    
-    // Table Headers
     'description' => 'Description',
     'quantity' => 'Quantity',
     'unit_price' => 'Unit Price',
     'tax' => 'Tax',
     'discount' => 'Discount',
     'total' => 'Total',
-    
-    // Totals
     'subtotal' => 'Subtotal',
-    'tax_amount' => 'Tax',
-    'discount_amount' => 'Discount',
     'total_amount' => 'Total Amount',
-    
-    // Footer
     'notes' => 'Notes',
-    'thank_you' => 'Thank you for your business!',
+    'thank_you' => 'Thank you for your business',
     'generated_on' => 'Generated on',
-    'reference_number' => 'Reference #',
+    'reference_number' => 'Reference Number',
+    'attn' => 'Attn',
+    'email' => 'Email',
+    'phone' => 'Phone',
+    'payment_information' => 'Payment Information',
+    'payment_method' => 'Payment Method',
+    'bank_transfer' => 'Bank Transfer',
+    'bank_account' => 'Bank Account',
+    'payment_terms' => 'Payment Terms',
+    'payment_date' => 'Payment Date',
+    'invoice_number' => 'Invoice Number',
+    'address' => 'Address',
+    'name' => 'Name',
+    'standard_payment_terms' => 'Payment is due within',
+    'days' => 'days',
+    'status' => 'Status',
+    'status.draft' => 'Draft',
+    'status.sent' => 'Sent',
+    'status.paid' => 'Paid',
+    'status.cancelled' => 'Cancelled',
 ];
