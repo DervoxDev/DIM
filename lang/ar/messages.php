@@ -38,8 +38,8 @@ return [
     'Download 64-bit' => 'تحميل 64-بت',
     'Download 32-bit' => 'تحميل 32-بت',
     'Download for macOS' => 'تحميل لنظام ماك',
-    'Download .deb' => 'تحميل .deb',
-    'Download .rpm' => 'تحميل .rpm',
+    'Download .Appimage' => 'تحميل .Appimage',
+
 
     // Pricing Section
     'Choose Your Plan' => 'اختر خطتك',

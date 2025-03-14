@@ -857,11 +857,16 @@
                 <a href="{{ route('download.os', 'windows-64') }}" class="button primary-button">
                     {{ __('messages.Download 64-bit') }}
                 </a>
-                <a href="{{ route('download.os', 'windows-32') }}" class="button primary-button">
+                <!-- <a href="{{ route('download.os', 'windows-32 ') }}" class="button primary-button">
                     {{ __('messages.Download 32-bit') }}
+                </a> -->
+                                <a href="javascript:void(0)" 
+                class="button primary-button disabled" 
+                style="opacity: 0.5; cursor: not-allowed; pointer-events: none;">
+                    {{ __('messages.Download 32-bit') }} ({{ __('messages.Coming Soon') }})
                 </a>
             </div>
-            <div class="version-info">Version 1.0.0 • 68.5 MB</div>
+            <div class="version-info">Version 1.0.0 • 84.5 MB</div>
         </div>
 
         <!-- macOS -->
@@ -872,8 +877,13 @@
             <h3>macOS</h3>
             <p>macOS 10.13 or higher</p>
             <div class="download-buttons">
-                <a href="{{ route('download.os', 'mac') }}" class="button primary-button">
+                <!-- <a href="{{ route('download.os', 'mac') }}" class="button primary-button">
                     {{ __('messages.Download for macOS') }}
+                </a> -->
+                <a href="javascript:void(0)" 
+                class="button primary-button disabled" 
+                style="opacity: 0.5; cursor: not-allowed; pointer-events: none;">
+                    {{ __('messages.Download for macOS') }} ({{ __('messages.Coming Soon') }})
                 </a>
             </div>
             <div class="version-info">Version 1.0.0 • 72.3 MB</div>
@@ -887,11 +897,13 @@
             <h3>Linux</h3>
             <p>Ubuntu, Fedora & more</p>
             <div class="download-buttons">
-                <a href="{{ route('download.os', ['os' => 'linux', 'type' => 'deb']) }}" class="button primary-button">
-                    {{ __('messages.Download .deb') }}
-                </a>
-                <a href="{{ route('download.os', ['os' => 'linux', 'type' => 'rpm']) }}" class="button primary-button">
-                    {{ __('messages.Download .rpm') }}
+                <!-- <a href="{{ route('download.os', ['os' => 'linux', 'type' => 'Appimage']) }}" class="button primary-button">
+                    {{ __('messages.Download .Appimage') }}
+                </a> -->
+                <a href="javascript:void(0)" 
+                class="button primary-button disabled" 
+                style="opacity: 0.5; cursor: not-allowed; pointer-events: none;">
+                    {{ __('messages.Download .Appimage') }} ({{ __('messages.Coming Soon') }})
                 </a>
             </div>
             <div class="version-info">Version 1.0.0 • ~64 MB</div>

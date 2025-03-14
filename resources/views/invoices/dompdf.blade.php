@@ -66,8 +66,8 @@
         }
         
         .logo {
-            max-width: 140pt;
-            max-height: 45pt;
+            max-width: 50pt;
+            max-height: 50pt;
         }
         
         .invoice-info {

@@ -64,8 +64,9 @@ Route::domain('dim.dervox.com')->group(function () {
 Route::get('/home', [HomeController::class, 'index'])->name('home');
 Route::get('/pricing', [PricingController::class, 'index'])->name('pricing');
 
-Route::get('/download', [App\Http\Controllers\DownloadController::class, 'index'])->name('download');
-Route::get('/download/{os}/{type?}', [App\Http\Controllers\DownloadController::class, 'download'])->name('download.os');
+//Route::get('/download', [App\Http\Controllers\DownloadController::class, 'index'])->name('download');
+Route::get('/download/{os}/{arch?}/{type?}', [App\Http\Controllers\DownloadController::class, 'download'])->name('download.os');
+
 
 
 Route::prefix('policies')->group(function () {
