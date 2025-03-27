@@ -15,7 +15,7 @@ class DashboardController extends Controller
         }
 
         // Default dashboard for other roles
-        return view('dashboard');
+        return view('subscriptions');
     }
     private function teamAdminDashboard($user)
     {
@@ -34,6 +34,6 @@ class DashboardController extends Controller
         $workers = $team->users()->where('id', '!=', $user->id)->get();
         $subscription = $team->subscription;
 
-        return view('dashboard', compact('team', 'workers', 'subscription'));
+        return view('subscriptions', compact('team', 'workers', 'subscription'));
     }
 }

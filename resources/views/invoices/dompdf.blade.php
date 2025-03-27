@@ -2,9 +2,9 @@
 <html>
 <head>
     <meta charset="utf-8">
-    <title>{{ __('invoice.invoice') }} {{ $invoice->reference_number }}</title>
+    <title>Invoice Template</title>
     <style>
-        /* Core styles only */
+        /* Core styles */
         body {
             font-family: Arial, sans-serif;
             line-height: 1.4;
@@ -14,13 +14,9 @@
             padding: 0;
         }
         
-        @page {
-            margin: 15mm;
-        }
+        @page { margin: 15mm; }
         
-        .invoice-container {
-            width: 100%;
-        }
+        .invoice-container { width: 100%; }
         
         .primary-color { color: #2563eb; }
         .secondary-color { color: #475569; }
@@ -58,46 +54,13 @@
         }
         
         .header-table,
-        .info-table,
         .items-table,
         .totals-table {
             width: 100%;
             border-collapse: collapse;
         }
         
-        .logo {
-            max-width: 50pt;
-            max-height: 50pt;
-        }
-        
-        .invoice-info {
-            background-color: #f8fafc;
-            border-radius: 4pt;
-            padding: 8pt;
-            border: 1px solid #e2e8f0;
-            margin-bottom: 15pt;
-        }
-        
-        .info-table td {
-            padding: 2pt 4pt;
-            vertical-align: top;
-        }
-        
-        .date-row td {
-            padding-top: 2pt;
-            padding-bottom: 2pt;
-            vertical-align: middle;
-        }
-        
-        .date-label {
-            white-space: nowrap;
-            width: 15%;
-        }
-        
-        .date-value {
-            white-space: nowrap;
-            width: 35%;
-        }
+        .logo { max-width: 50pt; max-height: 50pt; }
         
         .status-badge {
             display: inline-block;
@@ -128,13 +91,9 @@
             vertical-align: top;
         }
         
-        .items-table tr:nth-child(even) {
-            background-color: #f8fafc;
-        }
+        .items-table tr:nth-child(even) { background-color: #f8fafc; }
         
-        .totals-section {
-            margin-top: 15pt;
-        }
+        .totals-section { margin-top: 15pt; }
         
         .totals-table {
             width: 40%;
@@ -146,9 +105,7 @@
             border-top: 1px solid #e2e8f0;
         }
         
-        .totals-table tr:first-child td {
-            border-top: none;
-        }
+        .totals-table tr:first-child td { border-top: none; }
         
         .grand-total {
             font-weight: bold;
@@ -174,182 +131,335 @@
             padding-top: 10pt;
         }
         
-        .client-info {
-            line-height: 1.5;
+        .client-info { line-height: 1.5; }
+        
+        .client-card {
+            margin-bottom: 10pt;
+            padding: 8pt;
+            border: 1px solid #e2e8f0;
+            background-color: #f8fafc;
+            border-radius: 4pt;
         }
+        
+        .tax-info {
+            margin-top: 5pt;
+            font-size: 8pt;
+            color: #475569;
+        }
+        
+        .tax-label {
+            font-weight: bold;
+            margin-right: 4pt;
+        }
+        
+        .invoice-title {
+            text-align: center;
+            margin: 0 0 10pt 0;
+        }
+        
+        .date-table {
+            width: 100%;
+            margin-top: 10pt;
+            border-top: 1px solid #e2e8f0;
+            padding-top: 10pt;
+        }
+        
+        .date-table td { padding: 3pt 0; }
+        
+        .date-label {
+            text-align: right;
+            padding-right: 10pt;
+            font-weight: bold;
+            width: 40%;
+        }
+        
+        .date-value { width: 60%; }
     </style>
 </head>
 <body>
     <div class="invoice-container">
-        <!-- HEADER SECTION WITH LOGO AND COMPANY INFO -->
+        <!-- HEADER WITH MINIMUM DATA -->
         <div class="header">
             <table class="header-table">
                 <tr>
-                    <td width="60%" style="vertical-align: top;">
-                        @if(isset($invoice->team->logo_data_url))
-                            <img class="logo" src="{{ $invoice->team->logo_data_url }}" 
-                                @if(isset($invoice->team->logo_width) && isset($invoice->team->logo_height))
-                                width="{{ $invoice->team->logo_width }}"
-                                height="{{ $invoice->team->logo_height }}"
-                                @endif
-                                alt="Logo">
-                        @endif
+                    <td width="50%" style="vertical-align: top;">
+                        <!-- Company side - MINIMAL -->
                         <h2>{{ $invoice->team->name }}</h2>
-                        <p class="text-sm">
-                            {{ $invoice->team->address ?? '' }}<br>
-                            @if($invoice->team->phone)
-                                {{ $invoice->team->phone }} |
-                            @endif
-                            {{ $invoice->team->email ?? '' }}
-                            @if($invoice->team->tax_number)
-                                <br>{{ __('invoice.tax_number') }}: <strong>{{ $invoice->team->tax_number }}</strong>
-                            @endif
-                        </p>
                     </td>
-                    <td width="40%" style="vertical-align: top; text-align: right;">
-                        <h1>{{ __('invoice.invoice') }}</h1>
-                        <p class="text-bold" style="font-size: 14pt; color: #2563eb;">#{{ $invoice->reference_number }}</p>
-                        <p>
-                            <span class="status-badge status-{{ $invoice->status }}">
-                                {{ $invoice->status }}
-                            </span>
-                        </p>
-                    </td>
-                </tr>
-            </table>
-        </div>
-        
-        <!-- COMPLETELY RESTRUCTURED INFO SECTION -->
-        <div class="invoice-info">
-            <table class="info-table">
-                <!-- First row: Issue Date and Bill To -->
-                <tr class="date-row">
-                    <td class="date-label text-bold">{{ __('invoice.issue_date') }}:</td>
-                    <td class="date-value">
-                        @if($invoice->issue_date)
-                            {{ $invoice->issue_date instanceof \DateTime ? $invoice->issue_date->format('d/m/Y') : date('d/m/Y', strtotime($invoice->issue_date)) }}
-                        @else
-                            -
-                        @endif
-                    </td>
-                    <td width="15%" class="text-bold">{{ $invoice->invoiceable_type === 'App\Models\Sale' ? __('invoice.bill_to') : __('invoice.supplier') }}:</td>
-                    <td width="35%" rowspan="2">
-                        @php
-                            $hasClient = $invoice->invoiceable_type === 'App\Models\Sale' && isset($invoice->invoiceable->client);
-                            $hasSupplier = $invoice->invoiceable_type === 'App\Models\Purchase' && isset($invoice->invoiceable->supplier);
+                    
+                    <td width="50%" style="vertical-align: top;">
+                        <!-- Invoice info side - MINIMAL -->
+                        <h1 class="invoice-title">Invoice #{{ $invoice->reference_number }}</h1>
+                        
+                        <!-- Client card - ADDING CLIENT NAME -->
+                        <div class="client-card">
+                            @php
+                                $clientName = '';
+                                $clientEmail = '';
+                                $clientPhone = '';
+                                $clientAddress = '';
+                                $taxNumber = '';
+                                $ifNumber = '';
+                                $rcNumber = '';
+                                $cnssNumber = '';
+                                $tpNumber = '';
+                                $nisNumber = '';
+                                $nifNumber = '';
+                                $aiNumber = '';
+                                
+                                // Try to get from meta_data
+                                if (isset($invoice->meta_data['contact']) && 
+                                    isset($invoice->meta_data['contact']['data'])) {
+                                    
+                                    $data = $invoice->meta_data['contact']['data'];
+                                    
+                                    // Client name
+                                    if (isset($data['name']) && is_string($data['name'])) {
+                                        $clientName = $data['name'];
+                                    }
+                                    
+                                    // Client email
+                                    if (isset($data['email']) && is_string($data['email'])) {
+                                        $clientEmail = $data['email'];
+                                    }
+                                    
+                                    // Client phone
+                                    if (isset($data['phone']) && is_string($data['phone'])) {
+                                        $clientPhone = $data['phone'];
+                                    }
+                                    
+                                    // Client address
+                                    if (isset($data['address']) && is_string($data['address'])) {
+                                        $clientAddress = $data['address'];
+                                    }
+                                    
+                                    // Tax number
+                                    if (isset($data['tax_number']) && is_string($data['tax_number'])) {
+                                        $taxNumber = $data['tax_number'];
+                                    }
+                                    
+                                    // IF number
+                                    if (isset($data['if_number']) && is_string($data['if_number'])) {
+                                        $ifNumber = $data['if_number'];
+                                    }
+                                    
+                                    // RC number
+                                    if (isset($data['rc_number']) && is_string($data['rc_number'])) {
+                                        $rcNumber = $data['rc_number'];
+                                    }
+                                    
+                                    // CNSS number
+                                    if (isset($data['cnss_number']) && is_string($data['cnss_number'])) {
+                                        $cnssNumber = $data['cnss_number'];
+                                    }
+                                    
+                                    // TP number
+                                    if (isset($data['tp_number']) && is_string($data['tp_number'])) {
+                                        $tpNumber = $data['tp_number'];
+                                    }
+                                    
+                                    // NIS number
+                                    if (isset($data['nis_number']) && is_string($data['nis_number'])) {
+                                        $nisNumber = $data['nis_number'];
+                                    }
+                                    
+                                    // NIF number
+                                    if (isset($data['nif_number']) && is_string($data['nif_number'])) {
+                                        $nifNumber = $data['nif_number'];
+                                    }
+                                    
+                                    // AI number
+                                    if (isset($data['ai_number']) && is_string($data['ai_number'])) {
+                                        $aiNumber = $data['ai_number'];
+                                    }
+                                }
+                                // Try to get from relationship
+                                else if (isset($invoice->invoiceable) && 
+                                        isset($invoice->invoiceable->client)) {
+                                    
+                                    $client = $invoice->invoiceable->client;
+                                    
+                                    // Client name
+                                    if (isset($client->name) && is_string($client->name)) {
+                                        $clientName = $client->name;
+                                    }
+                                    
+                                    // Client email
+                                    if (isset($client->email) && is_string($client->email)) {
+                                        $clientEmail = $client->email;
+                                    }
+                                    
+                                    // Client phone
+                                    if (isset($client->phone) && is_string($client->phone)) {
+                                        $clientPhone = $client->phone;
+                                    }
+                                    
+                                    // Client address
+                                    if (isset($client->address) && is_string($client->address)) {
+                                        $clientAddress = $client->address;
+                                    }
+                                    
+                                    // Tax number
+                                    if (isset($client->tax_number) && is_string($client->tax_number)) {
+                                        $taxNumber = $client->tax_number;
+                                    }
+                                    
+                                    // IF number
+                                    if (isset($client->if_number) && is_string($client->if_number)) {
+                                        $ifNumber = $client->if_number;
+                                    }
+                                    
+                                    // RC number
+                                    if (isset($client->rc_number) && is_string($client->rc_number)) {
+                                        $rcNumber = $client->rc_number;
+                                    }
+                                    
+                                    // CNSS number
+                                    if (isset($client->cnss_number) && is_string($client->cnss_number)) {
+                                        $cnssNumber = $client->cnss_number;
+                                    }
+                                    
+                                    // TP number
+                                    if (isset($client->tp_number) && is_string($client->tp_number)) {
+                                        $tpNumber = $client->tp_number;
+                                    }
+                                    
+                                    // NIS number
+                                    if (isset($client->nis_number) && is_string($client->nis_number)) {
+                                        $nisNumber = $client->nis_number;
+                                    }
+                                    
+                                    // NIF number
+                                    if (isset($client->nif_number) && is_string($client->nif_number)) {
+                                        $nifNumber = $client->nif_number;
+                                    }
+                                    
+                                    // AI number
+                                    if (isset($client->ai_number) && is_string($client->ai_number)) {
+                                        $aiNumber = $client->ai_number;
+                                    }
+                                }
+                            @endphp
                             
-                            // Get entity data from meta_data if invoiceable is null
-                            $entityData = null;
-                            if ($invoice->invoiceable_type === 'App\Models\Sale') {
-                                $entityData = $invoice->invoiceable?->client ?? (object) ($invoice->meta_data['client'] ?? [
-                                    'name' => $invoice->meta_data['client_name'] ?? '[Deleted Client]',
-                                    'email' => $invoice->meta_data['client_email'] ?? '',
-                                    'phone' => $invoice->meta_data['client_phone'] ?? ''
-                                ]);
-                            } else {
-                                $entityData = $invoice->invoiceable?->supplier ?? (object) ($invoice->meta_data['supplier'] ?? [
-                                    'name' => $invoice->meta_data['supplier_name'] ?? '[Deleted Supplier]',
-                                    'email' => $invoice->meta_data['supplier_email'] ?? '',
-                                    'phone' => $invoice->meta_data['supplier_phone'] ?? ''
-                                ]);
-                            }
-                        @endphp
-                        <div class="client-info">
-                            <div><strong>{{ $entityData->name }}</strong></div>
-                            @if(isset($entityData->email) && $entityData->email)
-                                <div>{{ $entityData->email }}</div>
+                            @if($clientName)
+                                <p><strong>{{ $clientName }}</strong></p>
+                                
+                                @if($clientAddress)
+                                    <p>{{ $clientAddress }}</p>
+                                @endif
+                                
+                                @if($clientEmail)
+                                    <p>{{ $clientEmail }}</p>
+                                @endif
+                                
+                                @if($clientPhone)
+                                    <p>{{ $clientPhone }}</p>
+                                @endif
+                                
+                                <!-- Tax fields -->
+                                @if($taxNumber)
+                                <div class="tax-info">
+                                    <span class="tax-label">Tax Number:</span>{{ $taxNumber }}
+                                </div>
+                                @endif
+                                
+                                @if($ifNumber)
+                                <div class="tax-info">
+                                    <span class="tax-label">IF Number:</span>{{ $ifNumber }}
+                                </div>
+                                @endif
+                                
+                                @if($rcNumber)
+                                <div class="tax-info">
+                                    <span class="tax-label">RC Number:</span>{{ $rcNumber }}
+                                </div>
+                                @endif
+                                
+                                @if($cnssNumber)
+                                <div class="tax-info">
+                                    <span class="tax-label">CNSS Number:</span>{{ $cnssNumber }}
+                                </div>
+                                @endif
+                                
+                                @if($tpNumber)
+                                <div class="tax-info">
+                                    <span class="tax-label">TP Number:</span>{{ $tpNumber }}
+                                </div>
+                                @endif
+                                
+                                @if($nisNumber)
+                                <div class="tax-info">
+                                    <span class="tax-label">NIS Number:</span>{{ $nisNumber }}
+                                </div>
+                                @endif
+                                
+                                @if($nifNumber)
+                                <div class="tax-info">
+                                    <span class="tax-label">NIF Number:</span>{{ $nifNumber }}
+                                </div>
+                                @endif
+                                
+                                @if($aiNumber)
+                                <div class="tax-info">
+                                    <span class="tax-label">AI Number:</span>{{ $aiNumber }}
+                                </div>
+                                @endif
                             @endif
-                            @if(isset($entityData->phone) && $entityData->phone)
-                                <div>{{ $entityData->phone }}</div>
-                            @endif
+                            
+                            <!-- Only dates -->
+                            <table class="date-table">
+                                <tr>
+                                    <td class="date-label">Issue Date:</td>
+                                    <td class="date-value">
+                                        {{ date('d/m/Y', strtotime($invoice->issue_date)) }}
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td class="date-label">Status:</td>
+                                    <td class="date-value">
+                                        <span class="status-badge status-{{ $invoice->status }}">
+                                            {{ $invoice->status }}
+                                        </span>
+                                    </td>
+                                </tr>
+                            </table>
                         </div>
                     </td>
                 </tr>
-                <!-- Second row: Due Date -->
-                <tr class="date-row">
-                    <td class="date-label text-bold">{{ __('invoice.due_date') }}:</td>
-                    <td class="date-value">
-                        @if($invoice->due_date)
-                            {{ $invoice->due_date instanceof \DateTime ? $invoice->due_date->format('d/m/Y') : date('d/m/Y', strtotime($invoice->due_date)) }}
-                        @else
-                            -
-                        @endif
-                    </td>
-                    <td>&nbsp;</td><!-- Empty cell under "Bill To:" label -->
-                </tr>
             </table>
         </div>
         
-        <!-- ITEMS TABLE -->
+        <!-- ITEMS TABLE - MINIMAL -->
         <table class="items-table">
             <thead>
                 <tr>
-                    <th width="45%">{{ __('invoice.description') }}</th>
-                    <th width="10%">{{ __('invoice.quantity') }}</th>
-                    <th width="15%">{{ __('invoice.unit_price') }}</th>
-                    <th width="10%">{{ __('invoice.tax') }}</th>
-                    <th width="10%">{{ __('invoice.discount') }}</th>
-                    <th width="10%" class="text-right">{{ __('invoice.total') }}</th>
+                    <th width="70%">Description</th>
+                    <th width="30%" class="text-right">Total</th>
                 </tr>
             </thead>
             <tbody>
                 @foreach($invoice->items as $item)
                 <tr>
-                    <td>
-                        <strong>{{ $item->description }}</strong>
-                        @if($item->notes)
-                            <br><span class="text-sm secondary-color">{{ $item->notes }}</span>
-                        @endif
-                    </td>
-                    <td>{{ $item->quantity }}</td>
-                    <td>{{ number_format($item->unit_price, 2) }}</td>
-                    <td>{{ number_format($item->tax_amount ?? 0, 2) }}</td>
-                    <td>{{ number_format($item->discount_amount ?? 0, 2) }}</td>
-                    <td class="text-right text-bold">{{ number_format($item->total_price, 2) }}</td>
+                    <td>{{ $item->description }}</td>
+                    <td class="text-right">{{ number_format($item->total_price, 2) }} DH</td>
                 </tr>
                 @endforeach
             </tbody>
         </table>
         
-        <!-- TOTALS -->
+        <!-- TOTALS - MINIMAL -->
         <div class="totals-section">
             <table class="totals-table">
                 <tr>
-                    <td width="60%" class="secondary-color">{{ __('invoice.subtotal') }}:</td>
-                    <td width="40%" class="text-right">{{ number_format($invoice->meta_data['subtotal'] ?? 0, 2) }} DH</td>
-                </tr>
-                @if($invoice->tax_amount > 0)
-                <tr>
-                    <td class="secondary-color">{{ __('invoice.tax') }}:</td>
-                    <td class="text-right">{{ number_format($invoice->tax_amount, 2) }} DH</td>
-                </tr>
-                @endif
-                @if($invoice->discount_amount > 0)
-                <tr>
-                    <td class="secondary-color">{{ __('invoice.discount') }}:</td>
-                    <td class="text-right">-{{ number_format($invoice->discount_amount, 2) }} DH</td>
-                </tr>
-                @endif
-                <tr>
-                    <td class="grand-total">{{ __('invoice.total_amount') }}:</td>
+                    <td class="grand-total">Total:</td>
                     <td class="grand-total text-right">{{ number_format($invoice->total_amount, 2) }} DH</td>
                 </tr>
             </table>
         </div>
         
-        <!-- NOTES SECTION -->
-        @if($invoice->notes)
-        <div class="notes-section">
-            <div class="notes-title">{{ __('invoice.notes') }}</div>
-            <p>{{ $invoice->notes }}</p>
-        </div>
-        @endif
-        
-        <!-- FOOTER -->
+        <!-- SIMPLE FOOTER -->
         <div class="footer">
-            <p class="text-bold primary-color">{{ __('invoice.thank_you') }}</p>
-            <p>{{ $invoice->team->name }} &copy; {{ date('Y') }}</p>
-            <p>{{ __('invoice.generated_on') }}: {{ now()->format('d/m/Y H:i:s') }}</p>
+            <p>{{ $invoice->team->name }}</p>
         </div>
     </div>
 </body>

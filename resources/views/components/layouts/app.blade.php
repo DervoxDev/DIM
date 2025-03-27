@@ -949,10 +949,10 @@ input:checked + .cookie-slider:before {
                 <div class="nav-links">
             <div class="nav-links-container">
                 <div class="main-nav-group">
-               
-
+          
+        <a href="{{ route('analytics.dashboard') }}" class="nav-link">{{ __('messages.Dashboard') }}</a>
                     <!-- Dashboard Link -->
-                    <a href="{{ route('dashboard') }}" class="nav-link">{{ __('messages.Dashboard') }}</a>
+                    <a href="{{ route('subscriptions') }}" class="nav-link">{{ __('messages.Subscriptions') }}</a>
                     
                     <!-- Admin Link -->
                     @if(auth()->user()->hasRole('admin'))
@@ -1004,7 +1004,7 @@ input:checked + .cookie-slider:before {
             </div>
         </nav>
 
-        @if(request()->routeIs('dashboard') || request()->routeIs('profile.*'))
+        @if(request()->routeIs('subscriptions') || request()->routeIs('profile.*') || request()->routeIs('analytics.dashboard'))
             @if(isset($header))
                 <header class="bg-white dark:bg-gray-800 shadow mt-16">
                     <div class="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">

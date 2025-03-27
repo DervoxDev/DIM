@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "1e25326d5fbe7e1d0719ee17edcbe021",
+    "content-hash": "30fad106a0827c8d86cbdfd0929883c7",
     "packages": [
         {
             "name": "althinect/filament-spatie-roles-permissions",
@@ -2315,6 +2315,59 @@
                 "source": "https://github.com/kirschbaum-development/eloquent-power-joins/tree/4.2.0"
             },
             "time": "2025-02-13T23:30:29+00:00"
+        },
+        {
+            "name": "kwn/number-to-words",
+            "version": "2.11.2",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/kwn/number-to-words.git",
+                "reference": "c1fede59c3494c2c99b7d8d9ff7242cf89d36db7"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/kwn/number-to-words/zipball/c1fede59c3494c2c99b7d8d9ff7242cf89d36db7",
+                "reference": "c1fede59c3494c2c99b7d8d9ff7242cf89d36db7",
+                "shasum": ""
+            },
+            "require": {
+                "php": ">=7.4"
+            },
+            "require-dev": {
+                "phpunit/phpunit": "^9.6",
+                "squizlabs/php_codesniffer": "^3.7.2"
+            },
+            "type": "library",
+            "autoload": {
+                "psr-4": {
+                    "NumberToWords\\": "src"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Karol Wnuk",
+                    "email": "k.wnuk@ascetic.pl"
+                }
+            ],
+            "description": "Multi language standalone PHP number to words converter. Fully tested, open for extensions and new languages.",
+            "keywords": [
+                "currency",
+                "money",
+                "number",
+                "numbers",
+                "string",
+                "to",
+                "words"
+            ],
+            "support": {
+                "issues": "https://github.com/kwn/number-to-words/issues",
+                "source": "https://github.com/kwn/number-to-words/tree/2.11.2"
+            },
+            "time": "2025-01-07T18:42:09+00:00"
         },
         {
             "name": "laravel/framework",
@@ -4996,6 +5049,59 @@
                 }
             ],
             "time": "2024-04-27T21:32:50+00:00"
+        },
+        {
+            "name": "rmunate/spell-number",
+            "version": "v1.0.0",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/rmunate/SpellNumber.git",
+                "reference": "c225b10c03a82570c0be2ad0a1e916c2637aadcf"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/rmunate/SpellNumber/zipball/c225b10c03a82570c0be2ad0a1e916c2637aadcf",
+                "reference": "c225b10c03a82570c0be2ad0a1e916c2637aadcf",
+                "shasum": ""
+            },
+            "require": {
+                "php": ">=7.4"
+            },
+            "type": "library",
+            "extra": {
+                "branch-alias": {
+                    "dev-main": "1.0.x-dev"
+                }
+            },
+            "autoload": {
+                "psr-4": {
+                    "Rmunate\\Utilities\\": "src/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Raul Mauricio Uñate Castro",
+                    "email": "raulmauriciounate@gmail.com"
+                }
+            ],
+            "description": "Convierta de números a letras, ideal para uso en facturas, remisiones ó similares.",
+            "keywords": [
+                "altum",
+                "letras",
+                "numeros",
+                "rmunate",
+                "spell"
+            ],
+            "support": {
+                "issues": "https://github.com/rmunate/SpellNumber/issues",
+                "source": "https://github.com/rmunate/SpellNumber/tree/v1.0.0"
+            },
+            "abandoned": "illuminate/support",
+            "time": "2023-02-13T12:59:28+00:00"
         },
         {
             "name": "ryangjchandler/blade-capture-directive",

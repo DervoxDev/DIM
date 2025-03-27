@@ -45,4 +45,10 @@ return [
     'thank_you' => 'Merci de votre confiance !',
     'generated_on' => 'Générée le',
     'reference_number' => 'Référence n°',
+
+    'payment_information' => 'Informations de Paiement',
+    'payment_method' => 'Méthode de Paiement',
+    'amount' => 'Montant',
+    'total_paid' => 'Total Payé',
+    'balance_due' => 'Solde à Payer',
 ];

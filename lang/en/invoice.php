@@ -41,4 +41,9 @@ return [
     'status.sent' => 'Sent',
     'status.paid' => 'Paid',
     'status.cancelled' => 'Cancelled',
+    'payment_information' => 'Payment Information',
+    'payment_method' => 'Payment Method',
+    'amount' => 'Amount',
+    'total_paid' => 'Total Paid',
+    'balance_due' => 'Balance Due',
 ];

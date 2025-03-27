@@ -83,42 +83,44 @@ class Sale extends Model
     }
 
     // Helper methods
-    public function addPayment($amount, $cashSource, $paymentDate = null, $referenceNumber = null)
-    {
-        if ($amount > ($this->total_amount - $this->paid_amount)) {
-            throw new \Exception('Payment amount exceeds remaining balance');
-        }
-    
-        $transaction = null;
-    
-        DB::transaction(function () use ($amount, $cashSource, $paymentDate, $referenceNumber, &$transaction) {
-            // Add to cash source
-            $cashSource->deposit($amount, "Payment received for sale #{$this->reference_number}");
-    
-            // Update client balance if client exists
-            if ($this->client_id) {
-                $this->client->updateBalance($amount, 'subtract');
-            }
-    
-            // Update sale payment status
-            $this->paid_amount += $amount;
-            $this->payment_status = $this->paid_amount >= $this->total_amount ? 'paid' : 'partial';
-            $this->save();
-    
-            // Create transaction record
-            $transaction = $this->transactions()->create([
-                'team_id' => $this->team_id,
-                'cash_source_id' => $cashSource->id,
-                'amount' => $amount,
-                'type' => 'Sale Payment',
-                'transaction_date' =>  now(),
-                'reference_number' => $referenceNumber,
-                'description' => "Payment received for sale #{$this->reference_number}",
-            ]);
-        });
-    
-        return $transaction;
+    public function addPayment($amount, $cashSource, $paymentDate = null, $referenceNumber = null, $paymentMethod = 'cash', $notes = null)
+{
+    if ($amount > ($this->total_amount - $this->paid_amount)) {
+        throw new \Exception('Payment amount exceeds remaining balance');
     }
+
+    $transaction = null;
+
+    DB::transaction(function () use ($amount, $cashSource, $paymentDate, $referenceNumber, $paymentMethod, $notes, &$transaction) {
+        // Add to cash source
+        $cashSource->deposit($amount, "Payment received for sale #{$this->reference_number}");
+
+        // Update client balance if client exists
+        if ($this->client_id) {
+            $this->client->updateBalance($amount, 'subtract');
+        }
+
+        // Update sale payment status
+        $this->paid_amount += $amount;
+        $this->payment_status = $this->paid_amount >= $this->total_amount ? 'paid' : 'partial';
+        $this->save();
+
+        // Create transaction record
+        $transaction = $this->transactions()->create([
+            'team_id' => $this->team_id,
+            'cash_source_id' => $cashSource->id,
+            'amount' => $amount,
+            'type' => 'Sale Payment',
+            'payment_method' => $paymentMethod, // Add payment method
+            'transaction_date' => $paymentDate ? new \DateTime($paymentDate) : now(),
+            'reference_number' => $referenceNumber,
+            'description' => $notes ?: "Payment received for sale #{$this->reference_number}",
+        ]);
+    });
+
+    return $transaction;
+}
+
     public function calculateTotals()
     {
         $this->total_amount = $this->items->sum('total_price');

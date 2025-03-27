@@ -20,9 +20,17 @@ class Client extends Model
         'balance',
         'payment_terms',
         'tax_number',
+        'if_number',
+        'rc_number',
+        'cnss_number',
+        'tp_number',
+        'nis_number',
+        'nif_number',
+        'ai_number',
         'notes',
         'status',
     ];
+
 
     protected $casts = [
         'balance' => 'decimal:2',

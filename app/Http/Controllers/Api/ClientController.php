@@ -31,7 +31,11 @@ class ClientController extends Controller
                 $q->where('name', 'like', "%{$searchTerm}%")
                   ->orWhere('email', 'like', "%{$searchTerm}%")
                   ->orWhere('phone', 'like', "%{$searchTerm}%")
-                  ->orWhere('tax_number', 'like', "%{$searchTerm}%");
+                  ->orWhere('tax_number', 'like', "%{$searchTerm}%")
+                  ->orWhere('if_number', 'like', "%{$searchTerm}%")
+                  ->orWhere('rc_number', 'like', "%{$searchTerm}%")
+                  ->orWhere('cnss_number', 'like', "%{$searchTerm}%")
+                  ->orWhere('nif_number', 'like', "%{$searchTerm}%");
             });
         }
 
@@ -76,6 +80,13 @@ class ClientController extends Controller
             'address' => 'nullable|string',
             'payment_terms' => 'nullable|string',
             'tax_number' => 'nullable|string',
+            'if_number' => 'nullable|string',
+            'rc_number' => 'nullable|string',
+            'cnss_number' => 'nullable|string',
+            'tp_number' => 'nullable|string',
+            'nis_number' => 'nullable|string',
+            'nif_number' => 'nullable|string',
+            'ai_number' => 'nullable|string',
             'notes' => 'nullable|string',
         ]);
 
@@ -176,6 +187,13 @@ class ClientController extends Controller
                 'address' => 'nullable|string',
                 'payment_terms' => 'nullable|string',
                 'tax_number' => 'nullable|string',
+                'if_number' => 'nullable|string',
+                'rc_number' => 'nullable|string',
+                'cnss_number' => 'nullable|string',
+                'tp_number' => 'nullable|string',
+                'nis_number' => 'nullable|string',
+                'nif_number' => 'nullable|string',
+                'ai_number' => 'nullable|string',
                 'notes' => 'nullable|string',
                 'status' => 'nullable|in:active,inactive',
             ]);
@@ -405,8 +423,4 @@ class ClientController extends Controller
             ], 500);
         }
     }
-    
-    
-    
-    
 }

@@ -925,7 +925,6 @@
             <div class="price">$0<span>/month</span></div>
             <ul class="features-list">
                 <li><i class="fas fa-check"></i> {{ __('messages.Full Access to All Features') }}</li>
-                <li><i class="fas fa-check"></i> {{ __('messages.Up to 5 Team Members') }}</li>
                 <li><i class="fas fa-check"></i> {{ __('messages.Priority Support') }}</li>
                 <li><i class="fas fa-clock"></i> {{ __('messages.14-Day Trial Period') }}</li>
             </ul>
@@ -944,7 +943,7 @@
 </div>
             <ul class="features-list opacity-75">
                 <li><i class="fas fa-check"></i> {{ __('messages.All Trial Features') }}</li>
-                <li><i class="fas fa-check"></i> {{ __('messages.Up to 50 Users') }}</li>
+                <li><i class="fas fa-check"></i> {{ __('messages.Up to 5 Team Members') }}</li>
                 <li><i class="fas fa-check"></i> {{ __('messages.Advanced Analytics') }}</li>
             </ul>
             <button disabled class="button secondary-button opacity-75">

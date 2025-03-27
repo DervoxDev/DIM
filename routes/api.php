@@ -132,4 +132,11 @@
             
 
         });
+        Route::prefix('analytics')->group(function () {
+            Route::get('/sales', [DashboardAnalyticsController::class, 'getSaleAnalytics']);
+            Route::get('/purchases', [DashboardAnalyticsController::class, 'getPurchaseAnalytics']);
+            Route::get('/inventory', [DashboardAnalyticsController::class, 'getInventoryAnalytics']);
+            Route::get('/customers', [DashboardAnalyticsController::class, 'getCustomerAnalytics']);
+            Route::get('/dashboard', [DashboardAnalyticsController::class, 'getOverallDashboard']);
+        });
     });

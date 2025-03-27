@@ -11,6 +11,7 @@ use App\Models\Purchase;
 use App\Models\PurchaseItem;
 use App\Models\InvoiceItem;
 use App\Models\Invoice;
+use App\Models\CashSource;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
@@ -64,11 +65,28 @@ class SaleController extends Controller
                   ->orWhere('notes', 'like', "%{$searchTerm}%");
             });
         }
+ // Primary Sort
+ $primarySortField = $request->get('sort_by', 'reference_number');
+ $sortDirection = $request->get('sort_direction', 'desc');
+ 
+ // Apply main sorting
+ $query->orderBy($primarySortField, $sortDirection);
+ 
+ // Apply secondary sorting (always sort by these fields secondarily)
+ if ($primarySortField !== 'sale_date') {
+     $query->orderBy('sale_date', 'asc');
+ }
+ 
+ if ($primarySortField !== 'created_at') {
+     $query->orderBy('created_at', 'desc');
+ }
+ 
+ // For the case where primary sort is sale_date, 
+ // we can additionally sort sales happening on the same date
+ if ($primarySortField === 'sale_date') {
+     $query->orderBy('id', $sortDirection); // Using ID ensures consistent ordering
+ }
 
-        // Sort
-        $sortField = $request->get('sort_by', 'sale_date');
-        $sortDirection = $request->get('sort_direction', 'desc');
-        $query->orderBy($sortField, $sortDirection);
 
         $sales = $query->paginate($request->input('per_page', 15));
 
@@ -395,23 +413,28 @@ class SaleController extends Controller
     public function update(Request $request, $id)
     {
         $user = $request->user();
-    
+        
+        \Log::debug('Sale update started', [
+            'sale_id' => $id,
+            'user_id' => $user->id
+        ]);
+        
         $sale = Sale::where('team_id', $user->team->id)->find($id);
-    
+        
         if (!$sale) {
             return response()->json([
                 'error' => true,
                 'message' => 'Sale not found'
             ], 404);
         }
-    
+        
         if ($sale->status === 'completed') {
             return response()->json([
                 'error' => true,
                 'message' => 'Cannot update completed sale'
             ], 400);
         }
-    
+        
         $validator = Validator::make($request->all(), [
             'sale_date' => 'sometimes|required|date',
             'due_date' => 'nullable|date|after_or_equal:sale_date',
@@ -426,7 +449,7 @@ class SaleController extends Controller
             'tax_amount' => 'required|numeric|min:0',
             'discount_amount' => 'required|numeric|min:0',
         ]);
-    
+        
         if ($validator->fails()) {
             return response()->json([
                 'error' => true,
@@ -434,35 +457,40 @@ class SaleController extends Controller
                 'errors' => $validator->errors()
             ], 422);
         }
-    
+        
         try {
             DB::beginTransaction();
-    
-            // Store original payment status and old data
+            
+            // Store original values for later comparison
+            $originalSale = clone $sale;
+            $originalTotalAmount = $sale->total_amount;
             $originalPaymentStatus = $sale->payment_status;
+            $originalPaidAmount = $sale->paid_amount;
             $oldData = $sale->toArray();
-    
-            // Prepare sale data with preserved payment status
-            $saleData = array_merge($request->all(), [
-                'payment_status' => $originalPaymentStatus
+            
+            \Log::debug('Original sale data', [
+                'original_total' => $originalTotalAmount,
+                'original_paid' => $originalPaidAmount,
+                'original_payment_status' => $originalPaymentStatus
             ]);
-    
-            // Update sale basic information
-            $sale->update($saleData);
-    
-            // Handle items if present in request
+            
+            // Update the inventory first
             if ($request->has('items')) {
-                // First, restore old quantities to stock
+                // Restore old quantities to stock
                 foreach ($sale->items as $oldItem) {
                     $product = Product::find($oldItem->product_id);
                     if ($product) {
+                        \Log::debug('Restoring product to stock', [
+                            'product_id' => $product->id, 
+                            'quantity' => $oldItem->quantity
+                        ]);
                         $product->updateStock($oldItem->quantity, 'add');
                     }
                 }
-    
+                
                 // Delete old items
                 $sale->items()->delete();
-    
+                
                 // Add new items and update stock
                 foreach ($request->items as $item) {
                     $product = Product::findOrFail($item['product_id']);
@@ -471,21 +499,113 @@ class SaleController extends Controller
                     if ($product->quantity < $item['quantity']) {
                         throw new \Exception("Insufficient stock for product: {$product->name}");
                     }
-    
+                    
                     // Create new sale item
-                    $sale->items()->create([
+                    $saleItem = $sale->items()->create([
                         'product_id' => $item['product_id'],
                         'quantity' => $item['quantity'],
                         'unit_price' => $item['unit_price'],
                         'tax_rate' => $item['tax_rate'] ?? 0,
                         'total_price' => ($item['quantity'] * $item['unit_price']) * (1 + ($item['tax_rate'] ?? 0) / 100)
                     ]);
-    
+                    
+                    \Log::debug('Created sale item', [
+                        'item_id' => $saleItem->id,
+                        'product_id' => $item['product_id'],
+                        'quantity' => $item['quantity']
+                    ]);
+                    
                     // Update stock
                     $product->updateStock($item['quantity'], 'subtract');
                 }
             }
-    
+            
+            // Update sale data except payment status (will adjust later)
+            $saleData = $request->except('payment_status');
+            $sale->update($saleData);
+            
+            // Now handle the cash source adjustment if needed
+            $newTotalAmount = $request->input('total_amount', $originalTotalAmount);
+            
+            \Log::debug('Comparing totals', [
+                'old_total' => $originalTotalAmount,
+                'new_total' => $newTotalAmount,
+                'difference' => $originalTotalAmount - $newTotalAmount
+            ]);
+            
+            // If this is a paid or partially paid sale and the total amount has changed
+            if (($originalPaymentStatus == 'paid' || $originalPaymentStatus == 'partial') &&
+                $originalTotalAmount != $newTotalAmount) {
+                
+                $cashSource = CashSource::find($sale->cash_source_id);
+                if (!$cashSource) {
+                    throw new \Exception("Cash source not found");
+                }
+                
+                // If new total is less than original total and there were payments
+                if ($newTotalAmount < $originalTotalAmount && $originalPaidAmount > 0) {
+                    $amountReduction = $originalTotalAmount - $newTotalAmount;
+                    
+                    // Only adjust up to the amount already paid
+                    $adjustmentAmount = min($amountReduction, $originalPaidAmount);
+                    
+                    if ($adjustmentAmount > 0) {
+                        \Log::debug('Withdrawing from cash source due to reduced total', [
+                            'cash_source_id' => $cashSource->id,
+                            'amount' => $adjustmentAmount
+                        ]);
+                        
+                        // Create a withdrawal transaction
+                        $cashSource->withdraw($adjustmentAmount, 
+                            "Adjustment due to modified sale #{$sale->reference_number} (total reduced)"
+                        );
+                        
+                        // Record transaction linked to sale
+                        $sale->transactions()->create([
+                            'team_id' => $sale->team_id,
+                            'cash_source_id' => $cashSource->id,
+                            'amount' => -$adjustmentAmount,  // negative amount for withdrawal
+                            'type' => 'Sale Adjustment',
+                            'transaction_date' => now(),
+                            'reference_number' => 'ADJ-' . time(),
+                            'description' => "Adjustment due to modified sale (total reduced)"
+                        ]);
+                        
+                        // Adjust the paid amount
+                        if ($originalPaidAmount <= $newTotalAmount) {
+                            // No change to payment status if still has balance
+                            $sale->payment_status = $originalPaidAmount == $newTotalAmount ? 'paid' : 'partial';
+                        } else {
+                            // If paid more than new total, adjust paid amount and set to paid
+                            $sale->paid_amount = $newTotalAmount;
+                            $sale->payment_status = 'paid';
+                        }
+                        
+                        $sale->save();
+                        
+                        \Log::debug('Updated payment status after adjustment', [
+                            'new_payment_status' => $sale->payment_status,
+                            'adjusted_paid_amount' => $sale->paid_amount
+                        ]);
+                    }
+                }
+                // If new total is greater than original and was fully paid
+                else if ($newTotalAmount > $originalTotalAmount && $originalPaymentStatus == 'paid') {
+                    // Change to partially paid
+                    $sale->payment_status = 'partial';
+                    $sale->save();
+                    
+                    \Log::debug('Changed payment status to partial due to increased total', [
+                        'original_total' => $originalTotalAmount,
+                        'new_total' => $newTotalAmount
+                    ]);
+                }
+            } else {
+                // Preserve original payment status if no adjustments needed
+                $sale->payment_status = $originalPaymentStatus;
+                $sale->save();
+            }
+            
             // Log activity
             ActivityLog::create([
                 'log_type' => 'Update',
@@ -501,25 +621,31 @@ class SaleController extends Controller
                 'old_values' => $oldData,
                 'new_values' => $sale->fresh()->toArray()
             ]);
-    
+            
             DB::commit();
-    
+            
+            \Log::info('Sale updated successfully', [
+                'sale_id' => $sale->id,
+                'new_total' => $sale->total_amount,
+                'new_paid_amount' => $sale->paid_amount,
+                'new_payment_status' => $sale->payment_status
+            ]);
+            
             return response()->json([
                 'message' => 'Sale updated successfully',
                 'sale' => $sale->fresh(['items.product', 'client', 'cashSource'])
             ]);
-    
+        
         } catch (\Exception $e) {
             DB::rollBack();
             
             \Log::error('Sale update failed: ' . $e->getMessage(), [
                 'sale_id' => $id,
                 'user_id' => $user->id,
-                'request_data' => $request->all(),
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString()
             ]);
-    
+            
             return response()->json([
                 'error' => true,
                 'message' => 'Error updating sale: ' . $e->getMessage()
@@ -531,23 +657,24 @@ class SaleController extends Controller
     public function addPayment(Request $request, $id)
     {
         $user = $request->user();
-
+    
         $sale = Sale::where('team_id', $user->team->id)->find($id);
-
+    
         if (!$sale) {
             return response()->json([
                 'error' => true,
                 'message' => 'Sale not found'
             ], 404);
         }
-
+    
         $validator = Validator::make($request->all(), [
             'amount' => 'required|numeric|min:0.01',
-          //  'payment_date' => 'required|date',
+            'payment_date' => 'nullable|date',
             'notes' => 'nullable|string',
-            'reference_number' => 'nullable|string'
+            'reference_number' => 'nullable|string',
+            'payment_method' => 'nullable|string' // Add payment method validation
         ]);
-
+    
         if ($validator->fails()) {
             return response()->json([
                 'error' => true,
@@ -555,14 +682,36 @@ class SaleController extends Controller
                 'errors' => $validator->errors()
             ], 422);
         }
-
+    
+        // Use default cash_source_id from sale if none provided
+        $cashSourceId = $request->cash_source_id ?? $sale->cash_source_id;
+        $cashSource = CashSource::find($cashSourceId);
+        
+        if (!$cashSource) {
+            return response()->json([
+                'error' => true,
+                'message' => 'Cash source not found'
+            ], 404);
+        }
+    
         try {
             DB::beginTransaction();
+            
             $referenceNumber = $request->reference_number ?? 
             'PAY-' . date('Ymd-His') . '-' . str_pad($sale->id, 4, '0', STR_PAD_LEFT);
-            $transaction = $sale->addPayment($request->amount, $sale->cashSource ,  $request->payment_date,
-            $referenceNumber);
-
+            
+            // Use the payment method from request or default to 'cash'
+            $paymentMethod = $request->payment_method ?? 'cash';
+            
+            $transaction = $sale->addPayment(
+                $request->amount, 
+                $cashSource,
+                $request->payment_date,
+                $referenceNumber,
+                $paymentMethod,
+                $request->notes
+            );
+    
             ActivityLog::create([
                 'log_type' => 'Payment',
                 'model_type' => "Sale",
@@ -573,18 +722,18 @@ class SaleController extends Controller
                 'user_email' => $user?->email,
                 'ip_address' => $request->ip(),
                 'user_agent' => $request->userAgent(),
-                'description' => "Added payment of {$request->amount} to sale {$sale->reference_number}",
+                'description' => "Added {$paymentMethod} payment of {$request->amount} to sale {$sale->reference_number}",
                 'new_values' => $transaction->toArray()
             ]);
-
+    
             DB::commit();
-
+    
             return response()->json([
                 'message' => 'Payment added successfully',
                 'sale' => $sale->fresh(['items.product', 'client', 'cashSource']),
                 'transaction' => $transaction
             ]);
-
+    
         } catch (\Exception $e) {
             DB::rollBack();
             return response()->json([
@@ -593,141 +742,300 @@ class SaleController extends Controller
             ], 400);
         }
     }
-
+    
+    // public function generateInvoice(Request $request, $id)
+    // {
+    //     $user = $request->user();
+    //     $model = Sale::where('team_id', $user->team->id)->with(['items', 'client'])->find($id);
+    
+    //     if (!$model) {
+    //         return response()->json([
+    //             'error' => true,
+    //             'message' => 'Record not found'
+    //         ], 404);
+    //     }
+    
+    //     // Reference number generation code remains the same...
+    //     $lastInvoice = Invoice::where('team_id', $user->team->id)
+    //         ->withTrashed()
+    //         ->where('reference_number', 'like', "INV-" . date('Y') . "-%")
+    //         ->orderBy('id', 'desc')
+    //         ->first();
+    
+    //     if ($lastInvoice) {
+    //         $lastNumber = (int) substr($lastInvoice->reference_number, -6);
+    //         $nextNumber = $lastNumber + 1;
+    //     } else {
+    //         $nextNumber = 1;
+    //     }
+    
+    //     $referenceNumber = "INV-" . date('Y') . "-" . str_pad($nextNumber, 6, '0', STR_PAD_LEFT);
+    
+    //     while (Invoice::where('reference_number', $referenceNumber)->withTrashed()->exists()) {
+    //         $nextNumber++;
+    //         $referenceNumber = "INV-" . date('Y') . "-" . str_pad($nextNumber, 6, '0', STR_PAD_LEFT);
+    //     }
+    
+    //     try {
+    //         DB::beginTransaction();
+    
+    //         $invoice = new Invoice();
+    //         $invoice->team_id = $user->team->id;
+    //         $invoice->invoiceable_type = get_class($model);
+    //         $invoice->invoiceable_id = $model->id;
+    //         $invoice->reference_number = $referenceNumber;
+    //         $invoice->total_amount = $model->total_amount;
+    //         $invoice->tax_amount = $model->tax_amount;
+    //         $invoice->discount_amount = $model->discount_amount;
+    //         $invoice->status = 'draft';
+    //         $invoice->issue_date = now();
+    //         $invoice->due_date = $model->due_date;
+            
+    //         // Prepare contact data based on whether client exists
+    //         $contactData = null;
+    //         if ($model instanceof Purchase) {
+    //             $contactData = $model->supplier ? 
+    //                 ['type' => 'supplier', 'data' => $model->supplier->toArray()] : 
+    //                 ['type' => 'supplier', 'data' => null];
+    //         } else {
+    //             $contactData = $model->client ? 
+    //                 ['type' => 'client', 'data' => $model->client->toArray()] : 
+    //                 ['type' => 'client', 'data' => null];
+    //         }
+            
+    //         // Set meta_data with null check for items
+    //         $invoice->meta_data = [
+    //             'source_type' => $model instanceof Purchase ? 'purchase' : 'sale',
+    //             'source_reference' => $model->reference_number,
+    //             'source_date' => $model->created_at,
+    //             'contact' => $contactData,
+    //             'items_data' => $model->items->map(function($item) {
+    //                 return [
+    //                     'product_id' => $item->product_id,
+    //                     'product_name' => $item->product?->name ?? 'Unknown Product',
+    //                     'quantity' => $item->quantity,
+    //                     'unit_price' => $item->unit_price,
+    //                     'tax_rate' => $item->tax_rate,
+    //                     'discount_amount' => $item->discount_amount,
+    //                     'total_price' => $item->total_price,
+    //                     'is_package' => $item->is_package ?? false,
+    //                     'package_id' => $item->package_id ?? null,
+    //                     'total_pieces' => $item->total_pieces ?? $item->quantity
+    //                 ];
+    //             })->toArray()
+    //         ];
+            
+    //         $invoice->save();
+    
+    //         // Create invoice items with null checks
+    //         foreach ($model->items as $sourceItem) {
+    //             $invoice->items()->create([
+    //                 'description' => $sourceItem->product?->name ?? 'Unknown Product',
+    //                 'quantity' => $sourceItem->quantity,
+    //                 'unit_price' => $sourceItem->unit_price,
+    //                 'total_price' => $sourceItem->total_price,
+    //                 'notes' => $sourceItem->notes ?? ''
+    //             ]);
+    //         }
+    
+    //         ActivityLog::create([
+    //             'log_type' => 'Create',
+    //             'model_type' => "Invoice",
+    //             'model_id' => $invoice->id,
+    //             'model_identifier' => $invoice->reference_number,
+    //             'user_identifier' => $user?->name,
+    //             'user_id' => $user->id,
+    //             'user_email' => $user?->email,
+    //             'ip_address' => $request->ip(),
+    //             'user_agent' => $request->userAgent(),
+    //             'description' => "Generated invoice {$invoice->reference_number} from " . 
+    //                            ($model instanceof Purchase ? "purchase" : "sale") . 
+    //                            " {$model->reference_number}",
+    //             'new_values' => $invoice->toArray()
+    //         ]);
+    
+    //         DB::commit();
+    
+    //         return response()->json([
+    //             'message' => 'Invoice generated successfully',
+    //             'invoice' => $invoice->load('items')
+    //         ]);
+    
+    //     } catch (\Exception $e) {
+    //         DB::rollBack();
+    //         \Log::error('Invoice generation error', [
+    //             'error' => $e->getMessage(),
+    //             'trace' => $e->getTraceAsString(),
+    //             'model_id' => $id,
+    //             'user_id' => $user->id
+    //         ]);
+            
+    //         return response()->json([
+    //             'error' => true,
+    //             'message' => 'Error generating invoice: ' . $e->getMessage()
+    //         ], 500);
+    //     }
+    // }
     public function generateInvoice(Request $request, $id)
-    {
-        $user = $request->user();
-        $model = Sale::where('team_id', $user->team->id)->with(['items', 'client'])->find($id);
-    
-        if (!$model) {
-            return response()->json([
-                'error' => true,
-                'message' => 'Record not found'
-            ], 404);
-        }
-    
-        // Reference number generation code remains the same...
-        $lastInvoice = Invoice::where('team_id', $user->team->id)
-            ->withTrashed()
-            ->where('reference_number', 'like', "INV-" . date('Y') . "-%")
-            ->orderBy('id', 'desc')
-            ->first();
-    
-        if ($lastInvoice) {
-            $lastNumber = (int) substr($lastInvoice->reference_number, -6);
-            $nextNumber = $lastNumber + 1;
-        } else {
-            $nextNumber = 1;
-        }
-    
-        $referenceNumber = "INV-" . date('Y') . "-" . str_pad($nextNumber, 6, '0', STR_PAD_LEFT);
-    
-        while (Invoice::where('reference_number', $referenceNumber)->withTrashed()->exists()) {
-            $nextNumber++;
-            $referenceNumber = "INV-" . date('Y') . "-" . str_pad($nextNumber, 6, '0', STR_PAD_LEFT);
-        }
-    
-        try {
-            DB::beginTransaction();
-    
-            $invoice = new Invoice();
-            $invoice->team_id = $user->team->id;
-            $invoice->invoiceable_type = get_class($model);
-            $invoice->invoiceable_id = $model->id;
-            $invoice->reference_number = $referenceNumber;
-            $invoice->total_amount = $model->total_amount;
-            $invoice->tax_amount = $model->tax_amount;
-            $invoice->discount_amount = $model->discount_amount;
-            $invoice->status = 'draft';
-            $invoice->issue_date = now();
-            $invoice->due_date = $model->due_date;
-            
-            // Prepare contact data based on whether client exists
-            $contactData = null;
-            if ($model instanceof Purchase) {
-                $contactData = $model->supplier ? 
-                    ['type' => 'supplier', 'data' => $model->supplier->toArray()] : 
-                    ['type' => 'supplier', 'data' => null];
-            } else {
-                $contactData = $model->client ? 
-                    ['type' => 'client', 'data' => $model->client->toArray()] : 
-                    ['type' => 'client', 'data' => null];
-            }
-            
-            // Set meta_data with null check for items
-            $invoice->meta_data = [
-                'source_type' => $model instanceof Purchase ? 'purchase' : 'sale',
-                'source_reference' => $model->reference_number,
-                'source_date' => $model->created_at,
-                'contact' => $contactData,
-                'items_data' => $model->items->map(function($item) {
-                    return [
-                        'product_id' => $item->product_id,
-                        'product_name' => $item->product?->name ?? 'Unknown Product',
-                        'quantity' => $item->quantity,
-                        'unit_price' => $item->unit_price,
-                        'tax_rate' => $item->tax_rate,
-                        'discount_amount' => $item->discount_amount,
-                        'total_price' => $item->total_price,
-                        'is_package' => $item->is_package ?? false,
-                        'package_id' => $item->package_id ?? null,
-                        'total_pieces' => $item->total_pieces ?? $item->quantity
-                    ];
-                })->toArray()
-            ];
-            
-            $invoice->save();
-    
-            // Create invoice items with null checks
-            foreach ($model->items as $sourceItem) {
-                $invoice->items()->create([
-                    'description' => $sourceItem->product?->name ?? 'Unknown Product',
-                    'quantity' => $sourceItem->quantity,
-                    'unit_price' => $sourceItem->unit_price,
-                    'total_price' => $sourceItem->total_price,
-                    'notes' => $sourceItem->notes ?? ''
-                ]);
-            }
-    
-            ActivityLog::create([
-                'log_type' => 'Create',
-                'model_type' => "Invoice",
-                'model_id' => $invoice->id,
-                'model_identifier' => $invoice->reference_number,
-                'user_identifier' => $user?->name,
-                'user_id' => $user->id,
-                'user_email' => $user?->email,
-                'ip_address' => $request->ip(),
-                'user_agent' => $request->userAgent(),
-                'description' => "Generated invoice {$invoice->reference_number} from " . 
-                               ($model instanceof Purchase ? "purchase" : "sale") . 
-                               " {$model->reference_number}",
-                'new_values' => $invoice->toArray()
-            ]);
-    
-            DB::commit();
-    
-            return response()->json([
-                'message' => 'Invoice generated successfully',
-                'invoice' => $invoice->load('items')
-            ]);
-    
-        } catch (\Exception $e) {
-            DB::rollBack();
-            \Log::error('Invoice generation error', [
-                'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString(),
-                'model_id' => $id,
-                'user_id' => $user->id
-            ]);
-            
-            return response()->json([
-                'error' => true,
-                'message' => 'Error generating invoice: ' . $e->getMessage()
-            ], 500);
-        }
+{
+    $user = $request->user();
+    $model = Sale::where('team_id', $user->team->id)
+        ->with(['items', 'client', 'transactions']) // Add transactions to eager loading
+        ->find($id);
+
+    if (!$model) {
+        return response()->json([
+            'error' => true,
+            'message' => 'Record not found'
+        ], 404);
     }
-    
+
+    // Reference number generation code remains the same...
+    $lastInvoice = Invoice::where('team_id', $user->team->id)
+        ->withTrashed()
+        ->where('reference_number', 'like', "INV-" . date('Y') . "-%")
+        ->orderBy('id', 'desc')
+        ->first();
+
+    if ($lastInvoice) {
+        $lastNumber = (int) substr($lastInvoice->reference_number, -6);
+        $nextNumber = $lastNumber + 1;
+    } else {
+        $nextNumber = 1;
+    }
+
+    $referenceNumber = "INV-" . date('Y') . "-" . str_pad($nextNumber, 6, '0', STR_PAD_LEFT);
+
+    while (Invoice::where('reference_number', $referenceNumber)->withTrashed()->exists()) {
+        $nextNumber++;
+        $referenceNumber = "INV-" . date('Y') . "-" . str_pad($nextNumber, 6, '0', STR_PAD_LEFT);
+    }
+
+    try {
+        DB::beginTransaction();
+
+        // Get payment methods information
+        $paymentMethods = [];
+        
+        if (!($model instanceof Purchase)) {
+            // Only for sales, not purchases
+            $paymentMethods = $model->transactions()
+                ->select('payment_method', DB::raw('SUM(amount) as total_amount'))
+                ->whereNotNull('payment_method')
+                ->groupBy('payment_method')
+                ->get()
+                ->map(function($transaction) {
+                    return [
+                        'method' => $transaction->payment_method,
+                        'amount' => $transaction->total_amount,
+                        // Format the payment method name for display
+                        'method_name' => trans('payments.' . $transaction->payment_method, [], 'en') ?: ucfirst(str_replace('_', ' ', $transaction->payment_method))
+                    ];
+                })
+                ->toArray();
+        }
+
+        $invoice = new Invoice();
+        $invoice->team_id = $user->team->id;
+        $invoice->invoiceable_type = get_class($model);
+        $invoice->invoiceable_id = $model->id;
+        $invoice->reference_number = $referenceNumber;
+        $invoice->total_amount = $model->total_amount;
+        $invoice->tax_amount = $model->tax_amount;
+        $invoice->discount_amount = $model->discount_amount;
+        $invoice->status = 'draft';
+        $invoice->issue_date = now();
+        $invoice->due_date = $model->due_date;
+        
+        // Prepare contact data based on whether client exists
+        $contactData = null;
+        if ($model instanceof Purchase) {
+            $contactData = $model->supplier ? 
+                ['type' => 'supplier', 'data' => $model->supplier->toArray()] : 
+                ['type' => 'supplier', 'data' => null];
+        } else {
+            $contactData = $model->client ? 
+                ['type' => 'client', 'data' => $model->client->toArray()] : 
+                ['type' => 'client', 'data' => null];
+        }
+        
+        // Set meta_data with null check for items
+        $invoice->meta_data = [
+            'source_type' => $model instanceof Purchase ? 'purchase' : 'sale',
+            'source_reference' => $model->reference_number,
+            'source_date' => $model->created_at,
+            'contact' => $contactData,
+            'payment_status' => $model->payment_status,
+            'payment_methods' => $paymentMethods, // Add payment methods here
+            'paid_amount' => $model->paid_amount,
+            'items_data' => $model->items->map(function($item) {
+                return [
+                    'product_id' => $item->product_id,
+                    'product_name' => $item->product?->name ?? 'Unknown Product',
+                    'quantity' => $item->quantity,
+                    'unit_price' => $item->unit_price,
+                    'tax_rate' => $item->tax_rate,
+                    'discount_amount' => $item->discount_amount,
+                    'total_price' => $item->total_price,
+                    'is_package' => $item->is_package ?? false,
+                    'package_id' => $item->package_id ?? null,
+                    'total_pieces' => $item->total_pieces ?? $item->quantity
+                ];
+            })->toArray()
+        ];
+        
+        $invoice->save();
+
+        // Create invoice items with null checks
+        foreach ($model->items as $sourceItem) {
+            $invoice->items()->create([
+                'description' => $sourceItem->product?->name ?? 'Unknown Product',
+                'quantity' => $sourceItem->quantity,
+                'unit_price' => $sourceItem->unit_price,
+                'total_price' => $sourceItem->total_price,
+                'notes' => $sourceItem->notes ?? ''
+            ]);
+        }
+
+        ActivityLog::create([
+            'log_type' => 'Create',
+            'model_type' => "Invoice",
+            'model_id' => $invoice->id,
+            'model_identifier' => $invoice->reference_number,
+            'user_identifier' => $user?->name,
+            'user_id' => $user->id,
+            'user_email' => $user?->email,
+            'ip_address' => $request->ip(),
+            'user_agent' => $request->userAgent(),
+            'description' => "Generated invoice {$invoice->reference_number} from " . 
+                           ($model instanceof Purchase ? "purchase" : "sale") . 
+                           " {$model->reference_number}",
+            'new_values' => $invoice->toArray()
+        ]);
+
+        DB::commit();
+
+        return response()->json([
+            'message' => 'Invoice generated successfully',
+            'invoice' => $invoice->load('items')
+        ]);
+
+    } catch (\Exception $e) {
+        DB::rollBack();
+        \Log::error('Invoice generation error', [
+            'error' => $e->getMessage(),
+            'trace' => $e->getTraceAsString(),
+            'model_id' => $id,
+            'user_id' => $user->id
+        ]);
+        
+        return response()->json([
+            'error' => true,
+            'message' => 'Error generating invoice: ' . $e->getMessage()
+        ], 500);
+    }
+}
+
     public function generateReceipt(Request $request, $id)
     {
         try {
@@ -827,7 +1135,7 @@ class SaleController extends Controller
                         <p>' . $sale->team->address . '</p>
                         <p>' . __('receipt.tel') . ': ' . $sale->team->phone . '</p>
                         <p>' . __('receipt.receipt_number') . ': ' . $sale->reference_number . '</p>
-                        <p>' . __('receipt.date') . ': ' . $sale->sale_date->format('d/m/Y H:i') . '</p>
+                        <p>' . __('receipt.date') . ': ' . $sale->updated_at->format('d/m/Y H:i') . '</p>
                     </div>
                     
                     <table>

@@ -44,7 +44,7 @@ class CashSource extends Model
     }
 
     // Helper methods
-    public function deposit($amount, $description = null)
+    public function deposit($amount, $description = null, $paymentMethod = null)
     {
         $this->balance += $amount;
         $this->save();
@@ -53,13 +53,15 @@ class CashSource extends Model
             'team_id' => $this->team_id,
             'amount' => $amount,
             'type' => 'deposit',
+            'payment_method' => $paymentMethod, // Add payment method
             'description' => $description,
             'transaction_date' => now(),
-            'reference_number' => 'DEP-' . time(), // Generate a reference number
-            'transactionable_type' => 'App\Models\CashSource', // Default type
-            'transactionable_id' => $this->id, // Reference to self
+            'reference_number' => 'DEP-' . time(),
+            'transactionable_type' => 'App\Models\CashSource',
+            'transactionable_id' => $this->id,
         ]);
     }
+    
 
 public function withdraw($amount, $description = null)
 {

@@ -8,7 +8,7 @@ use App\Http\Controllers\DownloadController;
 use App\Http\Controllers\PricingController;
 use App\Http\Controllers\LanguageController;
 use App\Http\Controllers\ContactController;
-
+use App\Http\Controllers\UpdatesController;
 use App\Models\Subscription;
 use Illuminate\Support\Facades\Route;
     
@@ -40,9 +40,9 @@ Route::domain('dim.dervox.com')->group(function () {
 
     Route::get('lang', [LanguageController::class, 'change'])->name('change.lang');
     
-    Route::get('/dashboard', [DashboardController::class, 'index'])
+    Route::get('/subscriptions', [DashboardController::class, 'index'])
          ->middleware(['auth'])
-         ->name('dashboard');
+         ->name('subscriptions');
 
     Route::get('/a/admin', function(){
         return redirect('/admin');
@@ -63,10 +63,20 @@ Route::domain('dim.dervox.com')->group(function () {
 
 Route::get('/home', [HomeController::class, 'index'])->name('home');
 Route::get('/pricing', [PricingController::class, 'index'])->name('pricing');
-
+Route::get('/dashboard', function () {
+    return view('analytics-dashboard');
+})->middleware(['auth'])->name('analytics.dashboard');
+Route::get('/updates.json', [App\Http\Controllers\UpdatesController::class, 'index']);
 //Route::get('/download', [App\Http\Controllers\DownloadController::class, 'index'])->name('download');
+// Existing routes
+Route::get('/download', [App\Http\Controllers\DownloadController::class, 'index'])->name('download');
+Route::get('/download/auto', [App\Http\Controllers\DownloadController::class, 'autoDetect'])->name('download.auto');
 Route::get('/download/{os}/{arch?}/{type?}', [App\Http\Controllers\DownloadController::class, 'download'])->name('download.os');
 
+// New route for version-specific downloads
+Route::get('/downloads/{filename}', [App\Http\Controllers\DownloadController::class, 'downloadFile'])
+    ->name('download.file')
+    ->where('filename', '.*'); // Allow any filename format including dots
 
 
 Route::prefix('policies')->group(function () {

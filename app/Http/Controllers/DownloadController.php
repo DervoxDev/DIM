@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Response;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class DownloadController extends Controller
 {
@@ -104,15 +106,17 @@ class DownloadController extends Controller
             abort(404, 'Download file not found');
         }
 
+        // Get the file path on disk
+        $filePath = Storage::path($file['path']);
+        
+        // Get the actual file size (in bytes)
+        $fileSize = filesize($filePath);
+        
         // Optional: Log the download
-        \Log::info('File downloaded: ' . $file['name'] . ' for ' . $key);
-
-        // Return the file with proper headers
-        return Storage::download(
-            $file['path'], 
-            $file['name'], 
-            ['Content-Type' => $file['mime']]
-        );
+        \Log::info('File downloaded: ' . $file['name'] . ' for ' . $key . ', size: ' . $fileSize . ' bytes');
+        
+        // Return a better response with proper headers for download managers
+        return $this->streamDownload($filePath, $file['name'], $file['mime'], $fileSize);
     }
     
     /**
@@ -151,5 +155,80 @@ class DownloadController extends Controller
         }
         
         return redirect()->route('download.os', ['os' => $os, 'arch' => $arch]);
+    }
+
+    /**
+     * Download a specific file by name
+     * This is the new method for version-specific downloads
+     */
+    public function downloadFile($filename)
+    {
+        $path = 'downloads/' . $filename;
+        
+        if (!Storage::exists($path)) {
+            abort(404, 'Download file not found');
+        }
+
+        // Get the file path on disk
+        $filePath = Storage::path($path);
+        
+        // Get the actual file size (in bytes)
+        $fileSize = filesize($filePath);
+        
+        // Guess MIME type based on file extension
+        $mimeType = $this->getMimeTypeForFile($filename);
+        
+        // Log the download
+        \Log::info('File downloaded: ' . $filename . ', size: ' . $fileSize . ' bytes');
+        
+        // Return a better response with proper headers for download managers
+        return $this->streamDownload($filePath, $filename, $mimeType, $fileSize);
+    }
+
+    /**
+     * Stream a large file with proper size headers
+     */
+    protected function streamDownload($filePath, $fileName, $mimeType, $fileSize)
+    {
+        return Response::stream(
+            function() use ($filePath) {
+                $handle = fopen($filePath, 'rb');
+                while (!feof($handle)) {
+                    echo fread($handle, 8192); // Buffer output
+                    flush();
+                }
+                fclose($handle);
+            },
+            200,
+            [
+                'Content-Type' => $mimeType,
+                'Content-Disposition' => 'attachment; filename="'. $fileName .'"',
+                'Content-Length' => $fileSize,
+                'Accept-Ranges' => 'bytes',
+                'Cache-Control' => 'public, must-revalidate, max-age=0',
+                'Pragma' => 'public',
+            ]
+        );
+    }
+
+    /**
+     * Get the MIME type based on file extension
+     */
+    protected function getMimeTypeForFile($filename)
+    {
+        $extension = strtolower(pathinfo($filename, PATHINFO_EXTENSION));
+        
+        $mimeTypes = [
+            'exe' => 'application/octet-stream',
+            'dmg' => 'application/x-apple-diskimage',
+            'deb' => 'application/vnd.debian.binary-package',
+            'rpm' => 'application/x-rpm',
+            'appimage' => 'application/x-executable',
+            'apk' => 'application/vnd.android.package-archive',
+            'zip' => 'application/zip',
+            'pdf' => 'application/pdf'
+        ];
+        
+        return $mimeTypes[$extension] ?? 'application/octet-stream';
     }
 }

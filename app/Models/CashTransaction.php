@@ -20,6 +20,7 @@ class CashTransaction extends Model
         'transfer_destination_id',
         'description',
         'transaction_date',
+        'payment_method',
     ];
 
     protected $casts = [
