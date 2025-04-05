@@ -23,17 +23,22 @@ class SaleController extends Controller
     public function index(Request $request)
     {
         $user = $request->user();
-
+    
         if (!$user->team) {
             return response()->json([
                 'error' => true,
                 'message' => 'No team found for the user'
             ], 404);
         }
-
+    
         $query = Sale::where('team_id', $user->team->id)
                     ->with(['client', 'items.product', 'cashSource']);
-
+    
+        // Type filter - sales, quotes, or both
+        if ($request->has('type') && in_array($request->type, ['sale', 'quote'])) {
+            $query->where('type', $request->type);
+        }
+    
         // Date range filter
         if ($request->has('start_date') && $request->has('end_date')) {
             $query->whereBetween('sale_date', [
@@ -41,22 +46,22 @@ class SaleController extends Controller
                 $request->end_date
             ]);
         }
-
+    
         // Status filter
         if ($request->has('status')) {
             $query->where('status', $request->status);
         }
-
+    
         // Payment status filter
         if ($request->has('payment_status')) {
             $query->where('payment_status', $request->payment_status);
         }
-
+    
         // Client filter
         if ($request->has('client_id')) {
             $query->where('client_id', $request->client_id);
         }
-
+    
         // Search by reference number
         if ($request->has('search')) {
             $searchTerm = $request->search;
@@ -65,35 +70,38 @@ class SaleController extends Controller
                   ->orWhere('notes', 'like', "%{$searchTerm}%");
             });
         }
- // Primary Sort
- $primarySortField = $request->get('sort_by', 'reference_number');
- $sortDirection = $request->get('sort_direction', 'desc');
- 
- // Apply main sorting
- $query->orderBy($primarySortField, $sortDirection);
- 
- // Apply secondary sorting (always sort by these fields secondarily)
- if ($primarySortField !== 'sale_date') {
-     $query->orderBy('sale_date', 'asc');
- }
- 
- if ($primarySortField !== 'created_at') {
-     $query->orderBy('created_at', 'desc');
- }
- 
- // For the case where primary sort is sale_date, 
- // we can additionally sort sales happening on the same date
- if ($primarySortField === 'sale_date') {
-     $query->orderBy('id', $sortDirection); // Using ID ensures consistent ordering
- }
-
-
+        
+        // Primary Sort
+        $primarySortField = $request->get('sort_by', 'reference_number');
+        $sortDirection = $request->get('sort_direction', 'desc');
+        
+        // Apply main sorting
+        $query->orderBy($primarySortField, $sortDirection);
+        
+        // Apply secondary sorting (always sort by these fields secondarily)
+        if ($primarySortField !== 'sale_date') {
+            $query->orderBy('sale_date', 'asc');
+        }
+        
+        if ($primarySortField !== 'created_at') {
+            $query->orderBy('created_at', 'desc');
+        }
+        
+        // For the case where primary sort is sale_date, 
+        // we can additionally sort sales happening on the same date
+        if ($primarySortField === 'sale_date') {
+            $query->orderBy('id', $sortDirection); // Using ID ensures consistent ordering
+        }
+    
         $sales = $query->paginate($request->input('per_page', 15));
-
+    
         return response()->json([
             'sales' => $sales
         ]);
     }
+    
+
+
     public function store(Request $request)
     {
         $user = $request->user();
@@ -108,6 +116,7 @@ class SaleController extends Controller
         $validator = Validator::make($request->all(), [
             'client_id' => 'nullable|exists:clients,id',
             'cash_source_id' => 'required|exists:cash_sources,id',
+            'type' => 'nullable|in:sale,quote',  // Add validation for the new type field
             'sale_date' => 'required|date',
             'due_date' => 'nullable|date|after_or_equal:sale_date',
             'notes' => 'nullable|string',
@@ -136,30 +145,38 @@ class SaleController extends Controller
     
         try {
             DB::beginTransaction();
+            
+            // Get the type from request or default to 'sale'
+            $type = $request->type ?? 'sale';
+            
+            // Check stock availability first (only for sales, not quotes)
+            if ($type === 'sale') {
+                foreach ($request->items as $item) {
+                    $product = Product::find($item['product_id']);
+                    if (!$product) {
+                        throw new \Exception("Product not found: {$item['product_id']}");
+                    }
         
-            // Check stock availability first
-            foreach ($request->items as $item) {
-                $product = Product::find($item['product_id']);
-                if (!$product) {
-                    throw new \Exception("Product not found: {$item['product_id']}");
-                }
-    
-                // Calculate total pieces needed based on whether it's a package or not
-                $totalPieces = $item['is_package'] 
-                    ? ($item['quantity'] * ProductPackage::find($item['package_id'])->pieces_per_package)
-                    : $item['quantity'];
-    
-                if ($product->quantity < $totalPieces) {
-                    throw new \Exception("Insufficient stock for product: {$product->name} (Need: {$totalPieces}, Available: {$product->quantity})");
+                    // Calculate total pieces needed based on whether it's a package or not
+                    $totalPieces = $item['is_package'] 
+                        ? ($item['quantity'] * ProductPackage::find($item['package_id'])->pieces_per_package)
+                        : $item['quantity'];
+        
+                    if ($product->quantity < $totalPieces) {
+                        throw new \Exception("Insufficient stock for product: {$product->name} (Need: {$totalPieces}, Available: {$product->quantity})");
+                    }
                 }
             }
-        
-            // Create sale
+            
+            // Create sale/quote record
             $sale = new Sale();
             $sale->team_id = $user->team->id;
             $sale->client_id = $request->client_id;
             $sale->cash_source_id = $request->cash_source_id;
-            $sale->reference_number = 'SALE-' . str_pad(Sale::max('id') + 1, 6, '0', STR_PAD_LEFT);
+            
+            // Use different prefixes based on type
+            $sale->reference_number = $this->generateReferenceNumber($type);
+            $sale->type = $type;
             $sale->sale_date = $request->sale_date;
             $sale->due_date = $request->due_date;
             $sale->notes = $request->notes;
@@ -170,10 +187,10 @@ class SaleController extends Controller
             $sale->discount_amount = $request->discount_amount ?? 0;
             
             if (!$sale->save()) {
-                throw new \Exception("Failed to save sale");
+                throw new \Exception("Failed to save " . ($type === 'quote' ? 'quote' : 'sale'));
             }
-        
-            // Update stock and create sale items
+            
+            // Update stock (for sales only) and create sale items
             foreach ($request->items as $item) {
                 $product = Product::findOrFail($item['product_id']);
                 
@@ -182,13 +199,15 @@ class SaleController extends Controller
                     $totalPieces = $item['is_package']
                         ? ($item['quantity'] * ProductPackage::find($item['package_id'])->pieces_per_package)
                         : $item['quantity'];
-    
-                    // Update stock first
-                    if (!$product->updateStock($totalPieces, 'subtract')) {
-                        throw new \Exception("Failed to update stock for product: {$product->name}");
-                    }
         
-                    // Then create sale item
+                    // Only update stock for sales, skip for quotes
+                    if ($type === 'sale') {
+                        if (!$product->updateStock($totalPieces, 'subtract')) {
+                            throw new \Exception("Failed to update stock for product: {$product->name}");
+                        }
+                    }
+            
+                    // Create sale item (same for both types)
                     $saleItem = new SaleItem();
                     $saleItem->sale_id = $sale->id;
                     $saleItem->product_id = $item['product_id'];
@@ -209,30 +228,31 @@ class SaleController extends Controller
                         throw new \Exception("Failed to save sale item");
                     }
                 } catch (\Exception $e) {
-                    throw new \Exception("Stock update failed for {$product->name}: " . $e->getMessage());
+                    throw new \Exception("Item processing failed for {$product->name}: " . $e->getMessage());
                 }
             }
-        
+            
             // Recalculate sale totals
             $sale->calculateTotals();
-          // Handle auto-payment if enabled
-          if ($request->auto_payment) {
-            $referenceNumber = 'AUTO-PAY-' . date('YmdHis') . '-' . str_pad($sale->id, 4, '0', STR_PAD_LEFT);
-            
-            // Add payment using existing method
-            $transaction = $sale->addPayment(
-                $request->payment_amount ?? $sale->total_amount,
-                $sale->cashSource,
-                now(),
-                $referenceNumber,
-                "Auto payment on sale creation"
-            );
-        }
-
-            // Log activity
+              
+            // Handle auto-payment if enabled (only for sales, not for quotes)
+            if ($type === 'sale' && $request->auto_payment) {
+                $referenceNumber = 'AUTO-PAY-' . date('YmdHis') . '-' . str_pad($sale->id, 4, '0', STR_PAD_LEFT);
+                
+                // Add payment using existing method
+                $transaction = $sale->addPayment(
+                    $request->payment_amount ?? $sale->total_amount,
+                    $sale->cashSource,
+                    now(),
+                    $referenceNumber,
+                    "Auto payment on sale creation"
+                );
+            }
+    
+            // Log activity with the right type
             ActivityLog::create([
                 'log_type' => 'Create',
-                'model_type' => "Sale",
+                'model_type' => $type === 'quote' ? "Quote" : "Sale",
                 'model_id' => $sale->id,
                 'model_identifier' => $sale->reference_number,
                 'user_identifier' => $user?->name,
@@ -240,30 +260,32 @@ class SaleController extends Controller
                 'user_email' => $user?->email,
                 'ip_address' => $request->ip(),
                 'user_agent' => $request->userAgent(),
-                'description' => "Created sale {$sale->reference_number}",
+                'description' => $type === 'quote' 
+                    ? "Created quote {$sale->reference_number}" 
+                    : "Created sale {$sale->reference_number}",
                 'new_values' => $sale->toArray()
             ]);
-        
+            
             DB::commit();
-        
+            
             return response()->json([
-                'message' => 'Sale created successfully',
+                'message' => ($type === 'quote' ? 'Quote' : 'Sale') . ' created successfully',
                 'sale' => $sale->load(['items.product', 'items.package', 'client', 'cashSource'])
             ], 201);
-        
+            
         } catch (\Exception $e) {
             DB::rollBack();
             
-            \Log::error('Sale creation failed: ' . $e->getMessage(), [
+            \Log::error(($request->type === 'quote' ? 'Quote' : 'Sale') . ' creation failed: ' . $e->getMessage(), [
                 'user_id' => $user->id,
                 'request_data' => $request->all(),
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString()
             ]);
-        
+            
             return response()->json([
                 'error' => true,
-                'message' => 'Error creating sale',
+                'message' => 'Error creating ' . ($request->type === 'quote' ? 'quote' : 'sale'),
                 'debug' => config('app.debug') ? $e->getMessage() : null,
                 'details' => [
                     'message' => $e->getMessage(),
@@ -272,6 +294,7 @@ class SaleController extends Controller
             ], 500);
         }
     }
+    
     
     
     // public function store(Request $request)
@@ -877,164 +900,201 @@ class SaleController extends Controller
     //     }
     // }
     public function generateInvoice(Request $request, $id)
-{
-    $user = $request->user();
-    $model = Sale::where('team_id', $user->team->id)
-        ->with(['items', 'client', 'transactions']) // Add transactions to eager loading
-        ->find($id);
-
-    if (!$model) {
-        return response()->json([
-            'error' => true,
-            'message' => 'Record not found'
-        ], 404);
-    }
-
-    // Reference number generation code remains the same...
-    $lastInvoice = Invoice::where('team_id', $user->team->id)
-        ->withTrashed()
-        ->where('reference_number', 'like', "INV-" . date('Y') . "-%")
-        ->orderBy('id', 'desc')
-        ->first();
-
-    if ($lastInvoice) {
-        $lastNumber = (int) substr($lastInvoice->reference_number, -6);
-        $nextNumber = $lastNumber + 1;
-    } else {
-        $nextNumber = 1;
-    }
-
-    $referenceNumber = "INV-" . date('Y') . "-" . str_pad($nextNumber, 6, '0', STR_PAD_LEFT);
-
-    while (Invoice::where('reference_number', $referenceNumber)->withTrashed()->exists()) {
-        $nextNumber++;
-        $referenceNumber = "INV-" . date('Y') . "-" . str_pad($nextNumber, 6, '0', STR_PAD_LEFT);
-    }
-
-    try {
-        DB::beginTransaction();
-
-        // Get payment methods information
-        $paymentMethods = [];
+    {
+        $user = $request->user();
+        $sale = Sale::where('team_id', $user->team->id)
+            ->with(['items', 'client', 'transactions'])
+            ->find($id);
         
-        if (!($model instanceof Purchase)) {
-            // Only for sales, not purchases
-            $paymentMethods = $model->transactions()
-                ->select('payment_method', DB::raw('SUM(amount) as total_amount'))
-                ->whereNotNull('payment_method')
-                ->groupBy('payment_method')
-                ->get()
-                ->map(function($transaction) {
-                    return [
-                        'method' => $transaction->payment_method,
-                        'amount' => $transaction->total_amount,
-                        // Format the payment method name for display
-                        'method_name' => trans('payments.' . $transaction->payment_method, [], 'en') ?: ucfirst(str_replace('_', ' ', $transaction->payment_method))
-                    ];
-                })
-                ->toArray();
-        }
-
-        $invoice = new Invoice();
-        $invoice->team_id = $user->team->id;
-        $invoice->invoiceable_type = get_class($model);
-        $invoice->invoiceable_id = $model->id;
-        $invoice->reference_number = $referenceNumber;
-        $invoice->total_amount = $model->total_amount;
-        $invoice->tax_amount = $model->tax_amount;
-        $invoice->discount_amount = $model->discount_amount;
-        $invoice->status = 'draft';
-        $invoice->issue_date = now();
-        $invoice->due_date = $model->due_date;
-        
-        // Prepare contact data based on whether client exists
-        $contactData = null;
-        if ($model instanceof Purchase) {
-            $contactData = $model->supplier ? 
-                ['type' => 'supplier', 'data' => $model->supplier->toArray()] : 
-                ['type' => 'supplier', 'data' => null];
-        } else {
-            $contactData = $model->client ? 
-                ['type' => 'client', 'data' => $model->client->toArray()] : 
-                ['type' => 'client', 'data' => null];
+        if (!$sale) {
+            return response()->json([
+                'error' => true,
+                'message' => 'Record not found'
+            ], 404);
         }
         
-        // Set meta_data with null check for items
-        $invoice->meta_data = [
-            'source_type' => $model instanceof Purchase ? 'purchase' : 'sale',
-            'source_reference' => $model->reference_number,
-            'source_date' => $model->created_at,
-            'contact' => $contactData,
-            'payment_status' => $model->payment_status,
-            'payment_methods' => $paymentMethods, // Add payment methods here
-            'paid_amount' => $model->paid_amount,
-            'items_data' => $model->items->map(function($item) {
-                return [
-                    'product_id' => $item->product_id,
-                    'product_name' => $item->product?->name ?? 'Unknown Product',
-                    'quantity' => $item->quantity,
-                    'unit_price' => $item->unit_price,
-                    'tax_rate' => $item->tax_rate,
-                    'discount_amount' => $item->discount_amount,
-                    'total_price' => $item->total_price,
-                    'is_package' => $item->is_package ?? false,
-                    'package_id' => $item->package_id ?? null,
-                    'total_pieces' => $item->total_pieces ?? $item->quantity
-                ];
-            })->toArray()
+        // Define default configuration values
+        $defaultConfig = [
+            'showClientInfo' => true,
+            'showAmountInWords' => true,
+            'showPaymentMethods' => true,
+            'showTaxNumbers' => true,
+            'showNotes' => true,
+            'showThanksMessage' => true,
+            'showTermsConditions' => true,
+            'primaryColor' => '#2563eb',
+            'logoEnabled' => true,
+            'footerText' => '',
+            'defaultNotes' => 'Thank you for your business.',
+            'defaultTerms' => 'Payment is due within 30 days of invoice date.',
+            'thanksMessage' => 'Thank you for your business!'
         ];
-        
-        $invoice->save();
-
-        // Create invoice items with null checks
-        foreach ($model->items as $sourceItem) {
-            $invoice->items()->create([
-                'description' => $sourceItem->product?->name ?? 'Unknown Product',
-                'quantity' => $sourceItem->quantity,
-                'unit_price' => $sourceItem->unit_price,
-                'total_price' => $sourceItem->total_price,
-                'notes' => $sourceItem->notes ?? ''
-            ]);
+    
+        // Get configuration options from request using defaults
+        $config = [];
+        foreach ($defaultConfig as $key => $defaultValue) {
+            $config[$key] = $request->input($key, $defaultValue);
         }
-
-        ActivityLog::create([
-            'log_type' => 'Create',
-            'model_type' => "Invoice",
-            'model_id' => $invoice->id,
-            'model_identifier' => $invoice->reference_number,
-            'user_identifier' => $user?->name,
-            'user_id' => $user->id,
-            'user_email' => $user?->email,
-            'ip_address' => $request->ip(),
-            'user_agent' => $request->userAgent(),
-            'description' => "Generated invoice {$invoice->reference_number} from " . 
-                           ($model instanceof Purchase ? "purchase" : "sale") . 
-                           " {$model->reference_number}",
-            'new_values' => $invoice->toArray()
-        ]);
-
-        DB::commit();
-
-        return response()->json([
-            'message' => 'Invoice generated successfully',
-            'invoice' => $invoice->load('items')
-        ]);
-
-    } catch (\Exception $e) {
-        DB::rollBack();
-        \Log::error('Invoice generation error', [
-            'error' => $e->getMessage(),
-            'trace' => $e->getTraceAsString(),
-            'model_id' => $id,
-            'user_id' => $user->id
+                
+        // Debug log
+        \Log::info('Invoice generation config', [
+            'received' => $request->all(),
+            'final_config' => $config
         ]);
         
-        return response()->json([
-            'error' => true,
-            'message' => 'Error generating invoice: ' . $e->getMessage()
-        ], 500);
+        // No need for merging as we've already applied defaults above
+        $finalConfig = $config;
+        
+        // Generate different reference number prefix based on type
+        $prefix = ($sale->type === 'quote') ? "DEVIS-" : "INV-";
+                
+        $lastInvoice = Invoice::where('team_id', $user->team->id)
+            ->withTrashed()
+            ->where('reference_number', 'like', $prefix . date('Y') . "-%")
+            ->orderBy('id', 'desc')
+            ->first();
+        
+        if ($lastInvoice) {
+            $lastNumber = (int) substr($lastInvoice->reference_number, -6);
+            $nextNumber = $lastNumber + 1;
+        } else {
+            $nextNumber = 1;
+        }
+        
+        $referenceNumber = $prefix . date('Y') . "-" . str_pad($nextNumber, 6, '0', STR_PAD_LEFT);
+        
+        while (Invoice::where('reference_number', $referenceNumber)->withTrashed()->exists()) {
+            $nextNumber++;
+            $referenceNumber = $prefix . date('Y') . "-" . str_pad($nextNumber, 6, '0', STR_PAD_LEFT);
+        }
+        
+        try {
+            DB::beginTransaction();
+        
+            $invoice = new Invoice();
+            $invoice->team_id = $user->team->id;
+            $invoice->invoiceable_type = get_class($sale);
+            $invoice->invoiceable_id = $sale->id;
+            $invoice->reference_number = $referenceNumber;
+            $invoice->total_amount = $sale->total_amount;
+            $invoice->tax_amount = $sale->tax_amount;
+            $invoice->discount_amount = $sale->discount_amount;
+            $invoice->status = 'draft';
+            $invoice->issue_date = now();
+            $invoice->due_date = $sale->due_date;
+                
+            // Calculate subtotal
+            $subtotal = $sale->total_amount - $sale->tax_amount + $sale->discount_amount;
+                
+            // Prepare contact data based on whether client exists
+            $contactData = null;
+            if ($sale instanceof Purchase) {
+                $contactData = $sale->supplier ? 
+                    ['type' => 'supplier', 'data' => $sale->supplier->toArray()] : 
+                    ['type' => 'supplier', 'data' => null];
+            } else {
+                $contactData = $sale->client ? 
+                    ['type' => 'client', 'data' => $sale->client->toArray()] : 
+                    ['type' => 'client', 'data' => null];
+            }
+                
+            // Add document type to meta_data
+            $documentType = ($sale->type === 'quote') ? 'quote' : 'invoice';
+                
+            // Set meta_data with null check for items
+            $invoice->meta_data = [
+                'source_type' => $sale instanceof Purchase ? 'purchase' : ($sale->type ?? 'sale'),
+                'document_type' => $documentType,
+                'source_reference' => $sale->reference_number,
+                'source_date' => $sale->created_at,
+                'contact' => $contactData,
+                'payment_status' => $sale->payment_status,
+                'subtotal' => $subtotal,
+                'payment_methods' => $sale->transactions->groupBy('payment_method')
+                    ->map(function ($group) {
+                        return [
+                            'method' => $group->first()->payment_method,
+                            'amount' => $group->sum('amount'),
+                            'method_name' => ucfirst(str_replace('_', ' ', $group->first()->payment_method))
+                        ];
+                    })->values()->toArray(),
+                'paid_amount' => $sale->paid_amount,
+                'items_data' => $sale->items->map(function($item) {
+                    return [
+                        'product_id' => $item->product_id,
+                        'product_name' => $item->product?->name ?? 'Unknown Product',
+                        'quantity' => $item->quantity,
+                        'unit_price' => $item->unit_price,
+                        'tax_rate' => $item->tax_rate,
+                        'discount_amount' => $item->discount_amount,
+                        'total_price' => $item->total_price,
+                        'is_package' => $item->is_package ?? false,
+                        'package_id' => $item->package_id ?? null,
+                        'total_pieces' => $item->total_pieces ?? $item->quantity
+                    ];
+                })->toArray(),
+                'config' => $finalConfig
+            ];
+                
+            $invoice->save();
+        
+            // Create invoice items with null checks
+            foreach ($sale->items as $sourceItem) {
+                $invoice->items()->create([
+                    'description' => $sourceItem->product?->name ?? 'Unknown Product',
+                    'quantity' => $sourceItem->quantity,
+                    'unit_price' => $sourceItem->unit_price,
+                    'total_price' => $sourceItem->total_price,
+                    'notes' => $sourceItem->notes ?? '',
+                    'tax_amount' => $sourceItem->tax_amount ?? 0,
+                    'discount_amount' => $sourceItem->discount_amount ?? 0
+                ]);
+            }
+        
+            ActivityLog::create([
+                'log_type' => 'Create',
+                'model_type' => $sale->type === 'quote' ? "Quotation" : "Invoice",
+                'model_id' => $invoice->id,
+                'model_identifier' => $invoice->reference_number,
+                'user_identifier' => $user?->name,
+                'user_id' => $user->id,
+                'user_email' => $user?->email,
+                'ip_address' => $request->ip(),
+                'user_agent' => $request->userAgent(),
+                'description' => "Generated " . ($sale->type === 'quote' ? "quotation" : "invoice") . 
+                               " {$invoice->reference_number} from " . 
+                               ($sale instanceof Purchase ? "purchase" : ($sale->type ?? "sale")) . 
+                               " {$sale->reference_number}",
+                'new_values' => $invoice->toArray()
+            ]);
+        
+            DB::commit();
+        
+            return response()->json([
+                'message' => ($sale->type === 'quote' ? "Quotation" : "Invoice") . ' generated successfully',
+                'invoice' => $invoice->load('items'),
+                'invoice_id' => $invoice->id,
+                'url' => url("/api/v1/invoices/{$invoice->id}/pdf") // Add URL for PDF
+            ]);
+        
+        } catch (\Exception $e) {
+            DB::rollBack();
+            \Log::error('Document generation error', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+                'model_id' => $id,
+                'user_id' => $user->id
+            ]);
+                
+            return response()->json([
+                'error' => true,
+                'message' => 'Error generating ' . ($sale->type === 'quote' ? "quotation" : "invoice") . 
+                            ': ' . $e->getMessage()
+            ], 500);
+        }
     }
-}
+    
+    
 
     public function generateReceipt(Request $request, $id)
     {
@@ -1304,4 +1364,124 @@ class SaleController extends Controller
             ], 500);
         }
     }
+    public function convertToSale(Request $request, $id)
+    {
+        $user = $request->user();
+    
+        $quote = Sale::where('team_id', $user->team->id)
+                    ->where('type', 'quote')
+                    ->with(['items.product', 'client', 'cashSource'])
+                    ->find($id);
+    
+        if (!$quote) {
+            return response()->json([
+                'error' => true,
+                'message' => 'Quote not found'
+            ], 404);
+        }
+    
+        try {
+            DB::beginTransaction();
+            
+            // First check stock availability for all items
+            foreach ($quote->items as $item) {
+                $product = $item->product;
+                
+                if (!$product) {
+                    throw new \Exception("Product not found for item {$item->id}");
+                }
+                
+                // Calculate total pieces needed
+                $totalPieces = $item->is_package 
+                    ? ($item->quantity * $item->package->pieces_per_package)
+                    : $item->quantity;
+                
+                if ($product->quantity < $totalPieces) {
+                    throw new \Exception("Insufficient stock for product: {$product->name} (Need: {$totalPieces}, Available: {$product->quantity})");
+                }
+            }
+            
+            // Change type to 'sale'
+            $quote->type = 'sale';
+            $quote->reference_number = $this->generateReferenceNumber('sale');
+            $quote->save();
+            
+            // Now update stock for each item
+            foreach ($quote->items as $item) {
+                $product = $item->product;
+                
+                // Calculate total pieces
+                $totalPieces = $item->is_package 
+                    ? ($item->quantity * $item->package->pieces_per_package)
+                    : $item->quantity;
+                
+                // Update stock
+                $product->updateStock($totalPieces, 'subtract');
+            }
+            
+            // Log activity
+            ActivityLog::create([
+                'log_type' => 'Convert',
+                'model_type' => "Sale",
+                'model_id' => $quote->id,
+                'model_identifier' => $quote->reference_number,
+                'user_identifier' => $user->name,
+                'user_id' => $user->id,
+                'user_email' => $user->email,
+                'ip_address' => $request->ip(),
+                'user_agent' => $request->userAgent(),
+                'description' => "Converted quote {$quote->reference_number} to sale",
+                'new_values' => $quote->toArray()
+            ]);
+            
+            DB::commit();
+            
+            return response()->json([
+                'message' => 'Quote converted to sale successfully',
+                'sale' => $quote->fresh(['items.product', 'client', 'cashSource'])
+            ]);
+            
+        } catch (\Exception $e) {
+            DB::rollBack();
+            
+            return response()->json([
+                'error' => true,
+                'message' => 'Error converting quote to sale: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+    protected function generateReferenceNumber($type = 'sale')
+    {
+        $prefix = $type === 'quote' ? 'QUOTE-' : 'SALE-';
+        
+        // Use a database transaction with a lock to prevent race conditions
+        return DB::transaction(function() use ($prefix) {
+            // Lock the sales table to prevent concurrent reference number generation
+            DB::table('sales')->sharedLock();
+            
+            // Find the last reference number with this prefix
+            $latestSale = Sale::where('reference_number', 'like', $prefix . '%')
+                ->orderBy('id', 'desc')
+                ->first();
+            
+            $nextNumber = 1;
+            if ($latestSale) {
+                // Extract the numeric part and increment
+                $numericPart = substr($latestSale->reference_number, strlen($prefix));
+                $nextNumber = intval($numericPart) + 1;
+            }
+            
+            $referenceNumber = $prefix . str_pad($nextNumber, 6, '0', STR_PAD_LEFT);
+            
+            // Double-check uniqueness to avoid collisions
+            while (Sale::where('reference_number', $referenceNumber)->exists()) {
+                $nextNumber++;
+                $referenceNumber = $prefix . str_pad($nextNumber, 6, '0', STR_PAD_LEFT);
+            }
+            
+            return $referenceNumber;
+        }, 3); // 3 retries if transaction fails
+    }
+    
+
 }

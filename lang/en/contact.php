@@ -9,11 +9,11 @@ return [
     'subtitle' => 'Let\'s Connect',
     'address' => [
         'title' => 'Address',
-        'value' => 'Rabat, Morocco'
+        'value' => 'Casablanca, Morocco'
     ],
     'phone' => [
         'title' => 'Phone',
-        'value' => '+212 649-458819'
+        'value' => '+212 660696510'
     ],
     'email' => [
         'title' => 'Email',

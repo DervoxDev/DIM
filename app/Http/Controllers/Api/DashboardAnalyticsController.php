@@ -138,7 +138,13 @@ class DashboardAnalyticsController extends Controller
         }
     }
 
-    public function getSaleAnalytics(Request $request)
+/**
+ * Get comprehensive sale analytics data
+ *
+ * @param Request $request
+ * @return \Illuminate\Http\JsonResponse
+ */
+public function getSaleAnalytics(Request $request)
 {
     try {
         $request->validate([
@@ -149,8 +155,9 @@ class DashboardAnalyticsController extends Controller
 
         [$startDate, $endDate] = $this->getDateRange($request);
 
-        // Get sales summary for the period
-        $sales = Sale::whereBetween('created_at', [$startDate, $endDate])
+        // Get sales summary for the period - add where type = sale
+        $sales = Sale::where('type', 'sale') // Add this line to filter only sales
+            ->whereBetween('created_at', [$startDate, $endDate])
             ->select(
                 DB::raw('COUNT(*) as total_sales'),
                 DB::raw('COALESCE(SUM(total_amount), 0) as total_revenue'),
@@ -159,17 +166,21 @@ class DashboardAnalyticsController extends Controller
             )
             ->first();
 
-        // Get all-time stats
-        $allTimeStats = Sale::select(
-            DB::raw('COUNT(*) as total_sales'),
-            DB::raw('COALESCE(SUM(total_amount), 0) as total_revenue'),
-            DB::raw('COALESCE(AVG(total_amount), 0) as average_sale'),
-            DB::raw('COUNT(DISTINCT id) as total_orders')
-        )->first();
+        // Get all-time stats - add where type = sale
+        $allTimeStats = Sale::where('type', 'sale') // Add this line to filter only sales
+            ->select(
+                DB::raw('COUNT(*) as total_sales'),
+                DB::raw('COALESCE(SUM(total_amount), 0) as total_revenue'),
+                DB::raw('COALESCE(AVG(total_amount), 0) as average_sale'),
+                DB::raw('COUNT(DISTINCT id) as total_orders')
+            )->first();
 
-        // Get top products for the period
+        // Get top products for the period - add where type = sale to the join
         $topProducts = DB::table('sale_items')
-            ->join('sales', 'sale_items.sale_id', '=', 'sales.id')
+            ->join('sales', function ($join) {
+                $join->on('sale_items.sale_id', '=', 'sales.id')
+                    ->where('sales.type', '=', 'sale'); // Add this line to filter only sales
+            })
             ->join('products', 'sale_items.product_id', '=', 'products.id')
             ->whereBetween('sales.created_at', [$startDate, $endDate])
             ->select(
@@ -196,8 +207,10 @@ class DashboardAnalyticsController extends Controller
                 ];
             });
 
-        // Get history data
-        $historyQuery = Sale::whereBetween('created_at', [$startDate, $endDate]);
+        // Get history data - add where type = sale
+        $historyQuery = Sale::where('type', 'sale') // Add this line to filter only sales
+            ->whereBetween('created_at', [$startDate, $endDate]);
+        
         $history = $this->getHistoryData($historyQuery, $request->timeframe, $startDate, $endDate);
 
         return response()->json([
@@ -216,7 +229,7 @@ class DashboardAnalyticsController extends Controller
                     'total_orders' => $allTimeStats->total_orders
                 ],
                 'history' => $history,
-                'top_products' => $topProducts, // Added this line
+                'top_products' => $topProducts,
                 'period_info' => [
                     'timeframe' => $request->timeframe,
                     'start_date' => $startDate->toDateTimeString(),
@@ -233,6 +246,7 @@ class DashboardAnalyticsController extends Controller
         ], 500);
     }
 }
+
 
     
     public function getPurchaseAnalytics(Request $request)
@@ -476,16 +490,34 @@ class DashboardAnalyticsController extends Controller
             // Period statistics
             $periodStats = DB::transaction(function () use ($startDate, $endDate) {
                 $sales = Sale::whereBetween('created_at', [$startDate, $endDate])
+                    ->where(function($query) {
+                        $query->where('type', 'sale')
+                            ->orWhereNull('type');
+                    })
+                    ->sum('total_amount');
+    
+                $quotes = Sale::whereBetween('created_at', [$startDate, $endDate])
+                    ->where('type', 'quote')
                     ->sum('total_amount');
     
                 $purchases = Purchase::whereBetween('created_at', [$startDate, $endDate])
                     ->sum('total_amount');
     
                 $orders = Sale::whereBetween('created_at', [$startDate, $endDate])
+                    ->where(function($query) {
+                        $query->where('type', 'sale')
+                            ->orWhereNull('type');
+                    })
+                    ->count();
+    
+                $quotesCount = Sale::whereBetween('created_at', [$startDate, $endDate])
+                    ->where('type', 'quote')
                     ->count();
     
                 return [
                     'sales' => $sales ?? 0,
+                    'quotes' => $quotes ?? 0,
+                    'quotes_count' => $quotesCount ?? 0,
                     'purchases' => $purchases ?? 0,
                     'orders' => $orders ?? 0
                 ];
@@ -494,16 +526,32 @@ class DashboardAnalyticsController extends Controller
             // All-time statistics
             $allTimeStats = DB::transaction(function () {
                 return [
-                    'total_sales' => Sale::sum('total_amount') ?? 0,
+                    'total_sales' => Sale::where(function($query) {
+                        $query->where('type', 'sale')
+                            ->orWhereNull('type');
+                    })->sum('total_amount') ?? 0,
+                    
+                    'total_quotes' => Sale::where('type', 'quote')
+                        ->sum('total_amount') ?? 0,
+                    
                     'total_purchases' => Purchase::sum('total_amount') ?? 0,
-                    'total_orders' => Sale::count() ?? 0
+                    
+                    'total_orders' => Sale::where(function($query) {
+                        $query->where('type', 'sale')
+                            ->orWhereNull('type');
+                    })->count() ?? 0,
+                    
+                    'total_quotes_count' => Sale::where('type', 'quote')->count() ?? 0
                 ];
             });
     
             // Current status
             $currentStatus = [
                 'low_stock_alerts' => Product::where('quantity', '<=', DB::raw('min_stock_level'))->count(),
-                'cash_balance' => CashSource::sum('balance') ?? 0
+                'cash_balance' => CashSource::sum('balance') ?? 0,
+                'pending_quotes' => Sale::where('type', 'quote')
+                    ->where('status', 'pending')
+                    ->count()
             ];
     
             return response()->json([
@@ -525,6 +573,194 @@ class DashboardAnalyticsController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => $e->getMessage()
+            ], 500);
+        }
+    }
+    
+
+
+    public function getQuoteAnalytics(Request $request)
+    {
+        try {
+            $request->validate([
+                'timeframe' => 'required|in:daily,24hours,weekly,monthly,yearly,all',
+                'start_date' => 'nullable|date',
+                'end_date' => 'nullable|date|after_or_equal:start_date'
+            ]);
+    
+            [$startDate, $endDate] = $this->getDateRange($request);
+    
+            // Get quotes summary for the period
+            $quotes = Sale::where('type', 'quote')
+                ->whereBetween('created_at', [$startDate, $endDate])
+                ->select(
+                    DB::raw('COUNT(*) as total_quotes'),
+                    DB::raw('COALESCE(SUM(total_amount), 0) as total_value'),
+                    DB::raw('COALESCE(AVG(total_amount), 0) as average_quote'),
+                    DB::raw('COUNT(DISTINCT client_id) as unique_clients')
+                )
+                ->first();
+    
+            // Get all-time stats
+            $allTimeStats = Sale::where('type', 'quote')
+                ->select(
+                    DB::raw('COUNT(*) as total_quotes'),
+                    DB::raw('COALESCE(SUM(total_amount), 0) as total_value'),
+                    DB::raw('COALESCE(AVG(total_amount), 0) as average_quote'),
+                    DB::raw('COUNT(DISTINCT client_id) as unique_clients')
+                )->first();
+    
+            // Get conversion data - identify quotes that have been converted to sales
+            // Fixed: Check for the correct column names in activity_logs table
+            $convertedCount = Sale::where('type', 'quote')
+                ->whereBetween('created_at', [$startDate, $endDate])
+                ->whereExists(function ($query) {
+                    $query->select(DB::raw(1))
+                        ->from('activity_logs')
+                        ->where('log_type', 'Convert')
+                        ->whereRaw('activity_logs.loggable_id = sales.id') // Use loggable_id instead of model_id
+                        ->where('activity_logs.loggable_type', 'App\\Models\\Sale'); // Use loggable_type instead of model_type
+                })
+                ->count();
+    
+            $conversionRate = $quotes->total_quotes > 0 
+                ? ($convertedCount / $quotes->total_quotes * 100)
+                : 0;
+    
+            // Get conversion time metrics (avg days from quote to conversion)
+            $avgConversionDays = 0;
+            if ($convertedCount > 0) {
+                // Fixed: Use the correct column names in activity_logs table
+                $conversionTimes = DB::table('sales AS quotes')
+                    ->join('activity_logs', function($join) {
+                        $join->on('quotes.id', '=', 'activity_logs.loggable_id') // Use loggable_id instead of model_id
+                            ->where('activity_logs.log_type', '=', 'Convert')
+                            ->where('activity_logs.loggable_type', '=', 'App\\Models\\Sale'); // Use loggable_type instead of model_type
+                    })
+                    ->select(
+                        'quotes.id',
+                        'quotes.created_at AS quote_date',
+                        'activity_logs.created_at AS conversion_date',
+                        DB::raw('DATEDIFF(activity_logs.created_at, quotes.created_at) AS days_to_convert')
+                    )
+                    ->where('quotes.type', 'quote')
+                    ->whereBetween('quotes.created_at', [$startDate, $endDate])
+                    ->get();
+    
+                // Calculate average conversion time
+                $totalDays = 0;
+                foreach ($conversionTimes as $time) {
+                    $totalDays += $time->days_to_convert;
+                }
+                $avgConversionDays = count($conversionTimes) > 0 ? $totalDays / count($conversionTimes) : 0;
+            }
+    
+            // Track quotes by status
+            $quotesByStatus = Sale::where('type', 'quote')
+                ->whereBetween('created_at', [$startDate, $endDate])
+                ->select('status', DB::raw('COUNT(*) as count'))
+                ->groupBy('status')
+                ->get();
+    
+            // Top quoted products
+            $topQuotedProducts = DB::table('sale_items')
+                ->join('sales', 'sale_items.sale_id', '=', 'sales.id')
+                ->join('products', 'sale_items.product_id', '=', 'products.id')
+                ->where('sales.type', 'quote')
+                ->whereBetween('sales.created_at', [$startDate, $endDate])
+                ->select(
+                    'products.id',
+                    'products.name',
+                    DB::raw('SUM(sale_items.quantity) as total_quantity'),
+                    DB::raw('SUM(sale_items.total_price) as total_value'),
+                    DB::raw('COUNT(DISTINCT sales.id) as quote_count')
+                )
+                ->groupBy('products.id', 'products.name')
+                ->orderBy('total_value', 'desc')
+                ->limit(5)
+                ->get();
+    
+            // Get history data for quotes over time
+            $historyQuery = Sale::where('type', 'quote')
+                ->whereBetween('created_at', [$startDate, $endDate]);
+                
+            $history = $this->getHistoryData($historyQuery, $request->timeframe, $startDate, $endDate);
+    
+            // Get history of converted quotes over time
+            $convertedHistory = [];
+            if ($request->timeframe === 'monthly') {
+                // Fixed: Use the correct column names in activity_logs table
+                $convertedHistory = DB::table('activity_logs')
+                    ->where('log_type', 'Convert')
+                    ->where('loggable_type', 'App\\Models\\Sale') // Use loggable_type instead of model_type
+                    ->join('sales', 'activity_logs.loggable_id', '=', 'sales.id') // Use loggable_id instead of model_id
+                    ->where('sales.type', 'quote') // Ensure it's a quote that was converted
+                    ->whereBetween('activity_logs.created_at', [$startDate, $endDate])
+                    ->selectRaw('DATE_FORMAT(activity_logs.created_at, "%Y-%m-%d") as day, COUNT(*) as count')
+                    ->groupBy('day')
+                    ->orderBy('day')
+                    ->pluck('count', 'day')
+                    ->toArray();
+            } 
+            // Add similar cases for other timeframes
+    
+            // Calculate size ranges of quotes
+            $quoteSizeRanges = [
+                'small' => Sale::where('type', 'quote')
+                    ->whereBetween('created_at', [$startDate, $endDate])
+                    ->where('total_amount', '<', 1000)  // Adjust these thresholds as needed
+                    ->count(),
+                    
+                'medium' => Sale::where('type', 'quote')
+                    ->whereBetween('created_at', [$startDate, $endDate])
+                    ->whereBetween('total_amount', [1000, 5000])
+                    ->count(),
+                    
+                'large' => Sale::where('type', 'quote')
+                    ->whereBetween('created_at', [$startDate, $endDate])
+                    ->where('total_amount', '>', 5000)
+                    ->count()
+            ];
+            
+            return response()->json([
+                'success' => true,
+                'data' => [
+                    'summary' => [
+                        'total_quotes' => $quotes->total_quotes,
+                        'total_value' => number_format($quotes->total_value, 2),
+                        'average_quote' => number_format($quotes->average_quote, 2),
+                        'unique_clients' => $quotes->unique_clients,
+                        'converted_quotes' => $convertedCount,
+                        'conversion_rate' => number_format($conversionRate, 2) . '%',
+                        'avg_conversion_time' => number_format($avgConversionDays, 1) . ' days'
+                    ],
+                    'all_time' => [
+                        'total_quotes' => $allTimeStats->total_quotes,
+                        'total_value' => number_format($allTimeStats->total_value, 2),
+                        'average_quote' => number_format($allTimeStats->average_quote, 2),
+                        'unique_clients' => $allTimeStats->unique_clients
+                    ],
+                    'quotes_by_status' => $quotesByStatus,
+                    'top_products' => $topQuotedProducts,
+                    'quote_size_distribution' => $quoteSizeRanges,
+                    'history' => $history,
+                    'conversion_history' => $convertedHistory,
+                    'period_info' => [
+                        'timeframe' => $request->timeframe,
+                        'start_date' => $startDate->toDateTimeString(),
+                        'end_date' => $endDate->toDateTimeString()
+                    ]
+                ]
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Quote Analytics failed: ' . $e->getMessage(), [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'Error retrieving quote analytics: ' . $e->getMessage()
             ], 500);
         }
     }

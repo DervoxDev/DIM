@@ -21,6 +21,7 @@ class Sale extends Model
         'discount_amount',
         'payment_status',
         'status',
+        'type',
         'sale_date',
         'due_date',
         'notes',
@@ -127,4 +128,10 @@ class Sale extends Model
         $this->tax_amount = $this->items->sum('tax_amount');
         $this->save();
     }
+
+    public function __construct(array $attributes = [])
+{
+    parent::__construct($attributes);
+    $this->attributes['type'] = $this->attributes['type'] ?? 'sale';
+}
 }

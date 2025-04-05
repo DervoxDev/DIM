@@ -90,7 +90,8 @@
             Route::delete('/sales/{id}', [SaleController::class, 'destroy']);
             Route::post('/sales/{id}/add-payment', [SaleController::class, 'addPayment']);
             Route::post('/sales/{id}/generate-invoice', [SaleController::class, 'generateInvoice']);
-           
+            Route::post('/sales/{id}/convert-to-sale', [SaleController::class, 'convertToSale']);
+            
             Route::get('/sales/summary', [SaleController::class, 'getSummary']);
 
             Route::get('/clients', [ClientController::class, 'index']);

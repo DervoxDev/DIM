@@ -9,11 +9,11 @@ return [
     'subtitle' => 'Connectons-nous',
     'address' => [
         'title' => 'Adresse',
-        'value' => 'Rabat, Maroc'
+        'value' => 'Casablanca, Maroc'
     ],
     'phone' => [
         'title' => 'Téléphone',
-        'value' => '+212 649-458819'
+        'value' => '+212 660696510'
     ],
     'email' => [
         'title' => 'Email',
