@@ -945,6 +945,9 @@ class SaleController extends Controller
         // No need for merging as we've already applied defaults above
         $finalConfig = $config;
         
+        // Determine document type based on sale type
+        $documentType = ($sale->type === 'quote') ? 'quote' : 'invoice';
+        
         // Generate different reference number prefix based on type
         $prefix = ($sale->type === 'quote') ? "DEVIS-" : "INV-";
                 
@@ -976,10 +979,13 @@ class SaleController extends Controller
             $invoice->invoiceable_type = get_class($sale);
             $invoice->invoiceable_id = $sale->id;
             $invoice->reference_number = $referenceNumber;
+            $invoice->type = $documentType; // Set document type (invoice or quote)
             $invoice->total_amount = $sale->total_amount;
             $invoice->tax_amount = $sale->tax_amount;
             $invoice->discount_amount = $sale->discount_amount;
-            $invoice->status = 'draft';
+            $invoice->status = 'draft'; // Use draft as initial status
+            $invoice->payment_status = $sale->payment_status ?? 'unpaid'; // Copy payment status from sale
+            $invoice->is_email_sent = false; // Default to not email sent
             $invoice->issue_date = now();
             $invoice->due_date = $sale->due_date;
                 
@@ -998,9 +1004,6 @@ class SaleController extends Controller
                     ['type' => 'client', 'data' => null];
             }
                 
-            // Add document type to meta_data
-            $documentType = ($sale->type === 'quote') ? 'quote' : 'invoice';
-                
             // Set meta_data with null check for items
             $invoice->meta_data = [
                 'source_type' => $sale instanceof Purchase ? 'purchase' : ($sale->type ?? 'sale'),
@@ -1008,7 +1011,7 @@ class SaleController extends Controller
                 'source_reference' => $sale->reference_number,
                 'source_date' => $sale->created_at,
                 'contact' => $contactData,
-                'payment_status' => $sale->payment_status,
+                'payment_status' => $sale->payment_status ?? 'unpaid',
                 'subtotal' => $subtotal,
                 'payment_methods' => $sale->transactions->groupBy('payment_method')
                     ->map(function ($group) {
@@ -1018,7 +1021,7 @@ class SaleController extends Controller
                             'method_name' => ucfirst(str_replace('_', ' ', $group->first()->payment_method))
                         ];
                     })->values()->toArray(),
-                'paid_amount' => $sale->paid_amount,
+                'paid_amount' => $sale->paid_amount ?? 0,
                 'items_data' => $sale->items->map(function($item) {
                     return [
                         'product_id' => $item->product_id,
@@ -1095,7 +1098,6 @@ class SaleController extends Controller
     }
     
     
-
     public function generateReceipt(Request $request, $id)
     {
         try {
@@ -1108,151 +1110,258 @@ class SaleController extends Controller
             $locale = $sale->team->locale ?? config('app.locale');
             app()->setLocale($locale);
             
+            // Get paper dimensions from request with defaults
+            $paperWidthMM = $request->input('paperWidth', 80); // Default 80mm
+            $heightMode = $request->input('heightMode', 'auto'); // Default auto
+            $maxHeightPt = $request->input('maxHeight', 800); // Default max height
+            
+            // Convert mm to points for PDF (1mm ≈ 2.83pt)
+            $paperWidthPt = round($paperWidthMM * 2.83);
+            
             // Create filename
             $filename = "receipt-{$sale->reference_number}-{$locale}.pdf";
-            $tempPath = storage_path('app/public/temp');
             
-            if (!file_exists($tempPath)) {
-                mkdir($tempPath, 0755, true);
-            }
-            
-            $pdfPath = $tempPath . '/' . $filename;
-    
-            // Generate HTML with simplified receipt centered on page
+            // HTML for receipt
             $html = '<!DOCTYPE html>
             <html>
             <head>
                 <meta charset="utf-8">
                 <title>' . __('receipt.receipt_number') . ': ' . $sale->reference_number . '</title>
                 <style>
-                    body {
-                        font-family: Courier, monospace;
-                        font-size: 10pt;
+                    /* Reset */
+                    * {
+                        box-sizing: border-box;
                         margin: 0;
-                        padding: 100px 0;
-                        display: flex;
-                        justify-content: center;
+                        padding: 0;
                     }
                     
-                    .receipt {
-                        width: 300px;
-                        border: 1px dashed #ccc;
-                        padding: 20px;
-                        box-shadow: 0 3px 10px rgba(0,0,0,0.1);
-                        background-color: white;
+                    /* Base styles */
+                    body {
+                        font-family: "Courier New", Courier, monospace;
+                        font-size: 9pt;
+                        line-height: 1.15;
+                        padding: 8mm 2mm 0 1.5mm; /* No bottom padding */
+                        width: 100%;
+                        max-width: ' . ($paperWidthPt - 8) . 'pt;
+                        margin: 0 auto;
                     }
                     
+                    /* Header */
                     .header {
                         text-align: center;
-                        margin-bottom: 20px;
+                        margin-bottom: 3mm;
                     }
                     
                     h2 {
-                        margin: 5px 0;
-                        font-size: 12pt;
+                        font-size: 11pt;
+                        font-weight: bold;
+                        margin-bottom: 1.5mm;
                     }
                     
                     p {
-                        margin: 3px 0;
+                        margin-bottom: 1mm;
                     }
                     
+                    /* Table layout */
                     table {
                         width: 100%;
                         border-collapse: collapse;
-                        margin: 15px 0;
+                        margin: 3mm 0;
+                        table-layout: fixed;
                     }
                     
                     th {
-                        border-top: 1px solid #000;
-                        border-bottom: 1px solid #000;
-                        padding: 5px;
+                        border-top: 0.5pt solid #000;
+                        border-bottom: 0.5pt solid #000;
+                        padding: 1mm 0;
                         text-align: left;
+                        font-size: 9pt;
+                        font-weight: bold;
                     }
                     
                     td {
-                        padding: 5px;
+                        padding: 0.8mm 0;
+                        font-size: 9pt;
+                        vertical-align: top;
                     }
                     
+                    td.product-name {
+                        padding-right: 1mm;
+                    }
+                    
+                    .text-center { text-align: center; }
+                    .text-right { text-align: right; }
+                    
+                    /* Totals section */
                     .totals {
                         text-align: right;
-                        margin-top: 15px;
-                        border-top: 1px solid #000;
-                        padding-top: 10px;
+                        border-top: 0.5pt solid #000;
+                        padding-top: 1mm;
+                        margin-top: 1mm;
                     }
                     
+                    /* Footer */
                     .footer {
                         text-align: center;
-                        margin-top: 20px;
-                        border-top: 1px solid #000;
-                        padding-top: 10px;
+                        border-top: 0.5pt solid #000;
+                        padding-top: 1mm;
+                        margin-top: 2mm;
+                    }
+                    
+                    .total-line {
+                        font-weight: bold;
+                        font-size: 10pt;
+                        margin-top: 1mm;
                     }
                 </style>
             </head>
             <body>
-                <div class="receipt">
-                    <div class="header">
-                        <h2>' . $sale->team->name . '</h2>
-                        <p>' . $sale->team->address . '</p>
-                        <p>' . __('receipt.tel') . ': ' . $sale->team->phone . '</p>
-                        <p>' . __('receipt.receipt_number') . ': ' . $sale->reference_number . '</p>
-                        <p>' . __('receipt.date') . ': ' . $sale->updated_at->format('d/m/Y H:i') . '</p>
-                    </div>
-                    
-                    <table>
-                        <tr>
-                            <th>' . __('receipt.item') . '</th>
-                            <th>' . __('receipt.quantity') . '</th>
-                            <th>' . __('receipt.tax') . '</th>
-                            <th>' . __('receipt.price') . '</th>
-                            <th>' . __('receipt.total') . '</th>
-                        </tr>';
+                <div class="header">
+                    <h2>' . $sale->team->name . '</h2>
+                    <p>' . $sale->team->address . '</p>
+                    <p>' . __('receipt.tel') . ': ' . $sale->team->phone . '</p>
+                    <p>' . __('receipt.receipt_number') . ': ' . $sale->reference_number . '</p>
+                    <p>' . __('receipt.date') . ': ' . $sale->updated_at->format('d/m/Y H:i') . '</p>
+                </div>
+                
+                <table>';
+                
+            // Determine if tax needs to be shown as a separate column
+            $showTaxColumn = !empty(array_filter(array_column($sale->items->toArray(), 'tax_amount')));
             
-            foreach($sale->items as $item) {
+            if ($showTaxColumn) {
                 $html .= '<tr>
-                    <td>' . $item->product->name . '</td>
-                    <td>' . $item->quantity . '</td>
-                    <td>' . number_format($item->tax_amount, 2) . '</td>
-                    <td>' . number_format($item->unit_price, 2) . '</td>
-                    <td>' . number_format($item->total_price, 2) . '</td>
+                    <th width="38%">' . __('receipt.item') . '</th>
+                    <th width="8%" class="text-center">' . __('receipt.quantity') . '</th>
+                    <th width="10%" class="text-right">' . __('receipt.tax') . '</th>
+                    <th width="19%" class="text-right">' . __('receipt.price') . '</th>
+                    <th width="25%" class="text-right">' . __('receipt.total') . '</th>
+                </tr>';
+            } else {
+                $html .= '<tr>
+                    <th width="46%">' . __('receipt.item') . '</th>
+                    <th width="8%" class="text-center">' . __('receipt.quantity') . '</th>
+                    <th width="20%" class="text-right">' . __('receipt.price') . '</th>
+                    <th width="26%" class="text-right">' . __('receipt.total') . '</th>
                 </tr>';
             }
             
+            foreach($sale->items as $item) {
+                // Allow more characters for product name
+                $productName = $item->product->name;
+                if (strlen($productName) > 22) {
+                    $productName = substr($productName, 0, 19) . '...';
+                }
+                
+                if ($showTaxColumn) {
+                    $html .= '<tr>
+                        <td class="product-name">' . $productName . '</td>
+                        <td class="text-center">' . $item->quantity . '</td>
+                        <td class="text-right">' . number_format($item->tax_amount, 2) . '</td>
+                        <td class="text-right">' . number_format($item->unit_price, 2) . '</td>
+                        <td class="text-right">' . number_format($item->total_price, 2) . '</td>
+                    </tr>';
+                } else {
+                    $html .= '<tr>
+                        <td class="product-name">' . $productName . '</td>
+                        <td class="text-center">' . $item->quantity . '</td>
+                        <td class="text-right">' . number_format($item->unit_price, 2) . '</td>
+                        <td class="text-right">' . number_format($item->total_price, 2) . '</td>
+                    </tr>';
+                }
+            }
+            
             $html .= '</table>
+                
+                <div class="totals">
+                    <p>' . __('receipt.subtotal') . ': ' . number_format($sale->total_amount - $sale->tax_amount, 2) . ' ' . __('receipt.currency') . '</p>';
                     
-                    <div class="totals">
-                        <p>' . __('receipt.subtotal') . ': ' . number_format($sale->total_amount - $sale->tax_amount, 2) . ' ' . __('receipt.currency') . '</p>
-                        <p>' . __('receipt.tax') . ': ' . number_format($sale->tax_amount, 2) . ' ' . __('receipt.currency') . '</p>';
+            // Always show tax amount in the totals even if it's zero
+            $html .= '<p>' . __('receipt.tax') . ': ' . number_format($sale->tax_amount, 2) . ' ' . __('receipt.currency') . '</p>';
             
             if($sale->discount_amount > 0) {
                 $html .= '<p>' . __('receipt.discount') . ': -' . number_format($sale->discount_amount, 2) . ' ' . __('receipt.currency') . '</p>';
             }
             
-            $html .= '<p><strong>' . __('receipt.total') . ': ' . number_format($sale->total_amount, 2) . ' ' . __('receipt.currency') . '</strong></p>
-                    </div>
-                    
-                    <div class="footer">
-                        <p>' . __('receipt.thank_you') . '</p>
-                    </div>
+            $html .= '<p class="total-line">' . __('receipt.total') . ': ' . number_format($sale->total_amount, 2) . ' ' . __('receipt.currency') . '</p>
+                </div>
+                
+                <div class="footer">
+                    <p>' . __('receipt.thank_you') . '</p>
                 </div>
             </body>
             </html>';
     
-            // Configure DomPDF
+            // Create DomPDF options
             $options = new \Dompdf\Options();
+            $options->set('defaultFont', 'courier');
+            $options->set('dpi', 203); // Standard thermal printer DPI
+            $options->set('isRemoteEnabled', false);
+            $options->set('isPhpEnabled', false);
             $options->set('isHtml5ParserEnabled', true);
-            $options->set('defaultFont', 'Courier');
             
-            // Create DomPDF instance
+            $finalHeight = 0;
+            
+            if ($heightMode === 'auto') {
+                // Two-pass approach to determine height
+                
+                // First pass - estimate the page count from rendering a fixed height
+                $tempDompdf = new \Dompdf\Dompdf($options);
+                $tempDompdf->loadHtml($html);
+                
+                // Start with a reasonable height
+                $tempDompdf->setPaper(array(0, 0, $paperWidthPt, 500), 'portrait');
+                $tempDompdf->render();
+                
+                // Get the page count as a way to determine if content fits
+                $pageCount = $tempDompdf->getCanvas()->get_page_count();
+                
+                // Use page count to determine appropriate height
+                if ($pageCount == 1) {
+                    // Content fits on a single page - use binary search to find optimal height
+                    $minHeight = 200;  // Minimum reasonable height
+                    $maxHeight = 500;  // Our initial test height
+                    $bestHeight = $maxHeight;
+                    $iterations = 0;
+                    $maxIterations = 5; // Limit iterations to avoid excessive processing
+                    
+                    while ($iterations < $maxIterations && ($maxHeight - $minHeight) > 10) {
+                        $iterations++;
+                        $testHeight = floor(($minHeight + $maxHeight) / 2);
+                        
+                        // Test with this height
+                        $testDompdf = new \Dompdf\Dompdf($options);
+                        $testDompdf->loadHtml($html);
+                        $testDompdf->setPaper(array(0, 0, $paperWidthPt, $testHeight), 'portrait');
+                        $testDompdf->render();
+                        
+                        // If this still fits on one page, we can go smaller
+                        $testPageCount = $testDompdf->getCanvas()->get_page_count();
+                        
+                        if ($testPageCount == 1) {
+                            $bestHeight = $testHeight; // Save this working height
+                            $maxHeight = $testHeight;  // Try smaller
+                        } else {
+                            $minHeight = $testHeight;  // Try larger
+                        }
+                    }
+                    
+                    $finalHeight = $bestHeight + 5; // Add a small buffer
+                } else {
+                    // Content doesn't fit on a single page at 500pt height
+                    // Use a larger height based on page count but respect maxHeight
+                    $finalHeight = min(500 * $pageCount, $maxHeightPt);
+                }
+            } else {
+                // Fixed height mode
+                $finalHeight = $maxHeightPt;
+            }
+            
+            // Final render with optimized height
             $dompdf = new \Dompdf\Dompdf($options);
             $dompdf->loadHtml($html);
-            
-            // Use standard A4
-            $dompdf->setPaper('A4');
-            
+            $dompdf->setPaper(array(0, 0, $paperWidthPt, $finalHeight), 'portrait');
             $dompdf->render();
-            
-            // Save PDF to file
-            file_put_contents($pdfPath, $dompdf->output());
             
             // Log activity
             ActivityLog::create([
@@ -1266,14 +1375,28 @@ class SaleController extends Controller
                 'ip_address' => $request->ip(),
                 'user_agent' => $request->userAgent(),
                 'description' => "Generated receipt for sale {$sale->reference_number} in {$locale}",
-                'meta_data' => ['locale' => $locale]
+                'meta_data' => [
+                    'locale' => $locale, 
+                    'paper_width_mm' => $paperWidthMM,
+                    'paper_width_pts' => $paperWidthPt,
+                    'paper_height_pts' => $finalHeight,
+                    'optimized_height' => $finalHeight,
+                    'height_mode' => $heightMode,
+                    'algorithm' => 'binary-search',
+                    'page_count' => $pageCount ?? 1,
+                    'has_tax_column' => $showTaxColumn
+                ]
             ]);
     
-            return response()->download($pdfPath, $filename, [
-                'Content-Type' => 'application/pdf'
-            ])->deleteFileAfterSend(true);
-    
-        } catch (\Exception $e) {
+            // Output the PDF with dimension metadata in headers
+            return response($dompdf->output())
+                ->header('Content-Type', 'application/pdf')
+                ->header('Content-Disposition', 'inline; filename="' . $filename . '"')
+                ->header('X-Paper-Width-MM', $paperWidthMM)
+                ->header('X-Paper-Height-PT', $finalHeight)
+                ->header('X-Height-Mode', $heightMode);
+        }
+        catch (\Exception $e) {
             \Log::error('Receipt generation error: ' . $e->getMessage(), [
                 'sale_id' => $id ?? null,
                 'user_id' => $request->user()->id ?? null,
@@ -1287,6 +1410,377 @@ class SaleController extends Controller
             ], 500);
         }
     }
+    
+    public function generateTestReceipt(Request $request)
+{
+    try {
+        $user = $request->user();
+        $team = $user->team;
+
+        // Set locale based on team's preference
+        $locale = $team->locale ?? config('app.locale');
+        app()->setLocale($locale);
+        
+        // Get paper dimensions from request with defaults
+        $paperWidthMM = $request->input('paperWidth', 80); // Default 80mm
+        $heightMode = $request->input('heightMode', 'auto'); // Default auto
+        $maxHeightPt = $request->input('maxHeight', 800); // Default max height
+        
+        // Convert mm to points for PDF (1mm ≈ 2.83pt)
+        $paperWidthPt = round($paperWidthMM * 2.83);
+        
+        // Create test reference number
+        $refNumber = 'TEST-' . date('YmdHis');
+        
+        // Create filename
+        $filename = "test-receipt-{$refNumber}-{$locale}.pdf";
+
+        // Create test sale data
+        $testItems = [
+            [
+                'product' => [
+                    'name' => 'Test Product 1'
+                ],
+                'quantity' => 2,
+                'unit_price' => 25.99,
+                'total_price' => 51.98,
+                'tax_amount' => 5.20
+            ],
+            [
+                'product' => [
+                    'name' => 'Test Product 2 with a longer name to test wrapping'
+                ],
+                'quantity' => 1,
+                'unit_price' => 15.50,
+                'total_price' => 15.50,
+                'tax_amount' => 1.55
+            ],
+            [
+                'product' => [
+                    'name' => 'Test Product 3'
+                ],
+                'quantity' => 3,
+                'unit_price' => 7.75,
+                'total_price' => 23.25,
+                'tax_amount' => 2.33
+            ],
+            [
+                'product' => [
+                    'name' => 'Test Product with No Tax'
+                ],
+                'quantity' => 2,
+                'unit_price' => 5.00,
+                'total_price' => 10.00,
+                'tax_amount' => 0.00
+            ]
+        ];
+        
+        // Calculate totals
+        $subtotal = array_sum(array_column($testItems, 'total_price'));
+        $taxAmount = array_sum(array_column($testItems, 'tax_amount'));
+        $discountAmount = 5.00; // Example discount
+        $totalAmount = $subtotal; // Without discount for simplicity
+        
+        // HTML for receipt
+        $html = '<!DOCTYPE html>
+        <html>
+        <head>
+            <meta charset="utf-8">
+            <title>' . __('receipt.receipt_number') . ': ' . $refNumber . '</title>
+            <style>
+                /* Reset */
+                * {
+                    box-sizing: border-box;
+                    margin: 0;
+                    padding: 0;
+                }
+                
+                /* Base styles */
+                body {
+                    font-family: "Courier New", Courier, monospace;
+                    font-size: 9pt;
+                    line-height: 1.15;
+                    padding: 8mm 2mm 0 1.5mm; /* No bottom padding */
+                    width: 100%;
+                    max-width: ' . ($paperWidthPt - 8) . 'pt;
+                    margin: 0 auto;
+                }
+                
+                /* Header */
+                .header {
+                    text-align: center;
+                    margin-bottom: 3mm;
+                }
+                
+                h2 {
+                    font-size: 11pt;
+                    font-weight: bold;
+                    margin-bottom: 1.5mm;
+                }
+                
+                p {
+                    margin-bottom: 1mm;
+                }
+                
+                /* Table layout */
+                table {
+                    width: 100%;
+                    border-collapse: collapse;
+                    margin: 3mm 0;
+                    table-layout: fixed;
+                }
+                
+                th {
+                    border-top: 0.5pt solid #000;
+                    border-bottom: 0.5pt solid #000;
+                    padding: 1mm 0;
+                    text-align: left;
+                    font-size: 9pt;
+                    font-weight: bold;
+                }
+                
+                td {
+                    padding: 0.8mm 0;
+                    font-size: 9pt;
+                    vertical-align: top;
+                }
+                
+                td.product-name {
+                    padding-right: 1mm;
+                }
+                
+                .text-center { text-align: center; }
+                .text-right { text-align: right; }
+                
+                /* Totals section */
+                .totals {
+                    text-align: right;
+                    border-top: 0.5pt solid #000;
+                    padding-top: 1mm;
+                    margin-top: 1mm;
+                }
+                
+                /* Footer */
+                .footer {
+                    text-align: center;
+                    border-top: 0.5pt solid #000;
+                    padding-top: 1mm;
+                    margin-top: 2mm;
+                }
+                
+                .total-line {
+                    font-weight: bold;
+                    font-size: 10pt;
+                    margin-top: 1mm;
+                }
+
+                .test-receipt {
+                    text-align: center;
+                    margin-top: 4mm;
+                    font-size: 8pt;
+                    font-style: italic;
+                    color: #555;
+                }
+            </style>
+        </head>
+        <body>
+            <div class="header">
+                <h2>' . $team->name . '</h2>
+                <p>' . ($team->address ?? '123 Main Street, City') . '</p>
+                <p>' . __('receipt.tel') . ': ' . ($team->phone ?? '+1 234-567-8901') . '</p>
+                <p>' . __('receipt.receipt_number') . ': ' . $refNumber . '</p>
+                <p>' . __('receipt.date') . ': ' . date('d/m/Y H:i') . '</p>
+            </div>
+            
+            <table>';
+            
+        // Determine if tax needs to be shown as a separate column
+        $showTaxColumn = !empty(array_filter(array_column($testItems, 'tax_amount')));
+        
+        if ($showTaxColumn) {
+            $html .= '<tr>
+                <th width="38%">' . __('receipt.item') . '</th>
+                <th width="8%" class="text-center">' . __('receipt.quantity') . '</th>
+                <th width="10%" class="text-right">' . __('receipt.tax') . '</th>
+                <th width="19%" class="text-right">' . __('receipt.price') . '</th>
+                <th width="25%" class="text-right">' . __('receipt.total') . '</th>
+            </tr>';
+        } else {
+            $html .= '<tr>
+                <th width="46%">' . __('receipt.item') . '</th>
+                <th width="8%" class="text-center">' . __('receipt.quantity') . '</th>
+                <th width="20%" class="text-right">' . __('receipt.price') . '</th>
+                <th width="26%" class="text-right">' . __('receipt.total') . '</th>
+            </tr>';
+        }
+        
+        foreach($testItems as $item) {
+            // Allow more characters for product name
+            $productName = $item['product']['name'];
+            if (strlen($productName) > 22) {
+                $productName = substr($productName, 0, 19) . '...';
+            }
+            
+            if ($showTaxColumn) {
+                $html .= '<tr>
+                    <td class="product-name">' . $productName . '</td>
+                    <td class="text-center">' . $item['quantity'] . '</td>
+                    <td class="text-right">' . number_format($item['tax_amount'], 2) . '</td>
+                    <td class="text-right">' . number_format($item['unit_price'], 2) . '</td>
+                    <td class="text-right">' . number_format($item['total_price'], 2) . '</td>
+                </tr>';
+            } else {
+                $html .= '<tr>
+                    <td class="product-name">' . $productName . '</td>
+                    <td class="text-center">' . $item['quantity'] . '</td>
+                    <td class="text-right">' . number_format($item['unit_price'], 2) . '</td>
+                    <td class="text-right">' . number_format($item['total_price'], 2) . '</td>
+                </tr>';
+            }
+        }
+        
+        $html .= '</table>
+            
+            <div class="totals">
+                <p>' . __('receipt.subtotal') . ': ' . number_format($subtotal, 2) . ' ' . __('receipt.currency') . '</p>';
+                
+        // Always show tax amount in the totals even if it's zero
+        $html .= '<p>' . __('receipt.tax') . ': ' . number_format($taxAmount, 2) . ' ' . __('receipt.currency') . '</p>';
+        
+        $html .= '<p>' . __('receipt.discount') . ': -' . number_format($discountAmount, 2) . ' ' . __('receipt.currency') . '</p>';
+        
+        $html .= '<p class="total-line">' . __('receipt.total') . ': ' . number_format($totalAmount, 2) . ' ' . __('receipt.currency') . '</p>
+            </div>
+            
+            <div class="footer">
+                <p>' . __('receipt.thank_you') . '</p>
+                <div class="test-receipt">TEST RECEIPT - NOT A VALID DOCUMENT</div>
+            </div>
+        </body>
+        </html>';
+
+        // Create DomPDF options
+        $options = new \Dompdf\Options();
+        $options->set('defaultFont', 'courier');
+        $options->set('dpi', 203); // Standard thermal printer DPI
+        $options->set('isRemoteEnabled', false);
+        $options->set('isPhpEnabled', false);
+        $options->set('isHtml5ParserEnabled', true);
+        
+        $finalHeight = 0;
+        $pageCount = 1;
+        
+        if ($heightMode === 'auto') {
+            // Two-pass approach to determine height
+            
+            // First pass - estimate the page count from rendering a fixed height
+            $tempDompdf = new \Dompdf\Dompdf($options);
+            $tempDompdf->loadHtml($html);
+            
+            // Start with a reasonable height
+            $tempDompdf->setPaper(array(0, 0, $paperWidthPt, 500), 'portrait');
+            $tempDompdf->render();
+            
+            // Get the page count as a way to determine if content fits
+            $pageCount = $tempDompdf->getCanvas()->get_page_count();
+            
+            // Use page count to determine appropriate height
+            if ($pageCount == 1) {
+                // Content fits on a single page - use binary search to find optimal height
+                $minHeight = 200;  // Minimum reasonable height
+                $maxHeight = 500;  // Our initial test height
+                $bestHeight = $maxHeight;
+                $iterations = 0;
+                $maxIterations = 5; // Limit iterations to avoid excessive processing
+                
+                while ($iterations < $maxIterations && ($maxHeight - $minHeight) > 10) {
+                    $iterations++;
+                    $testHeight = floor(($minHeight + $maxHeight) / 2);
+                    
+                    // Test with this height
+                    $testDompdf = new \Dompdf\Dompdf($options);
+                    $testDompdf->loadHtml($html);
+                    $testDompdf->setPaper(array(0, 0, $paperWidthPt, $testHeight), 'portrait');
+                    $testDompdf->render();
+                    
+                    // If this still fits on one page, we can go smaller
+                    $testPageCount = $testDompdf->getCanvas()->get_page_count();
+                    
+                    if ($testPageCount == 1) {
+                        $bestHeight = $testHeight; // Save this working height
+                        $maxHeight = $testHeight;  // Try smaller
+                    } else {
+                        $minHeight = $testHeight;  // Try larger
+                    }
+                }
+                
+                $finalHeight = $bestHeight + 5; // Add a small buffer
+            } else {
+                // Content doesn't fit on a single page at 500pt height
+                // Use a larger height based on page count but respect maxHeight
+                $finalHeight = min(500 * $pageCount, $maxHeightPt);
+            }
+        } else {
+            // Fixed height mode
+            $finalHeight = $maxHeightPt;
+        }
+        
+        // Final render with optimized height
+        $dompdf = new \Dompdf\Dompdf($options);
+        $dompdf->loadHtml($html);
+        $dompdf->setPaper(array(0, 0, $paperWidthPt, $finalHeight), 'portrait');
+        $dompdf->render();
+        
+        // Log activity
+        ActivityLog::create([
+            'log_type' => 'Generate',
+            'model_type' => 'TestReceipt',
+            'model_id' => 0,
+            'model_identifier' => $refNumber,
+            'user_identifier' => $user->name,
+            'user_id' => $user->id,
+            'user_email' => $user->email,
+            'ip_address' => $request->ip(),
+            'user_agent' => $request->userAgent(),
+            'description' => "Generated test receipt {$refNumber} for previewing in settings",
+            'meta_data' => [
+                'locale' => $locale, 
+                'paper_width_mm' => $paperWidthMM,
+                'paper_width_pts' => $paperWidthPt,
+                'paper_height_pts' => $finalHeight,
+                'optimized_height' => $finalHeight,
+                'height_mode' => $heightMode,
+                'algorithm' => 'binary-search',
+                'page_count' => $pageCount,
+                'has_tax_column' => $showTaxColumn
+            ]
+        ]);
+
+        // Output the PDF with dimension metadata in headers
+        return response($dompdf->output())
+            ->header('Content-Type', 'application/pdf')
+            ->header('Content-Disposition', 'inline; filename="' . $filename . '"')
+            ->header('X-Paper-Width-MM', $paperWidthMM)
+            ->header('X-Paper-Height-PT', $finalHeight)
+            ->header('X-Height-Mode', $heightMode);
+    }
+    catch (\Exception $e) {
+        \Log::error('Test receipt generation error: ' . $e->getMessage(), [
+            'user_id' => $request->user()->id ?? null,
+            'trace' => $e->getTraceAsString()
+        ]);
+        
+        return response()->json([
+            'error' => true,
+            'message' => 'Error generating test receipt: ' . $e->getMessage(),
+            'details' => config('app.debug') ? $e->getTrace() : null
+        ], 500);
+    }
+}
+
+    
+    
+
     
 
     public function getSummary(Request $request)

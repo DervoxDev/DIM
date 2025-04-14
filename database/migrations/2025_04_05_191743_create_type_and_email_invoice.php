@@ -4,9 +4,12 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-class AddTypeAndEmailSentToInvoicesTable extends Migration
+return new class extends Migration
 {
-    public function up()
+    /**
+     * Run the migrations.
+     */
+    public function up(): void
     {
         Schema::table('invoices', function (Blueprint $table) {
             $table->string('type')->default('invoice')->after('reference_number');
@@ -18,7 +21,7 @@ class AddTypeAndEmailSentToInvoicesTable extends Migration
     public function down()
     {
         Schema::table('invoices', function (Blueprint $table) {
-            $table->dropColumn(['type', 'is_email_sent']);
+            $table->dropColumn(['type', 'is_email_sent','payment_status']);
         });
     }
-}
+};

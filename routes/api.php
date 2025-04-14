@@ -16,7 +16,7 @@
     use App\Http\Controllers\Api\DashboardAnalyticsController;
     use App\Http\Controllers\Api\TeamController;
     use App\Http\Controllers\LanguageController;
-
+    use App\Http\Controllers\Api\BarcodeController;
     Route::group(['prefix' =>'v1'], function () {
         Route::post('login', [AuthController::class, 'login']);
         Route::post('register', [AuthController::class, 'register']);
@@ -87,11 +87,14 @@
             Route::get('/sales/{id}', [SaleController::class, 'show']);
             Route::put('/sales/{id}', [SaleController::class, 'update']);
             Route::get('sales/{id}/receipt', [SaleController::class, 'generateReceipt']);
+            Route::get('sales/receipts/test', [SaleController::class, 'generateTestReceipt']);
             Route::delete('/sales/{id}', [SaleController::class, 'destroy']);
             Route::post('/sales/{id}/add-payment', [SaleController::class, 'addPayment']);
             Route::post('/sales/{id}/generate-invoice', [SaleController::class, 'generateInvoice']);
             Route::post('/sales/{id}/convert-to-sale', [SaleController::class, 'convertToSale']);
             
+            Route::post('barcodes/generate', [BarcodeController::class, 'generate']);
+
             Route::get('/sales/summary', [SaleController::class, 'getSummary']);
 
             Route::get('/clients', [ClientController::class, 'index']);
@@ -111,7 +114,8 @@
             Route::post('/invoices/{id}/send', [InvoiceController::class, 'send']);
             Route::post('/invoices/{id}/mark-as-paid', [InvoiceController::class, 'markAsPaid']);
             Route::get('/invoices/{id}/download', [InvoiceController::class, 'download']);
-       
+            Route::post('invoices/{id}/mark-email-sent', [InvoiceController::class, 'markAsEmailSent']);
+            
             Route::prefix('teams')->group(function () {
                 Route::get('/', [TeamController::class, 'index']);
                 Route::get('/{id}', [TeamController::class, 'show']);

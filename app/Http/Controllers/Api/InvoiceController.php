@@ -269,16 +269,20 @@ class InvoiceController extends Controller
             \Log::info('Found invoice for update', [
                 'invoice_id' => $invoice->id,
                 'reference_number' => $invoice->reference_number,
-                'current_status' => $invoice->status
+                'current_status' => $invoice->status,
+                'current_payment_status' => $invoice->payment_status,
+                'current_email_status' => $invoice->is_email_sent
             ]);
     
-            // Only validate status
+            // Validate all possible fields with CORRECT statuses
             $validator = Validator::make($request->all(), [
-                'status' => 'required|in:draft,sent,paid,cancelled'
+                'status' => 'sometimes|required|in:draft,completed,cancelled',
+                'payment_status' => 'sometimes|required|in:paid,partial,unpaid',
+                'is_email_sent' => 'sometimes|required|boolean'
             ]);
     
             if ($validator->fails()) {
-                \Log::warning('Invoice status update validation failed', [
+                \Log::warning('Invoice update validation failed', [
                     'invoice_id' => $id,
                     'errors' => $validator->errors()->toArray(),
                     'request_data' => $request->all()
@@ -292,29 +296,83 @@ class InvoiceController extends Controller
     
             try {
                 DB::beginTransaction();
-    
-                \Log::info('Starting invoice status update transaction', [
+                \Log::info('Starting invoice update transaction', [
                     'invoice_id' => $invoice->id,
                     'old_status' => $invoice->status,
-                    'new_status' => $request->status
+                    'new_status' => $request->has('status') ? $request->status : null,
+                    'old_payment_status' => $invoice->payment_status,
+                    'new_payment_status' => $request->has('payment_status') ? $request->payment_status : null,
+                    'old_email_status' => $invoice->is_email_sent,
+                    'new_email_status' => $request->has('is_email_sent') ? $request->is_email_sent : null
                 ]);
     
                 $oldData = $invoice->toArray();
-                
-                // Only update status
-                $invoice->status = $request->status;
+                $changes = [];
+    
+                // Update document status if provided
+                if ($request->has('status')) {
+                    $invoice->status = $request->status;
+                    $changes['status'] = [
+                        'old' => $oldData['status'],
+                        'new' => $invoice->status
+                    ];
+                }
+    
+                // Update payment status if provided
+                if ($request->has('payment_status')) {
+                    $invoice->payment_status = $request->payment_status;
+                    $changes['payment_status'] = [
+                        'old' => $oldData['payment_status'] ?? 'unpaid',
+                        'new' => $invoice->payment_status
+                    ];
+    
+                    // If we're updating the invoice's payment status, also update the sale
+                    // if this is from a sale and not a quote
+                    if ($invoice->type === 'invoice' && 
+                        $invoice->invoiceable_type === 'App\Models\Sale' && 
+                        $invoice->invoiceable_id) {
+                        
+                        try {
+                            $sale = \App\Models\Sale::find($invoice->invoiceable_id);
+                            if ($sale && $sale->team_id === $user->team->id) {
+                                $sale->payment_status = $invoice->payment_status;
+                                $sale->save();
+                                
+                                \Log::info('Updated sale payment status', [
+                                    'sale_id' => $sale->id,
+                                    'new_payment_status' => $invoice->payment_status
+                                ]);
+                            }
+                        } catch (\Exception $e) {
+                            \Log::warning('Failed to update sale payment status', [
+                                'sale_id' => $invoice->invoiceable_id,
+                                'error' => $e->getMessage()
+                            ]);
+                            // Don't fail the whole transaction if this fails
+                        }
+                    }
+                }
+    
+                // Update email sent status if provided
+                if ($request->has('is_email_sent')) {
+                    $invoice->is_email_sent = $request->is_email_sent;
+                    $changes['is_email_sent'] = [
+                        'old' => $oldData['is_email_sent'] ?? false,
+                        'new' => $invoice->is_email_sent
+                    ];
+                }
+    
                 $invoice->save();
     
-                \Log::info('Invoice status updated successfully', [
+                \Log::info('Invoice updated successfully', [
                     'invoice_id' => $invoice->id,
-                    'old_status' => $oldData['status'],
-                    'new_status' => $invoice->status
+                    'changes' => $changes
                 ]);
     
                 try {
                     ActivityLog::create([
-                        'log_type' => 'Status Update',
-                        'model_type' => "Invoice",
+                        'log_type' => 'Update',
+                        'model_type' => $invoice->type === 'quote' ? "Quotation" : "Invoice",
                         'model_id' => $invoice->id,
                         'model_identifier' => $invoice->reference_number,
                         'user_identifier' => $user?->name,
@@ -322,17 +380,18 @@ class InvoiceController extends Controller
                         'user_email' => $user?->email,
                         'ip_address' => $request->ip(),
                         'user_agent' => $request->userAgent(),
-                        'description' => "Updated invoice {$invoice->reference_number} status from {$oldData['status']} to {$invoice->status}",
-                        'old_values' => ['status' => $oldData['status']],
-                        'new_values' => ['status' => $invoice->status]
+                        'description' => "Updated " . ($invoice->type === 'quote' ? "quotation" : "invoice") . " {$invoice->reference_number}",
+                        'old_values' => $oldData,
+                        'new_values' => $invoice->fresh()->toArray(),
+                        'changes' => $changes
                     ]);
     
-                    \Log::info('Activity log created for invoice status update', [
+                    \Log::info('Activity log created for invoice update', [
                         'invoice_id' => $invoice->id,
-                        'log_type' => 'Status Update'
+                        'log_type' => 'Update'
                     ]);
                 } catch (\Exception $e) {
-                    \Log::error('Error creating activity log for invoice status update', [
+                    \Log::error('Error creating activity log for invoice update', [
                         'invoice_id' => $invoice->id,
                         'error' => $e->getMessage(),
                         'trace' => $e->getTraceAsString()
@@ -341,20 +400,19 @@ class InvoiceController extends Controller
                 }
     
                 DB::commit();
-                \Log::info('Invoice status update transaction committed successfully', [
+                \Log::info('Invoice update transaction committed successfully', [
                     'invoice_id' => $invoice->id
                 ]);
     
                 $refreshedInvoice = $invoice->fresh(['items']);
                 return response()->json([
-                    'message' => 'Invoice status updated successfully',
+                    'message' => 'Invoice updated successfully',
                     'invoice' => $refreshedInvoice
                 ]);
     
             } catch (\Exception $e) {
                 DB::rollBack();
-                
-                \Log::error('Error updating invoice status', [
+                \Log::error('Error updating invoice', [
                     'invoice_id' => $id,
                     'error_message' => $e->getMessage(),
                     'error_code' => $e->getCode(),
@@ -366,7 +424,7 @@ class InvoiceController extends Controller
     
                 return response()->json([
                     'error' => true,
-                    'message' => 'Error updating invoice status',
+                    'message' => 'Error updating invoice',
                     'debug_message' => config('app.debug') ? $e->getMessage() : null,
                     'error_details' => config('app.debug') ? [
                         'file' => $e->getFile(),
@@ -377,7 +435,7 @@ class InvoiceController extends Controller
                 ], 500);
             }
         } catch (\Exception $e) {
-            \Log::critical('Unhandled exception in invoice status update', [
+            \Log::critical('Unhandled exception in invoice update', [
                 'invoice_id' => $id,
                 'error_message' => $e->getMessage(),
                 'error_code' => $e->getCode(),
@@ -389,7 +447,7 @@ class InvoiceController extends Controller
     
             return response()->json([
                 'error' => true,
-                'message' => 'Critical error occurred while updating invoice status',
+                'message' => 'Critical error occurred while updating invoice',
                 'debug_message' => config('app.debug') ? $e->getMessage() : null
             ], 500);
         }
@@ -443,7 +501,76 @@ class InvoiceController extends Controller
             ], 500);
         }
     }
-
+    public function markAsEmailSent(Request $request, $id)
+    {
+        $user = $request->user();
+        $invoice = Invoice::where('team_id', $user->team->id)->find($id);
+        
+        if (!$invoice) {
+            return response()->json([
+                'error' => true,
+                'message' => 'Invoice not found'
+            ], 404);
+        }
+        
+        try {
+            DB::beginTransaction();
+            
+            // Update the email sent status
+            $oldEmailSentStatus = $invoice->is_email_sent;
+            $invoice->is_email_sent = true;
+            $invoice->save();
+            
+            // If invoice was draft and now marked as email sent, also mark status as sent
+            if ($invoice->status === 'draft') {
+                $oldStatus = $invoice->status;
+                $invoice->status = 'sent';
+                $invoice->save();
+                
+                // Log status change
+                \Log::info('Invoice status changed from draft to sent when marking as email sent', [
+                    'invoice_id' => $invoice->id,
+                    'old_status' => $oldStatus,
+                    'new_status' => $invoice->status
+                ]);
+            }
+            
+            ActivityLog::create([
+                'log_type' => 'Email',
+                'model_type' => $invoice->type === 'quote' ? "Quotation" : "Invoice",
+                'model_id' => $invoice->id,
+                'model_identifier' => $invoice->reference_number,
+                'user_identifier' => $user?->name,
+                'user_id' => $user->id,
+                'user_email' => $user?->email,
+                'ip_address' => $request->ip(),
+                'user_agent' => $request->userAgent(),
+                'description' => "Marked " . ($invoice->type === 'quote' ? "quotation" : "invoice") . " {$invoice->reference_number} as email sent",
+                'old_values' => ['is_email_sent' => $oldEmailSentStatus],
+                'new_values' => ['is_email_sent' => $invoice->is_email_sent]
+            ]);
+            
+            DB::commit();
+            
+            return response()->json([
+                'message' => ($invoice->type === 'quote' ? "Quotation" : "Invoice") . ' marked as email sent',
+                'invoice' => $invoice->fresh()
+            ]);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            \Log::error('Error marking invoice as email sent', [
+                'invoice_id' => $id,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString() 
+            ]);
+            
+            return response()->json([
+                'error' => true,
+                'message' => 'Error updating email status'
+            ], 500);
+        }
+    }
+    
     public function send(Request $request, $id)
     {
         $user = $request->user();
@@ -495,24 +622,53 @@ class InvoiceController extends Controller
     public function markAsPaid(Request $request, $id)
     {
         $user = $request->user();
-
+    
         $invoice = Invoice::where('team_id', $user->team->id)->find($id);
-
+    
         if (!$invoice) {
             return response()->json([
                 'error' => true,
                 'message' => 'Invoice not found'
             ], 404);
         }
-
+    
         try {
             DB::beginTransaction();
-
-            $invoice->markAsPaid();
-
+    
+            // Save old status for logging
+            $oldPaymentStatus = $invoice->payment_status;
+            
+            // Update the payment status
+            $invoice->payment_status = 'paid';
+            $invoice->save();
+    
+            // If this invoice is from a sale (and not a quote), update the sale's payment status too
+            if ($invoice->type === 'invoice' && 
+                $invoice->invoiceable_type === 'App\Models\Sale' && 
+                $invoice->invoiceable_id) {
+                
+                try {
+                    $sale = \App\Models\Sale::find($invoice->invoiceable_id);
+                    if ($sale && $sale->team_id === $user->team->id) {
+                        $sale->payment_status = 'paid';
+                        $sale->save();
+                        
+                        \Log::info('Updated sale payment status to paid', [
+                            'sale_id' => $sale->id
+                        ]);
+                    }
+                } catch (\Exception $e) {
+                    \Log::warning('Failed to update sale payment status to paid', [
+                        'sale_id' => $invoice->invoiceable_id,
+                        'error' => $e->getMessage()
+                    ]);
+                    // Don't fail the transaction if this update fails
+                }
+            }
+    
             ActivityLog::create([
-                'log_type' => 'Status Update',
-                'model_type' => "Invoice",
+                'log_type' => 'Payment Status Update',
+                'model_type' => $invoice->type === 'quote' ? "Quotation" : "Invoice",
                 'model_id' => $invoice->id,
                 'model_identifier' => $invoice->reference_number,
                 'user_identifier' => $user?->name,
@@ -520,25 +676,34 @@ class InvoiceController extends Controller
                 'user_email' => $user?->email,
                 'ip_address' => $request->ip(),
                 'user_agent' => $request->userAgent(),
-                'description' => "Marked invoice {$invoice->reference_number} as paid",
-                'new_values' => $invoice->fresh()->toArray()
+                'description' => "Marked " . ($invoice->type === 'quote' ? "quotation" : "invoice") . 
+                               " {$invoice->reference_number} as paid",
+                'old_values' => ['payment_status' => $oldPaymentStatus],
+                'new_values' => ['payment_status' => 'paid']
             ]);
-
+    
             DB::commit();
-
+    
             return response()->json([
-                'message' => 'Invoice marked as paid',
+                'message' => ($invoice->type === 'quote' ? "Quotation" : "Invoice") . ' marked as paid',
                 'invoice' => $invoice->fresh()
             ]);
-
+    
         } catch (\Exception $e) {
             DB::rollBack();
+            \Log::error('Error marking invoice as paid', [
+                'invoice_id' => $id,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            
             return response()->json([
                 'error' => true,
-                'message' => 'Error updating invoice status'
+                'message' => 'Error updating payment status'
             ], 500);
         }
     }
+    
 
     public function download(Request $request, $id)
     {
