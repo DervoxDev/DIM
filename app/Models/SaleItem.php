@@ -68,10 +68,19 @@ class SaleItem extends Model
             ? $this->quantity * $this->package->pieces_per_package 
             : $this->quantity;
 
-        // Calculate price totals
+        // Calculate price totals - FIX THE ORDER OF OPERATIONS
         $subtotal = $this->quantity * $this->unit_price;
-        $this->tax_amount = ($subtotal * $this->tax_rate) / 100;
-        $this->total_price = $subtotal + $this->tax_amount - $this->discount_amount;
+        
+        // Apply discount to get taxable amount
+        $taxableAmount = $subtotal - ($this->discount_amount ?? 0);
+        
+        // Calculate tax on discounted amount
+        $this->tax_amount = ($taxableAmount * $this->tax_rate) / 100;
+        
+        // Final total is taxable amount plus tax
+        $this->total_price = $taxableAmount + $this->tax_amount;
+        
+        return $this; // Return $this for method chaining
     }
 
 }

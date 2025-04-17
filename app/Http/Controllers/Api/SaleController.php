@@ -127,7 +127,7 @@ class SaleController extends Controller
             'items.*.quantity' => 'required|integer|min:1',
             'items.*.unit_price' => 'required|numeric|min:0',
             'items.*.tax_rate' => 'nullable|numeric|min:0',
-            'items.*.discount_amount' => 'nullable|numeric|min:0',
+            'items.*.discount_amount' => 'required|numeric|min:0',
             'items.*.is_package' => 'required|boolean',
             'items.*.package_id' => 'required_if:items.*.is_package,true|exists:product_packages,id',
             'items.*.total_pieces' => 'required|integer|min:1',
@@ -221,8 +221,9 @@ class SaleController extends Controller
                     
                     // Calculate totals before saving
                     $subtotal = $saleItem->quantity * $saleItem->unit_price;
-                    $saleItem->tax_amount = ($subtotal * $saleItem->tax_rate) / 100;
-                    $saleItem->total_price = $subtotal + $saleItem->tax_amount - $saleItem->discount_amount;
+                    $taxableAmount = $subtotal - $saleItem->discount_amount; // Apply discount before tax
+                    $saleItem->tax_amount = ($taxableAmount * $saleItem->tax_rate) / 100; // Calculate tax on discounted amount
+                    $saleItem->total_price = $taxableAmount + $saleItem->tax_amount; // Total with tax (after discount)
                     
                     if (!$saleItem->save()) {
                         throw new \Exception("Failed to save sale item");
@@ -515,32 +516,66 @@ class SaleController extends Controller
                 $sale->items()->delete();
                 
                 // Add new items and update stock
-                foreach ($request->items as $item) {
-                    $product = Product::findOrFail($item['product_id']);
-                    
-                    // Validate stock availability
-                    if ($product->quantity < $item['quantity']) {
-                        throw new \Exception("Insufficient stock for product: {$product->name}");
-                    }
-                    
-                    // Create new sale item
-                    $saleItem = $sale->items()->create([
-                        'product_id' => $item['product_id'],
-                        'quantity' => $item['quantity'],
-                        'unit_price' => $item['unit_price'],
-                        'tax_rate' => $item['tax_rate'] ?? 0,
-                        'total_price' => ($item['quantity'] * $item['unit_price']) * (1 + ($item['tax_rate'] ?? 0) / 100)
-                    ]);
-                    
-                    \Log::debug('Created sale item', [
-                        'item_id' => $saleItem->id,
-                        'product_id' => $item['product_id'],
-                        'quantity' => $item['quantity']
-                    ]);
-                    
-                    // Update stock
-                    $product->updateStock($item['quantity'], 'subtract');
-                }
+               // In SaleController.php, update method, when creating new sale items:
+
+// Add new items and update stock
+foreach ($request->items as $item) {
+    $product = Product::findOrFail($item['product_id']);
+    
+    // Validate stock availability
+    if ($product->quantity < $item['quantity']) {
+        throw new \Exception("Insufficient stock for product: {$product->name}");
+    }
+    
+    // Calculate values correctly
+    $quantity = $item['quantity'];
+    $unitPrice = $item['unit_price'];
+    $taxRate = $item['tax_rate'] ?? 0;
+    $discountAmount = $item['discount_amount'] ?? 0;
+    
+    // Calculate subtotal
+    $subtotal = $quantity * $unitPrice;
+    
+    // Apply discount to get taxable amount
+    $taxableAmount = $subtotal - $discountAmount;
+    
+    // Calculate tax on the discounted amount
+    $taxAmount = ($taxableAmount * $taxRate) / 100;
+    
+    // Calculate final total price
+    $totalPrice = $taxableAmount + $taxAmount;
+    
+    // Create new sale item with correct values
+    $saleItem = $sale->items()->create([
+        'product_id' => $item['product_id'],
+        'quantity' => $quantity,
+        'unit_price' => $unitPrice,
+        'tax_rate' => $taxRate,
+        'tax_amount' => $taxAmount, // Properly calculated tax amount
+        'discount_amount' => $discountAmount,
+        'is_package' => $item['is_package'] ?? false,
+        'package_id' => $item['is_package'] ? $item['package_id'] : null,
+        'total_pieces' => $item['total_pieces'] ?? $quantity,
+        'total_price' => $totalPrice // Correctly calculated total
+    ]);
+    
+    \Log::debug('Created sale item', [
+        'item_id' => $saleItem->id,
+        'product_id' => $item['product_id'],
+        'quantity' => $quantity,
+        'unit_price' => $unitPrice,
+        'subtotal' => $subtotal,
+        'discount_amount' => $discountAmount,
+        'taxable_amount' => $taxableAmount,
+        'tax_rate' => $taxRate,
+        'tax_amount' => $taxAmount,
+        'total_price' => $totalPrice
+    ]);
+    
+    // Update stock
+    $product->updateStock($quantity, 'subtract');
+}
+
             }
             
             // Update sale data except payment status (will adjust later)

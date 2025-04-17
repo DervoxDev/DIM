@@ -122,12 +122,51 @@ class Sale extends Model
     return $transaction;
 }
 
-    public function calculateTotals()
-    {
-        $this->total_amount = $this->items->sum('total_price');
-        $this->tax_amount = $this->items->sum('tax_amount');
-        $this->save();
+public function calculateTotals()
+{
+    $subtotal = 0;
+    $taxAmount = 0;
+    $itemDiscountTotal = 0;
+    
+    foreach ($this->items as $item) {
+        $itemSubtotal = $item->quantity * $item->unit_price;
+        $itemDiscountAmount = $item->discount_amount ?? 0;
+        
+        // Track item-level discounts separately
+        $itemDiscountTotal += $itemDiscountAmount;
+        
+        // Apply item discount before calculating tax
+        $taxableAmount = $itemSubtotal - $itemDiscountAmount;
+        
+        // Calculate tax on discounted amount
+        $itemTaxAmount = ($taxableAmount * $item->tax_rate) / 100;
+        
+        // Add to total tax
+        $taxAmount += $itemTaxAmount;
+        
+        // Add to subtotal (before tax)
+        $subtotal += $itemSubtotal;
     }
+    
+    // Get the already-stored sale-level discount
+    $saleDiscount = $this->discount_amount ?? 0;
+    
+    // Calculate final total:
+    // 1. Start with subtotal (sum of all item prices * quantities)
+    // 2. Subtract all item discounts
+    // 3. Add the total tax amount
+    // 4. Subtract the sale-level discount
+    $totalAmount = ($subtotal - $itemDiscountTotal) + $taxAmount - $saleDiscount;
+    
+    // Update the model
+    $this->total_amount = $totalAmount;
+    $this->tax_amount = $taxAmount;
+    
+    $this->save();
+    
+    return $this;
+}
+
 
     public function __construct(array $attributes = [])
 {
