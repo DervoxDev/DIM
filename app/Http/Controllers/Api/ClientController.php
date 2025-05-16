@@ -344,32 +344,60 @@ class ClientController extends Controller
         ]);
     }
 
+    // public function getTransactions(Request $request, $id)
+    // {
+    //     $user = $request->user();
+
+    //     $client = Client::where('team_id', $user->team->id)->find($id);
+
+    //     if (!$client) {
+    //         return response()->json([
+    //             'error' => true,
+    //             'message' => 'Client not found'
+    //         ], 404);
+    //     }
+
+    //     $transactions = $client->sales()
+    //                          ->with('transactions')
+    //                          ->get()
+    //                          ->pluck('transactions')
+    //                          ->flatten()
+    //                          ->sortByDesc('transaction_date')
+    //                          ->values();
+
+    //     return response()->json([
+    //         'transactions' => $transactions
+    //     ]);
+    // }
     public function getTransactions(Request $request, $id)
     {
         $user = $request->user();
-
+        $perPage = $request->input('per_page', 15); // Default to 15 items per page
+        
         $client = Client::where('team_id', $user->team->id)->find($id);
-
+        
         if (!$client) {
             return response()->json([
                 'error' => true,
                 'message' => 'Client not found'
             ], 404);
         }
-
-        $transactions = $client->sales()
-                             ->with('transactions')
-                             ->get()
-                             ->pluck('transactions')
-                             ->flatten()
-                             ->sortByDesc('transaction_date')
-                             ->values();
-
+        
+        // Get all sales IDs for this client
+        $salesIds = $client->sales()->pluck('id')->toArray();
+        
+        // Query transactions directly with pagination
+        $transactions = DB::table('cash_transactions')
+            ->whereIn('transactionable_id', $salesIds)
+            ->where('transactionable_type', 'App\Models\Sale')
+            ->orderBy('transaction_date', 'desc')
+            ->paginate($perPage);
+        
         return response()->json([
             'transactions' => $transactions
         ]);
     }
-
+    
     public function getStatement(Request $request, $id)
     {
         try {

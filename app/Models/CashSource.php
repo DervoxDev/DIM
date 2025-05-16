@@ -19,13 +19,20 @@ class CashSource extends Model
         'account_number',
         'bank_name',
         'status',
+        'is_default_general',
+        'is_default_sales',
+        'is_default_purchases',
+        'is_default_payments',
     ];
 
     protected $casts = [
         'balance' => 'decimal:2',
         'initial_balance' => 'decimal:2',
+        'is_default_general' => 'boolean',
+        'is_default_sales' => 'boolean',
+        'is_default_purchases' => 'boolean',
+        'is_default_payments' => 'boolean',
     ];
-
     // Relationships
     public function team()
     {
@@ -113,5 +120,29 @@ public function transfer($amount, CashSource $destination, $description = null)
 
     return $withdrawalTx;
 }
+public function setAsDefault($context = 'general')
+{
+    $column = 'is_default_' . $context;
+    
+    // First, unset any existing defaults for this context in the team
+    self::where('team_id', $this->team_id)
+        ->where('id', '!=', $this->id)
+        ->where($column, true)
+        ->update([$column => false]);
+    
+    // Then set this one as default
+    $this->$column = true;
+    $this->save();
+    
+    return $this;
+}
 
+public static function getDefaultForTeam($teamId, $context = 'general')
+{
+    $column = 'is_default_' . $context;
+    return self::where('team_id', $teamId)
+        ->where($column, true)
+        ->where('status', 'active')  // Only consider active cash sources
+        ->first();
+}
 }

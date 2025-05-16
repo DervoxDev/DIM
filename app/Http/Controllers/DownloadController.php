@@ -20,7 +20,7 @@ class DownloadController extends Controller
             'windows-64' => [
                 'path' => 'downloads/dim-setup-x64.exe',
                 'name' => 'dim-setup-x64.exe',
-                'size' => '84.5 MB',
+                'size' => '92 MB',
                 'mime' => 'application/octet-stream'
             ],
             'windows-32' => [

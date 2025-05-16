@@ -43,6 +43,9 @@
             Route::get('/products/{productId}/barcodes', [ProductController::class, 'getBarcodes']);
             Route::delete('products/{id}/image', [ProductController::class, 'removeImage']);
             Route::post('products/{id}/image', [ProductController::class, 'uploadImage']); 
+
+            Route::get('products/barcode/{barcode}', [ProductController::class, 'getByBarcode']);
+            
             Route::prefix('activity-logs')->group(function () {
                 Route::get('/', [ActivityLogController::class, 'index']);
                 Route::get('/{id}', [ActivityLogController::class, 'show']);
@@ -56,13 +59,20 @@
             Route::get('/suppliers/{id}', [SupplierController::class, 'show']);
             Route::put('/suppliers/{id}', [SupplierController::class, 'update']);
             Route::delete('/suppliers/{id}', [SupplierController::class, 'destroy']); 
+            Route::get('/suppliers/{id}/purchases', [SupplierController::class, 'getPurchases']);
+            Route::get('/suppliers/{id}/transactions', [SupplierController::class, 'getTransactions']);
+            Route::get('/suppliers/{id}/statement', [SupplierController::class, 'getStatement']);
 
+            Route::get('/cash-sources/defaults', [CashSourceController::class, 'getDefaults']);
             Route::get('/cash-sources', [CashSourceController::class, 'index']);
             Route::post('/cash-sources', [CashSourceController::class, 'store']);
+            
             Route::get('/cash-sources/{id}', [CashSourceController::class, 'show']);
             Route::put('/cash-sources/{id}', [CashSourceController::class, 'update']);
             Route::delete('/cash-sources/{id}', [CashSourceController::class, 'destroy']);
-            
+          
+            Route::post('/cash-sources/{id}/set-default', [CashSourceController::class, 'setDefault']);
+
             // Transaction routes
             Route::post('/cash-sources/{id}/deposit', [CashSourceController::class, 'deposit']);
             Route::post('/cash-sources/{id}/withdraw', [CashSourceController::class, 'withdraw']);
@@ -87,6 +97,7 @@
             Route::get('/sales/{id}', [SaleController::class, 'show']);
             Route::put('/sales/{id}', [SaleController::class, 'update']);
             Route::get('sales/{id}/receipt', [SaleController::class, 'generateReceipt']);
+            Route::get('sales/{id}/check-invoice', [SaleController::class, 'checkExistingInvoice']);
             Route::get('sales/receipts/test', [SaleController::class, 'generateTestReceipt']);
             Route::delete('/sales/{id}', [SaleController::class, 'destroy']);
             Route::post('/sales/{id}/add-payment', [SaleController::class, 'addPayment']);

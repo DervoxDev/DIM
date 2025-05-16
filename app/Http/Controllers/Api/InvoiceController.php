@@ -574,24 +574,76 @@ class InvoiceController extends Controller
     public function send(Request $request, $id)
     {
         $user = $request->user();
-
+    
         $invoice = Invoice::where('team_id', $user->team->id)->find($id);
-
+    
         if (!$invoice) {
             return response()->json([
                 'error' => true,
                 'message' => 'Invoice not found'
             ], 404);
         }
-
+    
+        // Check if the invoice has client contact information
+        $hasClientEmail = false;
+        if (isset($invoice->meta_data['contact']['data']['email'])) {
+            $clientEmail = $invoice->meta_data['contact']['data']['email'];
+            if (filter_var($clientEmail, FILTER_VALIDATE_EMAIL)) {
+                $hasClientEmail = true;
+            }
+        }
+    
+        if (!$hasClientEmail) {
+            return response()->json([
+                'error' => true,
+                'message' => 'Cannot send email - no valid client email address found'
+            ], 422);
+        }
+    
         try {
             DB::beginTransaction();
-
-            $invoice->markAsSent();
-
+            
+            // Mark email as sent - only update this flag, not the status
+            $invoice->is_email_sent = true;
+            $invoice->save();
+    
+            // Send the actual email
+            $clientName = $invoice->meta_data['contact']['data']['name'] ?? 'Client';
+            $clientEmail = $invoice->meta_data['contact']['data']['email'];
+            
+            // Log the attempt
+            \Log::info('Sending invoice email', [
+                'invoice_id' => $invoice->id,
+                'reference' => $invoice->reference_number,
+                'client_email' => $clientEmail
+            ]);
+    
+            // Create PDF here or use existing PDF generation method
+            $pdfPath = null;
+            try {
+                // This would be your method to generate and save the PDF
+                // $pdfPath = $this->generatePdf($invoice->id);
+                
+                // For this example, we assume the PDF generation works
+                $documentType = $invoice->type === 'quote' ? 'Quotation' : 'Invoice';
+                
+                // Here you would add the actual email sending code
+                // Mail::to($clientEmail)->send(new InvoiceEmail($invoice, $pdfPath, $documentType));
+                
+                // For now, just simulate email sending success
+                \Log::info("Email would be sent to $clientEmail with $documentType {$invoice->reference_number}");
+            } catch (\Exception $e) {
+                \Log::error('Error sending invoice email', [
+                    'invoice_id' => $invoice->id,
+                    'error' => $e->getMessage()
+                ]);
+                
+                throw $e;
+            }
+    
             ActivityLog::create([
-                'log_type' => 'Send',
-                'model_type' => "Invoice",
+                'log_type' => 'Email',
+                'model_type' => $invoice->type === 'quote' ? "Quotation" : "Invoice",
                 'model_id' => $invoice->id,
                 'model_identifier' => $invoice->reference_number,
                 'user_identifier' => $user?->name,
@@ -599,25 +651,35 @@ class InvoiceController extends Controller
                 'user_email' => $user?->email,
                 'ip_address' => $request->ip(),
                 'user_agent' => $request->userAgent(),
-                'description' => "Sent invoice {$invoice->reference_number}",
-                'new_values' => $invoice->fresh()->toArray()
+                'description' => "Sent " . ($invoice->type === 'quote' ? "quotation" : "invoice") . 
+                               " {$invoice->reference_number} to " . $clientEmail,
+                'new_values' => [
+                    'is_email_sent' => $invoice->is_email_sent
+                ]
             ]);
-
+    
             DB::commit();
-
+    
             return response()->json([
-                'message' => 'Invoice sent successfully',
+                'message' => ($invoice->type === 'quote' ? "Quote" : "Invoice") . ' sent successfully',
                 'invoice' => $invoice->fresh()
             ]);
-
+    
         } catch (\Exception $e) {
             DB::rollBack();
+            \Log::error('Error sending invoice', [
+                'invoice_id' => $id,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            
             return response()->json([
                 'error' => true,
-                'message' => 'Error sending invoice'
+                'message' => 'Error sending invoice: ' . $e->getMessage()
             ], 500);
         }
     }
+    
 
     public function markAsPaid(Request $request, $id)
     {

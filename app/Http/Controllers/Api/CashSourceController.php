@@ -100,7 +100,18 @@ class CashSourceController extends Controller
                 'description' => "Cash source {$cashSource->name} created",
                 'new_values' => $cashSource->toArray()
             ]);
+     // Check if this is the first cash source for the team
 
+     $count = CashSource::where('team_id', $user->team->id)->count();
+     if ($count === 1) {
+         // Set as default for all contexts
+         $cashSource->update([
+             'is_default_general' => true,
+             'is_default_sales' => true,
+             'is_default_purchases' => true,
+             'is_default_payments' => true
+         ]);
+     }
             return response()->json([
                 'message' => 'Cash source created successfully',
                 'cash_source' => $cashSource
@@ -143,7 +154,10 @@ class CashSourceController extends Controller
                 'account_number' => 'nullable|string',
                 'bank_name' => 'nullable|string',
                 'status' => 'required|string|in:active,inactive',
-                'is_default' => 'boolean'
+                'is_default_general' => 'boolean',
+                'is_default_sales' => 'boolean',
+                'is_default_purchases' => 'boolean',
+                'is_default_payments' => 'boolean'
             ]);
         
             if ($validator->fails()) {
@@ -168,18 +182,42 @@ class CashSourceController extends Controller
                     'description',
                     'account_number',
                     'bank_name',
-                    'status',
-                    'is_default'
+                    'status'
                 ]));
                 
-                $cashSource->save();
-                
-                // Handle default status
-                if ($cashSource->is_default) {
-                    CashSource::where('team_id', $user->team->id)
-                             ->where('id', '!=', $cashSource->id)
-                             ->update(['is_default' => false]);
+                // Handle default context fields
+                $contexts = ['general', 'sales', 'purchases', 'payments'];
+                foreach ($contexts as $context) {
+                    $field = 'is_default_' . $context;
+                    if (isset($request->$field)) {
+                        if ($request->$field) {
+                            $cashSource->setAsDefault($context);
+                        } else {
+                            // If setting to false and this was a default, find a new default
+                            if ($cashSource->$field) {
+                                $cashSource->$field = false;
+                                
+                                // Find another active cash source to make default
+                                $newDefault = CashSource::where('team_id', $user->team->id)
+                                    ->where('id', '!=', $cashSource->id)
+                                    ->where('status', 'active')
+                                    ->first();
+                                    
+                                if ($newDefault) {
+                                    $newDefault->$field = true;
+                                    $newDefault->save();
+                                }
+                            }
+                        }
+                    }
                 }
+                
+                // For backward compatibility
+                if (isset($request->is_default) && $request->is_default) {
+                    $cashSource->setAsDefault('general');
+                }
+                
+                $cashSource->save();
                 
                 // Log the successful update
                 \Log::info('Cash source updated successfully:', [
@@ -240,68 +278,146 @@ class CashSourceController extends Controller
         }
     }
     
-    
-    
-    public function destroy($id)
+    public function destroy(Request $request, $id)
     {
-        $user = request()->user();
+        $user = $request->user();
         
-        $cashSource = CashSource::where('team_id', $user->team->id)->find($id);
-    
-        if (!$cashSource) {
-            return response()->json([
-                'error' => true,
-                'message' => 'Cash source not found'
-            ], 404);
-        }
-    
         try {
-            $oldValues = $cashSource->toArray();
+            \DB::beginTransaction();
+            
+            $cashSource = CashSource::where('team_id', $user->team->id)->find($id);
+            
+            if (!$cashSource) {
+                return response()->json([
+                    'error' => true,
+                    'message' => 'Cash source not found'
+                ], 404);
+            }
+            
+            // Check if this is the only active cash source
+            $activeCount = CashSource::where('team_id', $user->team->id)
+                ->where('status', 'active')
+                ->count();
+                
+            if ($activeCount <= 1 && $cashSource->status === 'active') {
+                return response()->json([
+                    'error' => true,
+                    'message' => 'Cannot delete the only active cash source. Please create another cash source first.'
+                ], 422);
+            }
+            
+            // Check if this is a default cash source for any context
+            $isDefault = $cashSource->is_default_general || 
+                        $cashSource->is_default_sales || 
+                        $cashSource->is_default_purchases || 
+                        $cashSource->is_default_payments;
+            
+            // If it's a default, find the next active cash source to make default
+            if ($isDefault) {
+                $nextDefault = CashSource::where('team_id', $user->team->id)
+                    ->where('id', '!=', $id)
+                    ->where('status', 'active')
+                    ->first();
+                    
+                if ($nextDefault) {
+                    $contexts = ['general', 'sales', 'purchases', 'payments'];
+                    foreach ($contexts as $context) {
+                        $field = 'is_default_' . $context;
+                        if ($cashSource->$field) {
+                            $nextDefault->$field = true;
+                        }
+                    }
+                    $nextDefault->save();
+                }
+            }
+            
+            // Log the cash source details before deletion for record keeping
+            $cashSourceDetails = $cashSource->toArray();
+            
+            // Delete the cash source (or soft delete if soft deletes are enabled)
             $cashSource->delete();
-    
+            
             ActivityLog::create([
                 'log_type' => 'Delete',
-                'model_type' => "CashSource",
-                'model_id' => $cashSource->id,
+                'model_type' => 'CashSource',
+                'model_id' => $id,
                 'model_identifier' => $cashSource->name,
-                'user_identifier' => $user?->name,
+                'user_identifier' => $user->name,
                 'user_id' => $user->id,
-                'user_email' => $user?->email,
-                'ip_address' => request()->ip(),
-                'user_agent' => request()->userAgent(),
-                'description' => "Cash source {$cashSource->name} deleted",
-                'old_values' => $oldValues
+                'user_email' => $user->email,
+                'ip_address' => $request->ip(),
+                'user_agent' => $request->userAgent(),
+                'description' => "Cash source {$cashSource->name} was deleted",
+                'old_values' => $cashSourceDetails,
             ]);
-    
+            
+            \DB::commit();
+            
             return response()->json([
                 'message' => 'Cash source deleted successfully'
             ]);
-    
+            
         } catch (\Exception $e) {
+            \DB::rollBack();
+            
+            \Log::error('Cash source deletion failed:', [
+                'message' => $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            
             return response()->json([
                 'error' => true,
-                'message' => 'Error deleting cash source'
+                'message' => 'Error deleting cash source',
+                'details' => config('app.debug') ? [
+                    'message' => $e->getMessage(),
+                    'file' => $e->getFile(),
+                    'line' => $e->getLine()
+                ] : null
             ], 500);
         }
     }
     
-    public function show($id)
-    {
-        $user = request()->user();
-        
-        $cashSource = CashSource::where('team_id', $user->team->id)->find($id);
     
-        if (!$cashSource) {
+    public function show(Request $request, $id)
+    {
+        $user = $request->user();
+        
+        if (!$user->team) {
+            \Log::warning('No team found for user', ['user_id' => $user->id, 'method' => 'show']);
             return response()->json([
                 'error' => true,
+                'message' => 'No team found for the user'
+            ], 404);
+        }
+        
+        $teamId = $user->team->id;
+        
+        \Log::info('Getting cash source in show method', [
+            'id' => $id,
+            'user_id' => $user->id,
+            'team_id' => $teamId
+        ]);
+        
+        $cashSource = CashSource::where('team_id', $teamId)->find($id);
+        
+        if (!$cashSource) {
+            \Log::warning('Cash source not found in show method', [
+                'id' => $id, 
+                'team_id' => $teamId
+            ]);
+            
+            return response()->json([
                 'message' => 'Cash source not found'
             ], 404);
         }
-    
+        
         return response()->json([
             'cash_source' => $cashSource
         ]);
     }
+    
     
     public function deposit(Request $request, $id)
     {
@@ -592,6 +708,133 @@ class CashSourceController extends Controller
             ], 500);
         }
     }
+ /**
+ * Get default cash sources for all contexts
+ */
+/**
+ * Get a specific cash source
+ */
+/**
+ * Get default cash sources for all contexts
+ */
+public function getDefaults(Request $request)
+{
+    $user = $request->user();
     
+    if (!$user->team) {
+        \Log::warning('No team found for user', ['user_id' => $user->id, 'method' => 'getDefaults']);
+        return response()->json([
+            'error' => true,
+            'message' => 'No team found for the user'
+        ], 404);
+    }
+    
+    $teamId = $user->team->id;
+    
+    \Log::info('Getting default cash sources', [
+        'user_id' => $user->id,
+        'team_id' => $teamId
+    ]);
+    
+    return response()->json([
+        'defaults' => [
+            'general' => CashSource::getDefaultForTeam($teamId, 'general')?->id,
+            'sales' => CashSource::getDefaultForTeam($teamId, 'sales')?->id,
+            'purchases' => CashSource::getDefaultForTeam($teamId, 'purchases')?->id, 
+            'payments' => CashSource::getDefaultForTeam($teamId, 'payments')?->id
+        ]
+    ]);
+}
 
+
+/**
+ * Set a cash source as default for a specific context
+ */
+public function setDefault(Request $request, $id)
+{
+    $user = $request->user();
+    
+    if (!$user->team) {
+        \Log::warning('No team found for user', ['user_id' => $user->id, 'method' => 'setDefault']);
+        return response()->json([
+            'error' => true,
+            'message' => 'No team found for the user'
+        ], 404);
+    }
+    
+    $teamId = $user->team->id;
+    
+    \Log::info('Setting default cash source', [
+        'id' => $id,
+        'user_id' => $user->id,
+        'team_id' => $teamId,
+        'request_data' => $request->all(),
+        'request_context' => $request->context
+    ]);
+    
+    $cashSource = CashSource::where('team_id', $teamId)->find($id);
+    
+    if (!$cashSource) {
+        \Log::warning('Cash source not found for set default', [
+            'id' => $id, 
+            'team_id' => $teamId,
+            'query' => CashSource::where('team_id', $teamId)->toSql()
+        ]);
+        
+        // Check if this cash source exists for any team
+        $existsAtAll = CashSource::find($id);
+        if ($existsAtAll) {
+            \Log::warning('Source exists but for different team', [
+                'requested_id' => $id,
+                'actual_team_id' => $existsAtAll->team_id,
+                'user_team_id' => $teamId
+            ]);
+        }
+        
+        return response()->json([
+            'message' => 'Cash source not found'
+        ], 404);
+    }
+    
+    $validator = Validator::make($request->all(), [
+        'context' => 'required|in:general,sales,purchases,payments'
+    ]);
+    
+    if ($validator->fails()) {
+        \Log::warning('Validation error setting default', ['errors' => $validator->errors()]);
+        return response()->json([
+            'message' => 'Validation error',
+            'errors' => $validator->errors()
+        ], 422);
+    }
+    
+    try {
+        $cashSource->setAsDefault($request->context);
+        
+        \Log::info('Default cash source updated', [
+            'id' => $id,
+            'context' => $request->context,
+            'team_id' => $teamId,
+            'name' => $cashSource->name
+        ]);
+        
+        return response()->json([
+            'message' => 'Default cash source updated successfully',
+            'cash_source' => $cashSource
+        ]);
+    } catch (\Exception $e) {
+        \Log::error('Error setting default cash source', [
+            'id' => $id,
+            'context' => $request->context,
+            'team_id' => $teamId,
+            'error' => $e->getMessage()
+        ]);
+        
+        return response()->json([
+            'message' => 'Error setting default: ' . $e->getMessage()
+        ], 500);
+    }
+}
+
+    
 }

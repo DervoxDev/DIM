@@ -667,7 +667,7 @@ foreach ($request->items as $item) {
             // Log activity
             ActivityLog::create([
                 'log_type' => 'Update',
-                'model_type' => "Sale",
+                'model_type' => $sale->type === 'quote' ? "Quote" : "Sale",
                 'model_id' => $sale->id,
                 'model_identifier' => $sale->reference_number,
                 'user_identifier' => $user?->name,
@@ -675,7 +675,7 @@ foreach ($request->items as $item) {
                 'user_email' => $user?->email,
                 'ip_address' => $request->ip(),
                 'user_agent' => $request->userAgent(),
-                'description' => "Updated sale {$sale->reference_number}",
+                'description' => "Updated " . ($sale->type === 'quote' ? "quote" : "sale") . " {$sale->reference_number}",
                 'old_values' => $oldData,
                 'new_values' => $sale->fresh()->toArray()
             ]);
@@ -934,20 +934,429 @@ foreach ($request->items as $item) {
     //         ], 500);
     //     }
     // }
-    public function generateInvoice(Request $request, $id)
-    {
-        $user = $request->user();
-        $sale = Sale::where('team_id', $user->team->id)
-            ->with(['items', 'client', 'transactions'])
-            ->find($id);
+    public function checkExistingInvoice(Request $request, $id)
+{
+    $user = $request->user();
+    $sale = Sale::where('team_id', $user->team->id)->findOrFail($id);
+    
+    // Find existing invoice
+    $existingInvoice = Invoice::where('invoiceable_type', 'App\Models\Sale')
+        ->where('invoiceable_id', $sale->id)
+        ->first();
+    
+    if ($existingInvoice) {
+        return response()->json([
+            'exists' => true,
+            'invoice' => $existingInvoice->load('items'),
+            'created_at' => $existingInvoice->created_at,
+            'updated_at' => $existingInvoice->updated_at
+        ]);
+    }
+    
+    return response()->json(['exists' => false]);
+}
+
+    // public function generateInvoice(Request $request, $id)
+    // {
+    //     $user = $request->user();
+    //     $sale = Sale::where('team_id', $user->team->id)
+    //         ->with(['items', 'client', 'transactions'])
+    //         ->find($id);
         
-        if (!$sale) {
+    //     if (!$sale) {
+    //         return response()->json([
+    //             'error' => true,
+    //             'message' => 'Record not found'
+    //         ], 404);
+    //     }
+        
+    //     // Define default configuration values
+    //     $defaultConfig = [
+    //         'showClientInfo' => true,
+    //         'showAmountInWords' => true,
+    //         'showPaymentMethods' => true,
+    //         'showTaxNumbers' => true,
+    //         'showNotes' => true,
+    //         'showThanksMessage' => true,
+    //         'showTermsConditions' => true,
+    //         'primaryColor' => '#2563eb',
+    //         'logoEnabled' => true,
+    //         'footerText' => '',
+    //         'defaultNotes' => 'Thank you for your business.',
+    //         'defaultTerms' => 'Payment is due within 30 days of invoice date.',
+    //         'thanksMessage' => 'Thank you for your business!'
+    //     ];
+    
+    //     // Get configuration options from request using defaults
+    //     $config = [];
+    //     foreach ($defaultConfig as $key => $defaultValue) {
+    //         $config[$key] = $request->input($key, $defaultValue);
+    //     }
+                
+    //     // Debug log
+    //     \Log::info('Invoice generation config', [
+    //         'received' => $request->all(),
+    //         'final_config' => $config
+    //     ]);
+        
+    //     // No need for merging as we've already applied defaults above
+    //     $finalConfig = $config;
+        
+    //     // Determine document type based on sale type
+    //     $documentType = ($sale->type === 'quote') ? 'quote' : 'invoice';
+        
+    //     // Generate different reference number prefix based on type
+    //     $prefix = ($sale->type === 'quote') ? "DEVIS-" : "INV-";
+                
+    //     $lastInvoice = Invoice::where('team_id', $user->team->id)
+    //         ->withTrashed()
+    //         ->where('reference_number', 'like', $prefix . date('Y') . "-%")
+    //         ->orderBy('id', 'desc')
+    //         ->first();
+        
+    //     if ($lastInvoice) {
+    //         $lastNumber = (int) substr($lastInvoice->reference_number, -6);
+    //         $nextNumber = $lastNumber + 1;
+    //     } else {
+    //         $nextNumber = 1;
+    //     }
+        
+    //     $referenceNumber = $prefix . date('Y') . "-" . str_pad($nextNumber, 6, '0', STR_PAD_LEFT);
+        
+    //     while (Invoice::where('reference_number', $referenceNumber)->withTrashed()->exists()) {
+    //         $nextNumber++;
+    //         $referenceNumber = $prefix . date('Y') . "-" . str_pad($nextNumber, 6, '0', STR_PAD_LEFT);
+    //     }
+        
+    //     try {
+    //         DB::beginTransaction();
+        
+    //         $invoice = new Invoice();
+    //         $invoice->team_id = $user->team->id;
+    //         $invoice->invoiceable_type = get_class($sale);
+    //         $invoice->invoiceable_id = $sale->id;
+    //         $invoice->reference_number = $referenceNumber;
+    //         $invoice->type = $documentType; // Set document type (invoice or quote)
+    //         $invoice->total_amount = $sale->total_amount;
+    //         $invoice->tax_amount = $sale->tax_amount;
+    //         $invoice->discount_amount = $sale->discount_amount;
+    //         $invoice->status = 'draft'; // Use draft as initial status
+    //         $invoice->payment_status = $sale->payment_status ?? 'unpaid'; // Copy payment status from sale
+    //         $invoice->is_email_sent = false; // Default to not email sent
+    //         $invoice->issue_date = now();
+    //         $invoice->due_date = $sale->due_date;
+                
+    //         // Calculate subtotal
+    //         $subtotal = $sale->total_amount - $sale->tax_amount + $sale->discount_amount;
+                
+    //         // Prepare contact data based on whether client exists
+    //         $contactData = null;
+    //         if ($sale instanceof Purchase) {
+    //             $contactData = $sale->supplier ? 
+    //                 ['type' => 'supplier', 'data' => $sale->supplier->toArray()] : 
+    //                 ['type' => 'supplier', 'data' => null];
+    //         } else {
+    //             $contactData = $sale->client ? 
+    //                 ['type' => 'client', 'data' => $sale->client->toArray()] : 
+    //                 ['type' => 'client', 'data' => null];
+    //         }
+                
+    //         // Set meta_data with null check for items
+    //         $invoice->meta_data = [
+    //             'source_type' => $sale instanceof Purchase ? 'purchase' : ($sale->type ?? 'sale'),
+    //             'document_type' => $documentType,
+    //             'source_reference' => $sale->reference_number,
+    //             'source_date' => $sale->created_at,
+    //             'contact' => $contactData,
+    //             'payment_status' => $sale->payment_status ?? 'unpaid',
+    //             'subtotal' => $subtotal,
+    //             'payment_methods' => $sale->transactions->groupBy('payment_method')
+    //                 ->map(function ($group) {
+    //                     return [
+    //                         'method' => $group->first()->payment_method,
+    //                         'amount' => $group->sum('amount'),
+    //                         'method_name' => ucfirst(str_replace('_', ' ', $group->first()->payment_method))
+    //                     ];
+    //                 })->values()->toArray(),
+    //             'paid_amount' => $sale->paid_amount ?? 0,
+    //             'items_data' => $sale->items->map(function($item) {
+    //                 return [
+    //                     'product_id' => $item->product_id,
+    //                     'product_name' => $item->product?->name ?? 'Unknown Product',
+    //                     'quantity' => $item->quantity,
+    //                     'unit_price' => $item->unit_price,
+    //                     'tax_rate' => $item->tax_rate,
+    //                     'discount_amount' => $item->discount_amount,
+    //                     'total_price' => $item->total_price,
+    //                     'is_package' => $item->is_package ?? false,
+    //                     'package_id' => $item->package_id ?? null,
+    //                     'total_pieces' => $item->total_pieces ?? $item->quantity
+    //                 ];
+    //             })->toArray(),
+    //             'config' => $finalConfig
+    //         ];
+                
+    //         $invoice->save();
+        
+    //         // Create invoice items with null checks
+    //         foreach ($sale->items as $sourceItem) {
+    //             $invoice->items()->create([
+    //                 'description' => $sourceItem->product?->name ?? 'Unknown Product',
+    //                 'quantity' => $sourceItem->quantity,
+    //                 'unit_price' => $sourceItem->unit_price,
+    //                 'total_price' => $sourceItem->total_price,
+    //                 'notes' => $sourceItem->notes ?? '',
+    //                 'tax_amount' => $sourceItem->tax_amount ?? 0,
+    //                 'discount_amount' => $sourceItem->discount_amount ?? 0
+    //             ]);
+    //         }
+        
+    //         ActivityLog::create([
+    //             'log_type' => 'Create',
+    //             'model_type' => $sale->type === 'quote' ? "Quotation" : "Invoice",
+    //             'model_id' => $invoice->id,
+    //             'model_identifier' => $invoice->reference_number,
+    //             'user_identifier' => $user?->name,
+    //             'user_id' => $user->id,
+    //             'user_email' => $user?->email,
+    //             'ip_address' => $request->ip(),
+    //             'user_agent' => $request->userAgent(),
+    //             'description' => "Generated " . ($sale->type === 'quote' ? "quotation" : "invoice") . 
+    //                            " {$invoice->reference_number} from " . 
+    //                            ($sale instanceof Purchase ? "purchase" : ($sale->type ?? "sale")) . 
+    //                            " {$sale->reference_number}",
+    //             'new_values' => $invoice->toArray()
+    //         ]);
+        
+    //         DB::commit();
+        
+    //         return response()->json([
+    //             'message' => ($sale->type === 'quote' ? "Quotation" : "Invoice") . ' generated successfully',
+    //             'invoice' => $invoice->load('items'),
+    //             'invoice_id' => $invoice->id,
+    //             'url' => url("/api/v1/invoices/{$invoice->id}/pdf") // Add URL for PDF
+    //         ]);
+        
+    //     } catch (\Exception $e) {
+    //         DB::rollBack();
+    //         \Log::error('Document generation error', [
+    //             'error' => $e->getMessage(),
+    //             'trace' => $e->getTraceAsString(),
+    //             'model_id' => $id,
+    //             'user_id' => $user->id
+    //         ]);
+                
+    //         return response()->json([
+    //             'error' => true,
+    //             'message' => 'Error generating ' . ($sale->type === 'quote' ? "quotation" : "invoice") . 
+    //                         ': ' . $e->getMessage()
+    //         ], 500);
+    //     }
+    // }
+    public function generateInvoice(Request $request, $id)
+{
+    $user = $request->user();
+    $sale = Sale::where('team_id', $user->team->id)
+        ->with(['items', 'client', 'transactions'])
+        ->find($id);
+    
+    if (!$sale) {
+        return response()->json([
+            'error' => true,
+            'message' => 'Record not found'
+        ], 404);
+    }
+    
+    // Check for existing invoice if mode is 'check_first'
+    $mode = $request->input('mode', 'check_first');
+    
+    if ($mode === 'check_first') {
+        $existingInvoice = Invoice::where('invoiceable_type', 'App\Models\Sale')
+            ->where('invoiceable_id', $sale->id)
+            ->first();
+        
+        if ($existingInvoice) {
             return response()->json([
-                'error' => true,
-                'message' => 'Record not found'
-            ], 404);
+                'exists' => true,
+                'invoice' => $existingInvoice->load('items'),
+                'message' => 'An invoice already exists for this sale'
+            ]);
         }
         
+        // No existing invoice, continue with creation
+        $mode = 'create_new';
+    }
+    
+    // Handle replacement of existing invoice
+    if ($mode === 'replace') {
+        $existingInvoice = Invoice::where('invoiceable_type', 'App\Models\Sale')
+            ->where('invoiceable_id', $sale->id)
+            ->first();
+        
+        if ($existingInvoice) {
+            try {
+                DB::beginTransaction();
+                
+                // Save the existing reference number
+                $referenceNumber = $existingInvoice->reference_number;
+                
+                // Delete items
+                $existingInvoice->items()->delete();
+                
+                // Define default configuration values
+                $defaultConfig = [
+                    'showClientInfo' => true,
+                    'showAmountInWords' => true,
+                    'showPaymentMethods' => true,
+                    'showTaxNumbers' => true,
+                    'showNotes' => true,
+                    'showThanksMessage' => true,
+                    'showTermsConditions' => true,
+                    'primaryColor' => '#2563eb',
+                    'logoEnabled' => true,
+                    'footerText' => '',
+                    'defaultNotes' => 'Thank you for your business.',
+                    'defaultTerms' => 'Payment is due within 30 days of invoice date.',
+                    'thanksMessage' => 'Thank you for your business!'
+                ];
+                
+                // Get configuration options from request using defaults
+                $config = [];
+                foreach ($defaultConfig as $key => $defaultValue) {
+                    $config[$key] = $request->input($key, $defaultValue);
+                }
+                
+                // Debug log
+                \Log::info('Invoice replacement config', [
+                    'received' => $request->all(),
+                    'final_config' => $config,
+                    'invoice_id' => $existingInvoice->id
+                ]);
+                
+                // Calculate subtotal
+                $subtotal = $sale->total_amount - $sale->tax_amount + $sale->discount_amount;
+                
+                // Prepare contact data based on whether client exists
+                $contactData = null;
+                if ($sale instanceof Purchase) {
+                    $contactData = $sale->supplier ? 
+                        ['type' => 'supplier', 'data' => $sale->supplier->toArray()] : 
+                        ['type' => 'supplier', 'data' => null];
+                } else {
+                    $contactData = $sale->client ? 
+                        ['type' => 'client', 'data' => $sale->client->toArray()] : 
+                        ['type' => 'client', 'data' => null];
+                }
+                
+                // Update the existing invoice
+                $existingInvoice->total_amount = $sale->total_amount;
+                $existingInvoice->tax_amount = $sale->tax_amount;
+                $existingInvoice->discount_amount = $sale->discount_amount;
+                $existingInvoice->payment_status = $sale->payment_status ?? 'unpaid';
+                $existingInvoice->due_date = $sale->due_date;
+                
+                // Update meta_data with null check for items
+                $existingInvoice->meta_data = [
+                    'source_type' => $sale instanceof Purchase ? 'purchase' : ($sale->type ?? 'sale'),
+                    'document_type' => $existingInvoice->type, // Keep original document type
+                    'source_reference' => $sale->reference_number,
+                    'source_date' => $sale->created_at,
+                    'contact' => $contactData,
+                    'payment_status' => $sale->payment_status ?? 'unpaid',
+                    'subtotal' => $subtotal,
+                    'payment_methods' => $sale->transactions->groupBy('payment_method')
+                        ->map(function ($group) {
+                            return [
+                                'method' => $group->first()->payment_method,
+                                'amount' => $group->sum('amount'),
+                                'method_name' => ucfirst(str_replace('_', ' ', $group->first()->payment_method))
+                            ];
+                        })->values()->toArray(),
+                    'paid_amount' => $sale->paid_amount ?? 0,
+                    'items_data' => $sale->items->map(function($item) {
+                        return [
+                            'product_id' => $item->product_id,
+                            'product_name' => $item->product?->name ?? 'Unknown Product',
+                            'quantity' => $item->quantity,
+                            'unit_price' => $item->unit_price,
+                            'tax_rate' => $item->tax_rate,
+                            'discount_amount' => $item->discount_amount,
+                            'total_price' => $item->total_price,
+                            'is_package' => $item->is_package ?? false,
+                            'package_id' => $item->package_id ?? null,
+                            'total_pieces' => $item->total_pieces ?? $item->quantity
+                        ];
+                    })->toArray(),
+                    'config' => $config,
+                    'updated_at' => now(),
+                    'was_replaced' => true
+                ];
+                
+                $existingInvoice->save();
+                
+                // Create invoice items with null checks
+                foreach ($sale->items as $sourceItem) {
+                    $existingInvoice->items()->create([
+                        'description' => $sourceItem->product?->name ?? 'Unknown Product',
+                        'quantity' => $sourceItem->quantity,
+                        'unit_price' => $sourceItem->unit_price,
+                        'total_price' => $sourceItem->total_price,
+                        'notes' => $sourceItem->notes ?? '',
+                        'tax_amount' => $sourceItem->tax_amount ?? 0,
+                        'discount_amount' => $sourceItem->discount_amount ?? 0
+                    ]);
+                }
+                
+                ActivityLog::create([
+                    'log_type' => 'Update',
+                    'model_type' => $sale->type === 'quote' ? "Quotation" : "Invoice",
+                    'model_id' => $existingInvoice->id,
+                    'model_identifier' => $existingInvoice->reference_number,
+                    'user_identifier' => $user?->name,
+                    'user_id' => $user->id,
+                    'user_email' => $user?->email,
+                    'ip_address' => $request->ip(),
+                    'user_agent' => $request->userAgent(),
+                    'description' => "Updated " . ($sale->type === 'quote' ? "quotation" : "invoice") . 
+                                   " {$existingInvoice->reference_number} from " . 
+                                   ($sale instanceof Purchase ? "purchase" : ($sale->type ?? "sale")) . 
+                                   " {$sale->reference_number}",
+                    'new_values' => $existingInvoice->toArray()
+                ]);
+                
+                DB::commit();
+                
+                return response()->json([
+                    'message' => ($sale->type === 'quote' ? "Quotation" : "Invoice") . ' updated successfully',
+                    'invoice' => $existingInvoice->load('items'),
+                    'invoice_id' => $existingInvoice->id,
+                    'url' => url("/api/v1/invoices/{$existingInvoice->id}/pdf"),
+                    'was_replaced' => true
+                ]);
+                
+            } catch (\Exception $e) {
+                DB::rollBack();
+                \Log::error('Document update error', [
+                    'error' => $e->getMessage(),
+                    'trace' => $e->getTraceAsString(),
+                    'model_id' => $id,
+                    'user_id' => $user->id
+                ]);
+                
+                return response()->json([
+                    'error' => true,
+                    'message' => 'Error updating ' . ($sale->type === 'quote' ? "quotation" : "invoice") . 
+                                ': ' . $e->getMessage()
+                ], 500);
+            }
+        } else {
+            // No invoice to replace, create a new one instead
+            $mode = 'create_new';
+        }
+    }
+    
+    // Create a new invoice (existing logic for 'create_new' mode)
+    if ($mode === 'create_new') {
         // Define default configuration values
         $defaultConfig = [
             'showClientInfo' => true,
@@ -1131,7 +1540,8 @@ foreach ($request->items as $item) {
             ], 500);
         }
     }
-    
+}
+
     
     public function generateReceipt(Request $request, $id)
     {
@@ -1988,8 +2398,9 @@ foreach ($request->items as $item) {
             // Lock the sales table to prevent concurrent reference number generation
             DB::table('sales')->sharedLock();
             
-            // Find the last reference number with this prefix
+            // Find the last reference number with this prefix INCLUDING soft-deleted records
             $latestSale = Sale::where('reference_number', 'like', $prefix . '%')
+                ->withTrashed() // Include soft deleted records
                 ->orderBy('id', 'desc')
                 ->first();
             
@@ -2002,8 +2413,8 @@ foreach ($request->items as $item) {
             
             $referenceNumber = $prefix . str_pad($nextNumber, 6, '0', STR_PAD_LEFT);
             
-            // Double-check uniqueness to avoid collisions
-            while (Sale::where('reference_number', $referenceNumber)->exists()) {
+            // Double-check uniqueness to avoid collisions, including soft-deleted records
+            while (Sale::where('reference_number', $referenceNumber)->withTrashed()->exists()) {
                 $nextNumber++;
                 $referenceNumber = $prefix . str_pad($nextNumber, 6, '0', STR_PAD_LEFT);
             }
@@ -2012,5 +2423,58 @@ foreach ($request->items as $item) {
         }, 3); // 3 retries if transaction fails
     }
     
-
+    
+    public function destroy(Request $request, $id)
+    {
+        $user = $request->user();
+        
+        $sale = Sale::where('team_id', $user->team->id)->find($id);
+        
+        if (!$sale) {
+            return response()->json([
+                'error' => true,
+                'message' => 'Sale not found'
+            ], 404);
+        }
+        
+        try {
+            DB::beginTransaction();
+            
+            // Soft delete the sale items
+            $sale->items()->delete();
+            
+            // Soft delete the sale itself (using the SoftDeletes trait)
+            $sale->delete();
+            
+            // Log activity
+            ActivityLog::create([
+                'log_type' => 'Delete',
+                'model_type' => $sale->type === 'quote' ? "Quote" : "Sale",
+                'model_id' => $sale->id,
+                'model_identifier' => $sale->reference_number,
+                'user_identifier' => $user->name,
+                'user_id' => $user->id,
+                'user_email' => $user->email,
+                'ip_address' => $request->ip(),
+                'user_agent' => $request->userAgent(),
+                'description' => "Deleted " . ($sale->type === 'quote' ? "quote" : "sale") . " {$sale->reference_number}",
+                'old_values' => $sale->toArray()
+            ]);
+            
+            DB::commit();
+            
+            return response()->json([
+                'message' => ($sale->type === 'quote' ? "Quote" : "Sale") . ' deleted successfully'
+            ]);
+            
+        } catch (\Exception $e) {
+            DB::rollBack();
+            
+            return response()->json([
+                'error' => true,
+                'message' => 'Error deleting ' . ($sale->type === 'quote' ? "quote" : "sale") . ': ' . $e->getMessage()
+            ], 500);
+        }
+    }
+    
 }

@@ -15,18 +15,18 @@ class UpdatesController extends Controller
             "min_compatible_version" => "0.9.0",
             "updates" => [
                 [
-                    "version" => "1.2.0",
-                    "release_date" => "2023-10-15",
+                    "version" => "1.0.0",
+                    "release_date" => "2025-05-01",
                     "download_url" => [
                         "windows" => "https://dim.dervox.com/downloads/dim-setup-x64.exe",
                         "linux" => "https://dim.dervox.com/downloads/dim-setup-x64.exe",
                         "macos" => "https://dim.dervox.com/downloads/dim-1.0.0-macos.dmg",
                         "android" => "https://dim.dervox.com/downloads/dim-1.0.0-android.apk"
                     ],
-                    "changelog" => "### New Features\n- Feature 1\n- Feature 2\n\n### Bug Fixes\n- Fixed issue 1\n- Fixed issue 2",
+                    "changelog" => "### Changelog\n- Performance improvements \n- Bug fixes",
                     "is_mandatory" => false,
                     "file_size" => [
-                        "windows" => 24500000,
+                        "windows" => 9200000,
                         "linux" => 22000000,
                         "macos" => 25000000,
                         "android" => 15000000

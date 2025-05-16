@@ -234,4 +234,131 @@ class SupplierController extends Controller
             ], 500);
         }
     }
+    public function getStatement(Request $request, $id)
+    {
+        try {
+            $user = $request->user();
+            
+            // Find supplier with team scope
+            $supplier = Supplier::where('team_id', $user->team->id)->findOrFail($id);
+    
+            // Set date range from supplier creation to now
+            $startDate = $supplier->created_at->startOfDay();
+            $endDate = now()->endOfDay();
+    
+            // Optional date range from request
+            if ($request->has('start_date')) {
+                $startDate = Carbon::parse($request->input('start_date'))->startOfDay();
+            }
+            
+            if ($request->has('end_date')) {
+                $endDate = Carbon::parse($request->input('end_date'))->endOfDay();
+            }
+    
+            $statement = [
+                'supplier' => [
+                    'id' => $supplier->id,
+                    'name' => $supplier->name,
+                    'current_balance' => $supplier->getCurrentBalance()
+                ],
+                'period' => [
+                    'start_date' => $startDate->toISOString(),
+                    'end_date' => $endDate->toISOString()
+                ],
+                'opening_balance' => $supplier->getOpeningBalance($startDate),
+                'closing_balance' => $supplier->getCurrentBalance(),
+                'transactions' => $supplier->getStatementTransactions($startDate, $endDate),
+                'summary' => [
+                    'total_purchases' => $supplier->getTotalPurchases($startDate, $endDate),
+                    'total_payments' => $supplier->getTotalPayments($startDate, $endDate),
+                    'outstanding_balance' => $supplier->getOutstandingBalance($startDate, $endDate)
+                ]
+            ];
+    
+            return response()->json([
+                'success' => true,
+                'statement' => $statement
+            ]);
+    
+        } catch (\Exception $e) {
+            \Log::error('Statement generation error: ' . $e->getMessage());
+            return response()->json([
+                'error' => true,
+                'message' => 'An error occurred while generating the statement: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+    public function getPurchases(Request $request, $id)
+{
+    $user = $request->user();
+
+    $supplier = Supplier::where('team_id', $user->team->id)->find($id);
+
+    if (!$supplier) {
+        return response()->json([
+            'error' => true,
+            'message' => 'Supplier not found'
+        ], 404);
+    }
+
+    // Build the query for purchases
+    $query = $supplier->purchases();
+    
+    // Include related models if needed
+    if ($request->has('with_items')) {
+        $query->with(['items.product']);
+    }
+    
+    // Apply date filters if provided
+    if ($request->has('start_date')) {
+        $startDate = Carbon::parse($request->input('start_date'))->startOfDay();
+        $query->where('purchase_date', '>=', $startDate);
+    }
+    
+    if ($request->has('end_date')) {
+        $endDate = Carbon::parse($request->input('end_date'))->endOfDay();
+        $query->where('purchase_date', '<=', $endDate);
+    }
+    
+    // Sort by purchase date descending
+    $query->orderBy('purchase_date', 'desc');
+    
+    // Paginate the results
+    $perPage = $request->input('per_page', 15);
+    $purchases = $query->paginate($perPage);
+
+    return response()->json([
+        'purchases' => $purchases
+    ]);
+}
+public function getTransactions(Request $request, $id)
+{
+    $user = $request->user();
+    $perPage = $request->input('per_page', 15); // Default to 15 items per page
+    
+    $supplier = Supplier::where('team_id', $user->team->id)->find($id);
+    
+    if (!$supplier) {
+        return response()->json([
+            'error' => true,
+            'message' => 'Supplier not found'
+        ], 404);
+    }
+    
+    // Get all purchase IDs for this supplier
+    $purchaseIds = $supplier->purchases()->pluck('id')->toArray();
+    
+    // Query transactions directly with pagination
+    $transactions = DB::table('cash_transactions')
+        ->whereIn('transactionable_id', $purchaseIds)
+        ->where('transactionable_type', 'App\Models\Purchase')
+        ->orderBy('transaction_date', 'desc')
+        ->paginate($perPage);
+    
+    return response()->json([
+        'transactions' => $transactions
+    ]);
+}
+
+
 }

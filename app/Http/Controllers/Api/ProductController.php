@@ -778,4 +778,105 @@
                 'barcodes' => $product->barcodes
             ]);
         }
+        /**
+ * Get a product by barcode
+ */
+public function getByBarcode(Request $request, $barcode)
+{
+    $user = $request->user();
+
+    if (!$user->team) {
+        return response()->json([
+            'error' => true,
+            'message' => 'No team found for the user'
+        ], 404);
+    }
+
+    // Find a product that has this barcode
+    $product = Product::where('team_id', $user->team->id)
+        ->whereHas('barcodes', function($query) use ($barcode) {
+            $query->where('barcode', $barcode);
+        })
+        ->with('unit', 'packages')
+        ->first();
+
+    // If not found by barcode table, also check if it matches the SKU
+    if (!$product) {
+        $product = Product::where('team_id', $user->team->id)
+            ->where('sku', $barcode)
+            ->with('unit', 'packages')
+            ->first();
+    }
+
+    // If still not found, also check the product packages
+    if (!$product) {
+        $product = Product::where('team_id', $user->team->id)
+            ->whereHas('packages', function($query) use ($barcode) {
+                $query->where('barcode', $barcode);
+            })
+            ->with('unit', 'packages')
+            ->first();
+    }
+
+    // If no product found with this barcode
+    if (!$product) {
+        return response()->json([
+            'error' => true,
+            'message' => 'Product not found with barcode: ' . $barcode
+        ], 404);
+    }
+
+    // Log the activity
+    ActivityLog::create([
+        'log_type' => 'Read',
+        'model_type' => "Product",
+        'model_id' => $product->id,
+        'model_identifier' => $product->name,
+        'user_identifier' => $user?->name,
+        'user_id' => $user->id,
+        'user_email' => $user?->email,
+        'ip_address' => $request->ip(),
+        'user_agent' => $request->userAgent(),
+        'description' => "Product {$product->name} retrieved by barcode {$barcode}"
+    ]);
+
+    // Format the response with explicit package data
+    $formattedProduct = [
+        'id' => $product->id,
+        'reference' => $product->reference,
+        'name' => $product->name,
+        'description' => $product->description,
+        'price' => $product->price,
+        'purchase_price' => $product->purchase_price,
+        'expired_date' => $product->expired_date,
+        'quantity' => $product->quantity,
+        'product_unit_id' => $product->product_unit_id,
+        'sku' => $product->sku,
+        'min_stock_level' => $product->min_stock_level,
+        'max_stock_level' => $product->max_stock_level,
+        'reorder_point' => $product->reorder_point,
+        'location' => $product->location,
+        'image_path' => $product->image_path ? Storage::url($product->image_path) : null,
+        'unit' => $product->unit ? [
+            'id' => $product->unit->id,
+            'name' => $product->unit->name,
+        ] : null,
+        'packages' => $product->packages->map(function ($package) {
+            return [
+                'id' => $package->id,
+                'name' => $package->name,
+                'pieces_per_package' => $package->pieces_per_package,
+                'purchase_price' => $package->purchase_price,
+                'selling_price' => $package->selling_price,
+                'barcode' => $package->barcode,
+                'product_id' => $package->product_id,
+            ];
+        })->values()->all()
+    ];
+
+    return response()->json([
+        'product' => $formattedProduct
+    ]);
+}
+
     }
