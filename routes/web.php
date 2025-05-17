@@ -33,7 +33,7 @@ Route::domain('dervox.com')->group(function () {
 
 });
 
-Route::domain('dim.dervox.com')->group(function () {
+Route::domain('devdim.dervox.com')->group(function () {
     Route::get('/', function () {
         return view('welcome');
     });
