@@ -1,0 +1,29 @@
+name: Deploy to Production
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - name: Set up SSH
+        uses: webfactory/ssh-agent@v0.7.0
+        with:
+          ssh-private-key: ${{ secrets.DEPLOY_KEY }}
+
+      - name: Setup known hosts
+        run: |
+          mkdir -p ~/.ssh
+          ssh-keyscan ${{ secrets.SERVER_HOST }} >> ~/.ssh/known_hosts
+
+      - name: Deploy to production server
+        run: |
+          ssh ${{ secrets.SERVER_USERNAME }}@${{ secrets.SERVER_HOST }} "cd /home/dervoxcp/web/dim.dervox.com/public_html/ && git fetch --all && git checkout origin/main -f && composer install --no-interaction --prefer-dist --optimize-autoloader && php artisan migrate --force && php artisan config:cache && php artisan route:cache && php artisan view:cache"
