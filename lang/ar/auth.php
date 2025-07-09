@@ -71,6 +71,26 @@ return [
     'Governing Law' => 'القانون الحاكم',
     'Contact Information' => 'معلومات الاتصال',
     
+    'Country' => 'البلد',
+    'Select your country' => 'اختر بلدك',
+    'Please select your country' => 'يرجى اختيار بلدك',
+    'Country is required' => 'البلد مطلوب',
+
+       // Profile specific
+    'Profile' => 'الملف الشخصي',
+    'Manage your account settings and preferences' => 'إدارة إعدادات حسابك وتفضيلاتك',
+    'Profile Information' => 'معلومات الملف الشخصي',
+    'Update your account profile information and email address' => 'تحديث معلومات ملفك الشخصي وعنوان بريدك الإلكتروني',
+    'Update Password' => 'تحديث كلمة المرور',
+    'Delete Account' => 'حذف الحساب',
+    'Ensure your account is using a long random password to stay secure' => 'تأكد من أن حسابك يستخدم كلمة مرور طويلة وعشوائية للبقاء آمناً',
+    'Once your account is deleted all of its resources and data will be permanently deleted' => 'بمجرد حذف حسابك، سيتم حذف جميع موارده وبياناته نهائياً',
+    'Your email address is unverified' => 'عنوان بريدك الإلكتروني غير مُتحقق منه.',
+    'Click here to re-send the verification email' => 'انقر هنا لإعادة إرسال بريد التحقق.',
+    'A new verification link has been sent to your email address' => 'تم إرسال رابط تحقق جديد إلى عنوان بريدك الإلكتروني.',
+    'Save' => 'حفظ',
+    'Saved' => 'تم الحفظ.',
+    
     // Detailed terms content
     'terms_acceptance' => 'بالوصول إلى واستخدام نظام إدارة المخزون DIM ("الخدمة")، فإنك توافق على الالتزام بهذه الشروط والأحكام ("الشروط"). إذا كنت لا توافق على هذه الشروط، فيرجى عدم استخدام الخدمة.',
     

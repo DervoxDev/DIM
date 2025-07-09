@@ -33,13 +33,14 @@ Route::domain('dervox.com')->group(function () {
 
 });
 
-Route::domain('devdim.dervox.com')->group(function () {
+Route::domain('dim.dervox.com')->group(function () {
     Route::get('/', function () {
         return view('welcome');
     });
 
     Route::get('lang', [LanguageController::class, 'change'])->name('change.lang');
-    
+        Route::get('/contact', [ContactController::class, 'show'])->name('contact');
+    Route::post('/contact', [ContactController::class, 'send'])->name('contact.send');
     Route::get('/subscriptions', [DashboardController::class, 'index'])
          ->middleware(['auth'])
          ->name('subscriptions');

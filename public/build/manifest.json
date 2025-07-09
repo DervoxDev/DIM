@@ -5,7 +5,7 @@
     "isEntry": true
   },
   "resources/css/app.css": {
-    "file": "assets/app-HVDilNkJ.css",
+    "file": "assets/app-j1nOcCmI.css",
     "src": "resources/css/app.css",
     "isEntry": true
   },
@@ -15,7 +15,7 @@
     "isEntry": true
   },
   "resources/css/dervox.css": {
-    "file": "assets/dervox-CdZ5Z0Ve.css",
+    "file": "assets/dervox-BPIHl-vL.css",
     "src": "resources/css/dervox.css",
     "isEntry": true
   },
@@ -29,12 +29,24 @@
     "src": "resources/css/solutions.css",
     "isEntry": true
   },
+  "resources/images/NEW_Blue_White.svg": {
+    "file": "assets/NEW_Blue_White-gNf7Vt4y.svg",
+    "src": "resources/images/NEW_Blue_White.svg"
+  },
+  "resources/images/New_Trans_Blue.svg": {
+    "file": "assets/New_Trans_Blue-ByVQiYlw.svg",
+    "src": "resources/images/New_Trans_Blue.svg"
+  },
+  "resources/images/New_White_Blue.svg": {
+    "file": "assets/New_White_Blue-DqUMDlMf.svg",
+    "src": "resources/images/New_White_Blue.svg"
+  },
   "resources/images/about-img.png": {
     "file": "assets/about-img-uPdxcTQE.png",
     "src": "resources/images/about-img.png"
   },
   "resources/images/dark.png": {
-    "file": "assets/dark-D3Eva1LA.png",
+    "file": "assets/dark-CzzRJ7cE.png",
     "src": "resources/images/dark.png"
   },
   "resources/images/favicon/apple-touch-icon.png": {
@@ -69,12 +81,16 @@
     "file": "assets/header-img-rA7YSRLv.png",
     "src": "resources/images/header-img.png"
   },
+  "resources/images/image2.png": {
+    "file": "assets/image2-B8Dq2p06.png",
+    "src": "resources/images/image2.png"
+  },
   "resources/images/laptop.svg": {
     "file": "assets/laptop-CP9rpVzO.svg",
     "src": "resources/images/laptop.svg"
   },
   "resources/images/light.png": {
-    "file": "assets/light-BbAMzzqM.png",
+    "file": "assets/light-DW4g5sVm.png",
     "src": "resources/images/light.png"
   },
   "resources/images/logo.png": {

@@ -1722,13 +1722,13 @@ foreach ($request->items as $item) {
                     <p>' . __('receipt.subtotal') . ': ' . number_format($sale->total_amount - $sale->tax_amount, 2) . ' ' . __('receipt.currency') . '</p>';
                     
             // Always show tax amount in the totals even if it's zero
-            $html .= '<p>' . __('receipt.tax') . ': ' . number_format($sale->tax_amount, 2) . ' ' . __('receipt.currency') . '</p>';
+            $html .= '<p>' . __('receipt.taxAmount') . ': ' . number_format($sale->tax_amount, 2) . ' ' . __('receipt.currency') . '</p>';
             
             if($sale->discount_amount > 0) {
                 $html .= '<p>' . __('receipt.discount') . ': -' . number_format($sale->discount_amount, 2) . ' ' . __('receipt.currency') . '</p>';
             }
             
-            $html .= '<p class="total-line">' . __('receipt.total') . ': ' . number_format($sale->total_amount, 2) . ' ' . __('receipt.currency') . '</p>
+            $html .= '<p class="total-line">' . __('receipt.Finaltotal') . ': ' . number_format($sale->total_amount, 2) . ' ' . __('receipt.currency') . '</p>
                 </div>
                 
                 <div class="footer">

@@ -72,6 +72,26 @@ return [
     'Governing Law' => 'Loi applicable',
     'Contact Information' => 'Informations de contact',
     
+    'Country' => 'Pays',
+    'Select your country' => 'Sélectionnez votre pays',
+    'Please select your country' => 'Veuillez sélectionner votre pays',
+    'Country is required' => 'Le pays est requis',
+
+       // Profile specific
+    'Profile' => 'Profil',
+    'Manage your account settings and preferences' => 'Gérez les paramètres et préférences de votre compte',
+    'Profile Information' => 'Informations du profil',
+    'Update your account profile information and email address' => 'Mettez à jour les informations de votre profil et votre adresse email',
+    'Update Password' => 'Mettre à jour le mot de passe',
+    'Delete Account' => 'Supprimer le compte',
+    'Ensure your account is using a long random password to stay secure' => 'Assurez-vous que votre compte utilise un mot de passe long et aléatoire pour rester sécurisé',
+    'Once your account is deleted all of its resources and data will be permanently deleted' => 'Une fois votre compte supprimé, toutes ses ressources et données seront définitivement supprimées',
+    'Your email address is unverified' => 'Votre adresse email n\'est pas vérifiée.',
+    'Click here to re-send the verification email' => 'Cliquez ici pour renvoyer l\'email de vérification.',
+    'A new verification link has been sent to your email address' => 'Un nouveau lien de vérification a été envoyé à votre adresse email.',
+    'Save' => 'Enregistrer',
+    'Saved' => 'Enregistré.',
+    
     // Detailed terms content
     'terms_acceptance' => 'En accédant et en utilisant le système de gestion d\'inventaire DIM ("le Service"), vous acceptez d\'être lié par ces Conditions Générales ("Conditions"). Si vous n\'acceptez pas ces Conditions, veuillez ne pas utiliser le Service.',
     

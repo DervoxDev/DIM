@@ -7,6 +7,7 @@
     "require": {
         "php": "^8.2",
         "althinect/filament-spatie-roles-permissions": "^2.2",
+        "astrotomic/laravel-translatable": "^11.16",
         "barryvdh/laravel-dompdf": "^3.1",
         "barryvdh/laravel-snappy": "^1.0",
         "filament/filament": "^3.2",
@@ -15,10 +16,12 @@
         "laravel/sanctum": "^4.0",
         "laravel/tinker": "^2.9",
         "milon/barcode": "^12.0",
+        "pragmarx/countries": "^0.8.3",
         "rmunate/spell-number": "^1.0",
         "spatie/browsershot": "^5.0",
         "spatie/laravel-permission": "^6.9",
-        "tecnickcom/tcpdf": "^6.8"
+        "tecnickcom/tcpdf": "^6.8",
+        "webpatser/laravel-countries": "^1.5"
     },
     "require-dev": {
         "fakerphp/faker": "^1.23",

@@ -221,3 +221,615 @@
 .process-item:nth-child(3) .content:hover i {
     color: white;
 }
+
+
+/* DIM Banner Enhanced Styles with Full RTL Support */
+.dim-banner {
+    padding: 100px 0;
+    background: linear-gradient(135deg, #05346b 0%, #0a4d8a 50%, #05346b 100%);
+    position: relative;
+    overflow: hidden;
+    min-height: 600px;
+    display: flex;
+    align-items: center;
+}
+
+.dim-banner::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: 
+        radial-gradient(circle at 20% 80%, rgba(255, 255, 255, 0.1) 0%, transparent 50%),
+        radial-gradient(circle at 80% 20%, rgba(255, 255, 255, 0.1) 0%, transparent 50%);
+    pointer-events: none;
+}
+
+.banner-bg-effects {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    overflow: hidden;
+    pointer-events: none;
+}
+
+.floating-shapes {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+}
+
+.shape {
+    position: absolute;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 50%;
+    animation: float 6s ease-in-out infinite;
+}
+
+.shape-1 {
+    width: 80px;
+    height: 80px;
+    top: 20%;
+    left: 10%;
+    animation-delay: 0s;
+}
+
+.shape-2 {
+    width: 120px;
+    height: 120px;
+    top: 60%;
+    right: 15%;
+    animation-delay: 2s;
+}
+
+.shape-3 {
+    width: 60px;
+    height: 60px;
+    top: 80%;
+    left: 20%;
+    animation-delay: 4s;
+}
+
+.shape-4 {
+    width: 100px;
+    height: 100px;
+    top: 10%;
+    right: 30%;
+    animation-delay: 1s;
+}
+
+@keyframes float {
+    0%, 100% {
+        transform: translateY(0px) rotate(0deg);
+        opacity: 0.5;
+    }
+    50% {
+        transform: translateY(-20px) rotate(180deg);
+        opacity: 0.8;
+    }
+}
+
+.dim-banner .container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 20px;
+    position: relative;
+    z-index: 2;
+}
+
+.dim-banner .row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 60px;
+}
+
+/* Default LTR: Text on left, Image stuck on right */
+.dim-banner .banner-content {
+    flex: 1;
+    max-width: 550px;
+    text-align: left;
+    position: relative;
+    z-index: 3;
+    order: 1;
+}
+
+.dim-banner .banner-image {
+    flex: 1;
+    display: flex;
+    justify-content: flex-end;
+    position: relative;
+    order: 2;
+}
+
+.image-glow {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 140%;
+    height: 140%;
+    background: radial-gradient(circle, rgba(255, 255, 255, 0.4) 0%, rgba(255, 255, 255, 0.2) 30%, transparent 70%);
+    border-radius: 50%;
+    filter: blur(40px);
+    animation: glow 3s ease-in-out infinite alternate;
+}
+
+@keyframes glow {
+    from {
+        transform: translate(-50%, -50%) scale(0.8);
+        opacity: 0.6;
+    }
+    to {
+        transform: translate(-50%, -50%) scale(1.3);
+        opacity: 0.9;
+    }
+}
+
+.image-wrapper {
+    position: relative;
+    z-index: 3;
+    transition: transform 0.3s ease;
+}
+
+.image-wrapper:hover {
+    transform: scale(1.05);
+}
+
+.dim-banner .banner-image img {
+    width: 100%;
+    max-width: 600px;
+    height: auto;
+    filter: brightness(1.1) contrast(1.1) drop-shadow(0 10px 30px rgba(0, 0, 0, 0.3));
+    transition: filter 0.3s ease;
+}
+
+.dim-banner .banner-image img:hover {
+    filter: brightness(1.2) contrast(1.2) drop-shadow(0 15px 40px rgba(0, 0, 0, 0.4));
+}
+
+.pulse-rings {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 1;
+}
+
+.pulse-ring {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    border-radius: 50%;
+    animation: pulse 3s ease-out infinite;
+}
+
+.ring-1 {
+    width: 400px;
+    height: 400px;
+    animation-delay: 0s;
+}
+
+.ring-2 {
+    width: 500px;
+    height: 500px;
+    animation-delay: 1s;
+}
+
+.ring-3 {
+    width: 600px;
+    height: 600px;
+    animation-delay: 2s;
+}
+
+@keyframes pulse {
+    0% {
+        transform: translate(-50%, -50%) scale(0.5);
+        opacity: 1;
+    }
+    100% {
+        transform: translate(-50%, -50%) scale(1);
+        opacity: 0;
+    }
+}
+
+.content-wrapper {
+    animation: slideInLeft 1s ease-out;
+}
+
+@keyframes slideInLeft {
+    from {
+        opacity: 0;
+        transform: translateX(-50px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+@keyframes slideInRight {
+    from {
+        opacity: 0;
+        transform: translateX(50px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+.badge {
+    display: inline-block;
+    background: rgba(255, 255, 255, 0.2);
+    backdrop-filter: blur(10px);
+    padding: 8px 20px;
+    border-radius: 25px;
+    margin-bottom: 20px;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.badge span {
+    color: #ffffff;
+    font-size: 14px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.dim-banner .banner-content h3 {
+    font-size: 52px;
+    font-weight: 900;
+    color: #ffffff;
+    line-height: 1.1;
+    margin-bottom: 25px;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+    background: linear-gradient(135deg, #ffffff 0%, #e8f2ff 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.dim-banner .banner-content p {
+    color: rgba(255, 255, 255, 0.9);
+    margin: 25px 0;
+    font-size: 18px;
+    line-height: 1.7;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+}
+
+.features-list {
+    margin: 30px 0;
+}
+
+.feature-item {
+    display: flex;
+    align-items: center;
+    margin-bottom: 15px;
+    color: rgba(255, 255, 255, 0.9);
+    font-size: 16px;
+}
+
+.feature-item i {
+    color: #4CAF50;
+    margin-right: 15px;
+    width: 20px;
+    background: rgba(76, 175, 80, 0.2);
+    border-radius: 50%;
+    padding: 5px;
+    text-align: center;
+    flex-shrink: 0;
+}
+
+.feature-item span {
+    flex: 1;
+}
+
+.button-group {
+    display: flex;
+    gap: 20px;
+    margin-top: 40px;
+    flex-wrap: wrap;
+}
+
+.dim-button {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    padding: 16px 32px;
+    font-weight: 600;
+    font-size: 16px;
+    border-radius: 12px;
+    text-decoration: none;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.dim-button::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+    transition: left 0.5s;
+}
+
+.dim-button:hover::before {
+    left: 100%;
+}
+
+.dim-button.primary {
+    background: linear-gradient(45deg, #ffffff, #f0f8ff);
+    color: #05346b;
+    box-shadow: 0 8px 25px rgba(255, 255, 255, 0.3);
+}
+
+.dim-button.primary:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 12px 35px rgba(255, 255, 255, 0.4);
+    background: linear-gradient(45deg, #f0f8ff, #ffffff);
+}
+
+.dim-button.secondary {
+    background: rgba(255, 255, 255, 0.1);
+    color: #ffffff;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    backdrop-filter: blur(10px);
+}
+
+.dim-button.secondary:hover {
+    background: rgba(255, 255, 255, 0.2);
+    border-color: rgba(255, 255, 255, 0.5);
+    transform: translateY(-3px);
+}
+
+.dim-button span {
+    order: 1;
+}
+
+.dim-button i {
+    order: 2;
+    flex-shrink: 0;
+}
+
+/* RTL support - Image stuck on left, Text on right for Arabic */
+[dir="rtl"] .dim-banner .banner-content {
+    text-align: right;
+    order: 2;
+}
+
+[dir="rtl"] .dim-banner .banner-image {
+    justify-content: flex-start;
+    order: 1;
+}
+
+[dir="rtl"] .dim-banner .banner-content h3 {
+    text-align: right;
+}
+
+[dir="rtl"] .dim-banner .banner-content p {
+    text-align: right;
+}
+
+[dir="rtl"] .badge {
+    text-align: right;
+}
+
+[dir="rtl"] .badge span {
+    text-transform: none;
+}
+
+/* RTL Feature items - Enhanced */
+[dir="rtl"] .features-list {
+    text-align: right;
+}
+
+[dir="rtl"] .feature-item {
+    flex-direction: row-reverse;
+    text-align: right;
+}
+
+[dir="rtl"] .feature-item i {
+    margin-right: 0;
+    margin-left: 15px;
+    order: 2;
+}
+
+[dir="rtl"] .feature-item span {
+    order: 1;
+    text-align: right;
+}
+
+/* RTL Button styling - Enhanced */
+[dir="rtl"] .button-group {
+    flex-direction: row-reverse;
+    justify-content: flex-start;
+}
+
+[dir="rtl"] .dim-button {
+    flex-direction: row-reverse;
+    text-align: center;
+}
+
+[dir="rtl"] .dim-button span {
+    order: 2;
+    text-align: center;
+}
+
+[dir="rtl"] .dim-button i {
+    order: 1;
+}
+
+/* Specific RTL icon fixes */
+[dir="rtl"] .dim-button i.fa-arrow-right:before {
+    content: "\f060"; /* fa-arrow-left */
+}
+
+[dir="rtl"] .dim-button i.fa-play {
+    transform: scaleX(-1);
+}
+
+/* RTL Button hover effects */
+[dir="rtl"] .dim-button::before {
+    left: 100%;
+    background: linear-gradient(270deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+}
+
+[dir="rtl"] .dim-button:hover::before {
+    left: -100%;
+}
+
+/* RTL Content wrapper animation */
+[dir="rtl"] .content-wrapper {
+    animation: slideInRight 1s ease-out;
+}
+
+/* Responsive styles for DIM banner */
+@media (max-width: 967px) {
+    .dim-banner {
+        padding: 80px 0;
+        min-height: 500px;
+    }
+    
+    .dim-banner .banner-content h3 {
+        font-size: 42px;
+    }
+
+    .dim-banner .banner-image img {
+        max-width: 500px;
+    }
+}
+
+@media (max-width: 767px) {
+    .dim-banner {
+        padding: 60px 0;
+        min-height: auto;
+    }
+    
+    .dim-banner .row {
+        flex-direction: column !important;
+        text-align: center;
+        gap: 50px;
+    }
+
+    .dim-banner .banner-image {
+        justify-content: center !important;
+        order: 2 !important;
+    }
+
+    .dim-banner .banner-content {
+        text-align: center !important;
+        order: 1 !important;
+    }
+
+    .dim-banner .banner-content h3 {
+        font-size: 36px;
+    }
+
+    .button-group {
+        justify-content: center !important;
+        flex-direction: row !important;
+    }
+
+    .pulse-ring {
+        display: none;
+    }
+
+    .dim-banner .banner-image img {
+        max-width: 400px;
+    }
+
+    /* RTL Mobile responsive fixes */
+    [dir="rtl"] .dim-banner .banner-content {
+        text-align: center !important;
+        order: 1 !important;
+    }
+
+    [dir="rtl"] .button-group {
+        justify-content: center !important;
+        flex-direction: row !important;
+    }
+
+    [dir="rtl"] .dim-button {
+        flex-direction: row !important;
+    }
+
+    [dir="rtl"] .dim-button span {
+        order: 1 !important;
+    }
+
+    [dir="rtl"] .dim-button i {
+        order: 2 !important;
+    }
+
+    [dir="rtl"] .feature-item {
+        justify-content: center;
+        text-align: center;
+        flex-direction: row !important;
+    }
+
+    [dir="rtl"] .feature-item i {
+        order: 1 !important;
+        margin-right: 15px !important;
+        margin-left: 0 !important;
+    }
+
+    [dir="rtl"] .feature-item span {
+        order: 2 !important;
+    }
+}
+
+@media (max-width: 480px) {
+    .dim-banner .banner-content h3 {
+        font-size: 28px;
+    }
+    
+    .dim-banner .banner-content p {
+        font-size: 16px;
+    }
+
+    .button-group {
+        flex-direction: column !important;
+        align-items: center;
+    }
+
+    .dim-button {
+        width: 100%;
+        justify-content: center;
+        max-width: 280px;
+    }
+
+    .dim-banner .banner-image img {
+        max-width: 100%;
+    }
+
+    /* RTL Mobile fixes */
+    [dir="rtl"] .button-group {
+        flex-direction: column !important;
+        align-items: center;
+    }
+
+    [dir="rtl"] .dim-button {
+        justify-content: center;
+        flex-direction: row !important;
+    }
+
+    [dir="rtl"] .dim-button span {
+        order: 1 !important;
+    }
+
+    [dir="rtl"] .dim-button i {
+        order: 2 !important;
+    }
+}

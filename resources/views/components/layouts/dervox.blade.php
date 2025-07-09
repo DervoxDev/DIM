@@ -731,21 +731,13 @@ html[lang="ar"] .social-links {
                     </div>
                 </div>
                 
-                <div class="footer-column">
-                <h4>{{ __('layout.footer.columns.product.title') }}</h4>
-            <ul class="footer-links">
-                <li><a href="#download">{{ __('layout.footer.columns.product.download') }}</a></li>
-                <li><a href="#pricing">{{ __('layout.footer.columns.product.pricing') }}</a></li>
-                <li><a href="#features">{{ __('layout.footer.columns.product.features') }}</a></li>
-            </ul>
-                </div>
+         
 
                 <div class="footer-column">
                 <h4>{{ __('layout.footer.columns.company.title') }}</h4>
             <ul class="footer-links">
                 <li><a href="#">{{ __('layout.footer.columns.company.about') }}</a></li>
-                <li><a href="#">{{ __('layout.footer.columns.company.careers') }}</a></li>
-                <li><a href="#">{{ __('layout.footer.columns.company.blog') }}</a></li>
+                <li><a href="#">{{ __('layout.footer.columns.company.') }}</a></li>
             </ul>
                 </div>
 
@@ -753,17 +745,6 @@ html[lang="ar"] .social-links {
                 <h4>{{ __('layout.footer.columns.resources.title') }}</h4>
             <ul class="footer-links">
                 <li><a href="#">{{ __('layout.footer.columns.resources.support') }}</a></li>
-                <li><a href="#">{{ __('layout.footer.columns.resources.documentation') }}</a></li>
-                <li><a href="#">{{ __('layout.footer.columns.resources.security') }}</a></li>
-            </ul>
-                </div>
-
-                <div class="footer-column">
-                <h4>{{ __('layout.footer.columns.legal.title') }}</h4>
-            <ul class="footer-links">
-                <li><a href="#">{{ __('layout.footer.columns.legal.terms') }}</a></li>
-                <li><a href="#">{{ __('layout.footer.columns.legal.privacy') }}</a></li>
-                <li><a href="#">{{ __('layout.footer.columns.legal.guidelines') }}</a></li>
             </ul>
                 </div>
             </div>

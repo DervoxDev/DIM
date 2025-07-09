@@ -54,19 +54,36 @@
         margin-bottom: 0.5rem;
     }
 
-    .form-input {
+    .form-input, .form-select {
         width: 100%;
         padding: 0.75rem 1rem;
         border: 2px solid #e2e8f0;
         border-radius: 8px;
         font-size: 1rem;
         transition: all 0.3s ease;
+        background: white;
     }
 
-    .form-input:focus {
+    .form-input:focus, .form-select:focus {
         border-color: var(--primary-color);
         outline: none;
         box-shadow: 0 0 0 3px rgba(88, 101, 242, 0.1);
+    }
+
+    .form-select {
+        cursor: pointer;
+        background-image: url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTIiIGhlaWdodD0iOCIgdmlld0JveD0iMCAwIDEyIDgiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxwYXRoIGQ9Ik0xIDFMNiA2TDExIDEiIHN0cm9rZT0iIzZCNzI4MCIgc3Ryb2tlLXdpZHRoPSIyIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiLz4KPC9zdmc+');
+        background-repeat: no-repeat;
+        background-position: right 0.75rem center;
+        background-size: 12px;
+        padding-right: 2.5rem;
+        appearance: none;
+    }
+
+    .rtl .form-select {
+        background-position: left 0.75rem center;
+        padding-right: 1rem;
+        padding-left: 2.5rem;
     }
 
     .error-message {
@@ -141,13 +158,15 @@
         color: #e2e8f0;
     }
 
-    .dark .form-input {
+    .dark .form-input,
+    .dark .form-select {
         background: rgba(30, 32, 34, 0.8);
         border-color: #4a5568;
         color: white;
     }
 
-    .dark .form-input:focus {
+    .dark .form-input:focus,
+    .dark .form-select:focus {
         border-color: var(--primary-color);
     }
 
@@ -157,6 +176,23 @@
 
     .dark .register-header p {
         color: #e2e8f0;
+    }
+
+    /* RTL Support */
+    .rtl {
+        direction: rtl;
+        text-align: right;
+        font-family: 'Arial', 'Tahoma', sans-serif;
+    }
+
+    .rtl .form-input,
+    .rtl .form-select {
+        text-align: right;
+    }
+
+    .rtl .form-footer {
+        flex-direction: row-reverse;
+        justify-content: space-between;
     }
 
     /* Responsive styles */
@@ -174,102 +210,6 @@
         .register-button {
             width: 100%;
         }
-        .rtl .form-footer {
-            flex-direction: column;
-        }
-        .register-button,
-        .rtl .register-button {
-            width: 100%;
-            margin: 0;
-            order: 2; /* In mobile, button goes below */
-        }
-        .register-button,
-        .rtl .register-button {
-            order: 1; /* Pull the register button to the left */
-            margin: 0;
-        }
-
-        .rtl .login-link {
-            order: 2; /* Push the login link to the right */
-        }
-        .login-link,
-        .rtl .login-link {
-            width: 100%;
-            text-align: center;
-            order: 1; /* In mobile, link goes above */
-        }
-    }
-    /* RTL Support */
-    .rtl {
-        direction: rtl;
-        text-align: right;
-        font-family: 'Arial', 'Tahoma', sans-serif;
-    }
-    .rtl input::placeholder {
-        font-family: 'Arial', 'Tahoma', sans-serif;
-    }
-
-    .rtl .register-header h1 {
-        font-family: 'Arial', 'Tahoma', sans-serif;
-        letter-spacing: normal;
-    }
-    .rtl .error-message {
-        margin-right: 0;
-        padding-right: 0;
-    }
-
-    .rtl .form-input.is-invalid {
-        border-color: #e53e3e;
-        padding-right: 1rem;
-        padding-left: 2.5rem;
-        background-position: left 0.75rem center;
-    }
-
-    .rtl .form-label,
-    .rtl .form-input,
-    .rtl .error-message,
-    .rtl .login-link,
-    .rtl .register-button {
-        font-family: 'Arial', 'Tahoma', sans-serif;
-        letter-spacing: normal;
-    }
-    .rtl .form-input {
-        text-align: right;
-    }
-
-    .rtl .error-message {
-        text-align: right;
-    }
-
-    .rtl .form-footer {
-        flex-direction: row-reverse;
-        justify-content: space-between; /* Add this */
-    }
-
-    .rtl .register-button {
-        order: 1; /* Pull the register button to the left */
-        margin: 0;
-    }
-
-    .rtl .form-label {
-        text-align: right;
-    }
-
-    .rtl .password-strength {
-        text-align: right;
-    }
-
-    .rtl .strength-meter div {
-        float: right;
-    }
-
-    /* Adjust padding and margins for RTL */
-    .rtl .form-input {
-        padding: 0.75rem 1rem;
-    }
-
-    .rtl .register-button {
-        padding: 0.75rem 2rem;
     }
 
     /* Checkbox styles */
@@ -304,7 +244,7 @@
         text-decoration: underline;
     }
 
-    /* Modal styles */
+    /* Modal styles - keeping existing styles */
     .terms-modal {
         display: none;
         position: fixed;
@@ -415,7 +355,7 @@
         transform: translateY(-1px);
     }
 
-    /* Dark mode adjustments */
+    /* Dark mode adjustments for modal */
     .dark .terms-modal-content {
         background-color: #1e2022;
         color: #e2e8f0;
@@ -437,17 +377,6 @@
     .dark .terms-modal-footer {
         background-color: #2d3748;
         border-color: #4a5568;
-    }
-
-    @media (max-width: 640px) {
-        .terms-modal-content {
-            width: 95%;
-            margin: 5% auto;
-        }
-        
-        .terms-modal-body {
-            padding: 1rem;
-        }
     }
 </style>
 @endpush
@@ -486,6 +415,27 @@
                        value="{{ old('email') }}" 
                        required>
                 @error('email')
+                    <p class="error-message">{{ $message }}</p>
+                @enderror
+            </div>
+
+            <!-- Country Selection - Required Field -->
+            <div class="form-group">
+                <label for="country_id" class="form-label">{{ __('auth.Country') }}</label>
+                
+                <select id="country_id" name="country_id" class="form-select" required>
+                    <option value="">{{ __('auth.Select your country') }}</option>
+                    @php
+                        $countries = \App\Helpers\CountryHelper::getCountriesForDropdown();
+                    @endphp
+                    @foreach($countries as $code => $name)
+                        <option value="{{ $code }}" {{ old('country_id') == $code ? 'selected' : '' }}>
+                            {{ $name }}
+                        </option>
+                    @endforeach
+                </select>
+                
+                @error('country_id')
                     <p class="error-message">{{ $message }}</p>
                 @enderror
             </div>
@@ -537,7 +487,7 @@
         </form>
     </div>
 
-    <!-- Terms and Conditions Modal -->
+    <!-- Terms and Conditions Modal (keeping existing modal code) -->
     <div class="terms-modal" id="termsModal">
         <div class="terms-modal-content {{ app()->getLocale() === 'ar' ? 'rtl' : '' }}">
             <div class="terms-modal-header">
@@ -588,54 +538,56 @@
 
 @push('scripts')
 <script>
-    // Password strength checker
-    document.getElementById('password').addEventListener('input', function() {
-        const password = this.value;
-        const strengthMeter = document.querySelector('.strength-meter div');
-        
-        // Check password strength
-        let strength = 0;
-        if (password.length >= 8) strength++;
-        if (password.match(/[a-z]/) && password.match(/[A-Z]/)) strength++;
-        if (password.match(/[0-9]/)) strength++;
-        
-        // Update strength meter
-        strengthMeter.className = '';
-        if (strength === 1) strengthMeter.classList.add('weak');
-        if (strength === 2) strengthMeter.classList.add('medium');
-        if (strength === 3) strengthMeter.classList.add('strong');
-    });
+    document.addEventListener('DOMContentLoaded', function() {
+        // Password strength checker
+        document.getElementById('password').addEventListener('input', function() {
+            const password = this.value;
+            const strengthMeter = document.querySelector('.strength-meter div');
+            
+            // Check password strength
+            let strength = 0;
+            if (password.length >= 8) strength++;
+            if (password.match(/[a-z]/) && password.match(/[A-Z]/)) strength++;
+            if (password.match(/[0-9]/)) strength++;
+            
+            // Update strength meter
+            strengthMeter.className = '';
+            if (strength === 1) strengthMeter.classList.add('weak');
+            if (strength === 2) strengthMeter.classList.add('medium');
+            if (strength === 3) strengthMeter.classList.add('strong');
+        });
 
-    // Terms and conditions modal
-    const modal = document.getElementById('termsModal');
-    const openModalBtn = document.getElementById('openTermsModal');
-    const closeModalBtn = document.getElementById('closeTermsModal');
-    const acceptTermsBtn = document.getElementById('acceptTerms');
-    const termsCheckbox = document.getElementById('terms');
+        // Terms and conditions modal
+        const modal = document.getElementById('termsModal');
+        const openModalBtn = document.getElementById('openTermsModal');
+        const closeModalBtn = document.getElementById('closeTermsModal');
+        const acceptTermsBtn = document.getElementById('acceptTerms');
+        const termsCheckbox = document.getElementById('terms');
 
-    openModalBtn.addEventListener('click', function(e) {
-        e.preventDefault();
-        modal.style.display = 'block';
-        document.body.style.overflow = 'hidden';
-    });
+        openModalBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            modal.style.display = 'block';
+            document.body.style.overflow = 'hidden';
+        });
 
-    closeModalBtn.addEventListener('click', function() {
-        modal.style.display = 'none';
-        document.body.style.overflow = '';
-    });
-
-    acceptTermsBtn.addEventListener('click', function() {
-        termsCheckbox.checked = true;
-        modal.style.display = 'none';
-        document.body.style.overflow = '';
-    });
-
-    // Close modal when clicking outside of it
-    window.addEventListener('click', function(event) {
-        if (event.target === modal) {
+        closeModalBtn.addEventListener('click', function() {
             modal.style.display = 'none';
             document.body.style.overflow = '';
-        }
+        });
+
+        acceptTermsBtn.addEventListener('click', function() {
+            termsCheckbox.checked = true;
+            modal.style.display = 'none';
+            document.body.style.overflow = '';
+        });
+
+        // Close modal when clicking outside of it
+        window.addEventListener('click', function(event) {
+            if (event.target === modal) {
+                modal.style.display = 'none';
+                document.body.style.overflow = '';
+            }
+        });
     });
 </script>
 @endpush

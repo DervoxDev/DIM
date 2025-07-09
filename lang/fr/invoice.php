@@ -38,10 +38,10 @@ return [
     'total' => 'Total',
     
     // Totals
-    'subtotal' => 'Sous-total',
+    'subtotal' => 'TOTAL HT',
     'tax_amount' => 'Montant TVA',
     'discount_amount' => 'Montant remise',
-    'total_amount' => 'Montant total',
+    'total_amount' => 'TOTAL TTC',
     
     // Footer
     'notes' => 'Notes',

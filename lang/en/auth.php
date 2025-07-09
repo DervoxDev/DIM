@@ -90,6 +90,25 @@ return [
     'Governing Law' => 'Governing Law',
     'Contact Information' => 'Contact Information',
     
+    'Country' => 'Country',
+    'Select your country' => 'Select your country',
+    'Please select your country' => 'Please select your country',
+    'Country is required' => 'Country is required',
+
+    'Profile' => 'Profile',
+    'Manage your account settings and preferences' => 'Manage your account settings and preferences',
+    'Profile Information' => 'Profile Information',
+    'Update your account profile information and email address' => 'Update your account profile information and email address',
+    'Update Password' => 'Update Password',
+    'Delete Account' => 'Delete Account',
+    'Ensure your account is using a long random password to stay secure' => 'Ensure your account is using a long, random password to stay secure',
+    'Once your account is deleted all of its resources and data will be permanently deleted' => 'Once your account is deleted, all of its resources and data will be permanently deleted',
+    'Your email address is unverified' => 'Your email address is unverified.',
+    'Click here to re-send the verification email' => 'Click here to re-send the verification email.',
+    'A new verification link has been sent to your email address' => 'A new verification link has been sent to your email address.',
+    'Save' => 'Save',
+    'Saved' => 'Saved.',
+
     // Detailed terms content
     'terms_acceptance' => 'By accessing and using DIM Inventory Management System ("the Service"), you agree to be bound by these Terms and Conditions ("Terms"). If you do not agree to these Terms, please do not use the Service.',
     

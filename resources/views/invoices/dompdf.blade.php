@@ -145,8 +145,8 @@
         }
         
         .totals-table {
-            width: 40%;
-            margin-left: 60%;
+            width: 50%;
+            margin-left: 50%;
         }
         
         .totals-table td {
@@ -459,32 +459,47 @@
             <thead>
                 <tr>
                     <th width="45%">{{ __('invoice.description') }}</th>
-                    <th width="10%">{{ __('invoice.quantity') }}</th>
+                    <th width="15%">{{ __('invoice.quantity') }}</th>
                     <th width="15%">{{ __('invoice.unit_price') }}</th>
                     <th width="10%">{{ __('invoice.tax') }}</th>
-                    <th width="10%">{{ __('invoice.discount') }}</th>
-                    <th width="10%" class="text-right">{{ __('invoice.total') }}</th>
+                    <th width="15%">{{ __('invoice.discount') }}</th>
+                    <th width="15%" class="text-right">{{ __('invoice.total') }}</th>
                 </tr>
             </thead>
             <tbody>
-                @foreach($invoice->items as $item)
-                <tr>
-                    <td>
-                        <strong>{{ $item->description }}</strong>
-                        @if($item->notes)
-                            <br><span class="text-sm secondary-color">{{ $item->notes }}</span>
-                        @endif
-                    </td>
-                    <td>{{ $item->quantity }}</td>
-                    <td>{{ number_format($item->unit_price, 2) }}</td>
-                    <td>{{ number_format($item->tax_amount ?? 0, 2) }}</td>
-                    <td>{{ number_format($item->discount_amount ?? 0, 2) }}</td>
-                    <td class="text-right text-bold">{{ number_format($item->total_price, 2) }}</td>
-                </tr>
+                @php
+                    // Calculate total item discounts
+                    $totalItemDiscounts = 0;
+                @endphp
+                @foreach($invoice->items as $index => $item)
+                    @php
+                        // Get the corresponding item data from metadata
+                        $itemData = $invoice->meta_data['items_data'][$index] ?? null;
+                        $taxRate = $itemData['tax_rate'] ?? 0;
+                        $unitPrice = $itemData['unit_price'] ?? $item->unit_price;
+                        $discountAmount = $itemData['discount_amount'] ?? 0;
+                        $totalPrice = $itemData['total_price'] ?? $item->total_price;
+                        $quantity = $itemData['quantity'] ?? $item->quantity;
+                        
+                        // Add to total item discounts
+                        $totalItemDiscounts += $discountAmount;
+                    @endphp
+                    <tr>
+                        <td>
+                            <strong>{{ $item->description }}</strong>
+                            @if($item->notes)
+                                <br><span class="text-sm secondary-color">{{ $item->notes }}</span>
+                            @endif
+                        </td>
+                        <td>{{ $quantity }}</td>
+                        <td>{{ number_format($unitPrice, 2) }} DH</td>
+                        <td>{{ number_format($taxRate, 2) }}%</td>
+                        <td>{{ number_format($discountAmount, 2) }} DH</td>
+                        <td class="text-right text-bold">{{ number_format($totalPrice, 2) }} DH</td>
+                    </tr>
                 @endforeach
             </tbody>
         </table>
-        
         <!-- TOTALS -->
         <div class="totals-section">
             <table class="totals-table">
@@ -493,16 +508,20 @@
                     <td width="40%" class="text-right">{{ number_format($invoice->meta_data['subtotal'] ?? 0, 2) }} DH</td>
                 </tr>
                 @if($invoice->tax_amount > 0)
-                <tr>
-                    <td class="secondary-color">{{ __('invoice.tax') }}:</td>
-                    <td class="text-right">{{ number_format($invoice->tax_amount, 2) }} DH</td>
-                </tr>
+                    <tr>
+                        <td class="secondary-color">{{ __('invoice.tax') }}:</td>
+                        <td class="text-right">{{ number_format($invoice->tax_amount, 2) }} DH</td>
+                    </tr>
                 @endif
-                @if($invoice->discount_amount > 0)
-                <tr>
-                    <td class="secondary-color">{{ __('invoice.discount') }}:</td>
-                    <td class="text-right">-{{ number_format($invoice->discount_amount, 2) }} DH</td>
-                </tr>
+                @php
+                    // Calculate total discount (invoice discount + all item discounts)
+                    $totalDiscount = $invoice->discount_amount + $totalItemDiscounts;
+                @endphp
+                @if($totalDiscount > 0)
+                    <tr>
+                        <td class="secondary-color">{{ __('invoice.discount') }}:</td>
+                        <td class="text-right">-{{ number_format($totalDiscount, 2) }} DH</td>
+                    </tr>
                 @endif
                 <tr>
                     <td class="grand-total">{{ __('invoice.total_amount') }}:</td>

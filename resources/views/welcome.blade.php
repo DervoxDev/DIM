@@ -660,7 +660,10 @@
         font-size: 2.5rem;
         margin-bottom: 1.5rem;
     }
-
+  .cta p {
+        
+        margin-bottom: 1.5rem;
+    }
     .cta .primary-button {
         background-color: var(--light-color);
         color: var(--primary-color);
@@ -753,6 +756,228 @@
             padding: 1.5rem;
         }
     }
+
+
+
+
+   /* Pricing toggle styles */
+    .billing-toggle {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 2rem auto 0;
+        gap: 0.5rem;
+    }
+
+    .billing-option {
+        font-weight: 500;
+        color: var(--text-color);
+        opacity: 0.7;
+        transition: all 0.3s ease;
+    }
+
+    .billing-option.active {
+        opacity: 1;
+        color: var(--primary-color);
+        font-weight: 600;
+    }
+
+    .billing-save {
+        background: var(--primary-color);
+        color: white;
+        padding: 0.2rem 0.5rem;
+        border-radius: 12px;
+        font-size: 0.75rem;
+        margin-left: 0.5rem;
+    }
+
+    /* Switch styling */
+    .switch {
+        position: relative;
+        display: inline-block;
+        width: 50px;
+        height: 24px;
+    }
+
+    .switch input { 
+        opacity: 0;
+        width: 0;
+        height: 0;
+    }
+
+    .slider {
+        position: absolute;
+        cursor: pointer;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: #ccc;
+        transition: .4s;
+    }
+
+    .slider:before {
+        position: absolute;
+        content: "";
+        height: 18px;
+        width: 18px;
+        left: 3px;
+        bottom: 3px;
+        background-color: white;
+        transition: .4s;
+    }
+
+    input:checked + .slider {
+        background-color: var(--primary-color);
+    }
+
+    input:focus + .slider {
+        box-shadow: 0 0 1px var(--primary-color);
+    }
+
+    input:checked + .slider:before {
+        transform: translateX(26px);
+    }
+
+    .slider.round {
+        border-radius: 24px;
+    }
+
+    .slider.round:before {
+        border-radius: 50%;
+    }
+    
+    /* Price subtext */
+    .price-subtext {
+        font-size: 0.8rem;
+        color: var(--text-color);
+        margin-top: -0.5rem;
+        margin-bottom: 1rem;
+        opacity: 0.8;
+    }
+    
+    /* Comparison table styles */
+    .pricing-comparison {
+        max-width: 1200px;
+        margin: 4rem auto 0;
+          margin-bottom: 2rem;
+    }
+    
+.pricing-comparison h3 {
+    text-align: center;
+        font-size: 2.5rem;
+        color: var(--secondary-color);
+        margin-bottom: 1rem;
+}
+    
+    .comparison-table-container {
+        overflow-x: auto;
+    }
+    
+    .comparison-table {
+        width: 100%;
+        border-collapse: collapse;
+        border-radius: 8px;
+        overflow: hidden;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+    
+    .comparison-table th,
+    .comparison-table td {
+        padding: 1rem;
+        text-align: center;
+        border: 1px solid #eaeaea;
+    }
+    
+    .comparison-table th {
+        background: var(--primary-color);
+        color: var(--light-color);
+        font-weight: 600;
+    }
+    
+    .comparison-table th:first-child {
+        text-align: left;
+    }
+    
+    .comparison-table td:first-child {
+        text-align: left;
+        font-weight: 500;
+    }
+    
+    .comparison-table tr:nth-child(even) {
+        background-color: rgba(0, 0, 0, 0.02);
+    }
+    
+    .text-success {
+        color: #28a745;
+    }
+    
+    .text-danger {
+        color: #dc3545;
+    }
+    
+    /* Make the pricing cards consistent height */
+    .pricing-grid {
+        grid-auto-rows: 1fr;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    }
+    
+    /* Dark mode support */
+    .dark .comparison-table th {
+        background: var(--accent-color);
+    }
+    
+    .dark .comparison-table td {
+        border-color: #333;
+    }
+    
+    .dark .comparison-table tr:nth-child(even) {
+        background-color: rgba(255, 255, 255, 0.05);
+    }
+    
+    @media (max-width: 992px) {
+        .pricing-grid {
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        }
+    }
+
+.total-price.small-text {
+    font-size: 14px;
+    color: #666;
+    margin-top: 5px;
+    font-weight: normal;
+}
+/* RTL Support for pricing toggle */
+[dir="rtl"] .billing-toggle {
+    flex-direction: row; /* Maintain same direction even in RTL */
+}
+
+[dir="rtl"] .billing-save {
+    margin-right: 0.5rem;
+    margin-left: 0;
+}
+
+/* RTL Support for toggle switch */
+[dir="rtl"] .switch {
+    direction: ltr; /* Force LTR direction for the switch itself */
+    transform: scaleX(-1); /* Mirror it horizontally */
+}
+
+[dir="rtl"] .switch input:checked + .slider:before {
+    transform: translateX(26px); /* Maintain same sliding behavior */
+}
+
+/* For comparison table */
+[dir="rtl"] .comparison-table th:first-child,
+[dir="rtl"] .comparison-table td:first-child {
+    text-align: right;
+}
+
+/* Fix the billing toggle layout in RTL */
+[dir="rtl"] .billing-option {
+    display: inline-block; /* Ensure text stays in correct position */
+}
+
 </style>
 @endpush
 
@@ -860,11 +1085,11 @@
                 <!-- <a href="{{ route('download.os', 'windows-32 ') }}" class="button primary-button">
                     {{ __('messages.Download 32-bit') }}
                 </a> -->
-                                <a href="javascript:void(0)" 
+                                <!-- <a href="javascript:void(0)" 
                 class="button primary-button disabled" 
                 style="opacity: 0.5; cursor: not-allowed; pointer-events: none;">
                     {{ __('messages.Download 32-bit') }} ({{ __('messages.Coming Soon') }})
-                </a>
+                </a> -->
             </div>
             <div class="version-info">Version 1.0.0 • 84.5 MB</div>
         </div>
@@ -916,13 +1141,27 @@
     <div class="pricing-header">
         <h2>{{ __('messages.Choose Your Plan') }}</h2>
         <p>{{ __('messages.Start with our free trial and grow with us') }}</p>
+        
+        <!-- Billing Toggle -->
+        <div class="billing-toggle">
+            <span class="billing-option">{{ __('messages.6 Months') }}</span>
+            <label class="switch">
+                <input type="checkbox" id="billingToggle">
+                <span class="slider round"></span>
+            </label>
+            <span class="billing-option active">{{ __('messages.Yearly') }}</span>
+            <span class="billing-save">{{ __('messages.Save 8%') }}</span>
+        </div>
     </div>
+    
     <div class="pricing-grid">
-        <!-- Current Available Plan -->
+        <!-- Free Trial Plan -->
         <div class="pricing-card popular">
             <div class="popular-badge">{{ __('messages.Available Now') }}</div>
             <h3>{{ __('messages.Free Trial') }}</h3>
-            <div class="price">$0<span>/month</span></div>
+            <div class="price">
+                <div>0 <span class="currency">{{ __('messages.MAD') }}</span><span>/{{ __('messages.month') }}</span></div>
+            </div>
             <ul class="features-list">
                 <li><i class="fas fa-check"></i> {{ __('messages.Full Access to All Features') }}</li>
                 <li><i class="fas fa-check"></i> {{ __('messages.Priority Support') }}</li>
@@ -930,19 +1169,38 @@
             </ul>
 
             <a href="{{ route('register') }}" class="button primary-button pricing-cta-button">{{ __('messages.Start Free Trial') }}</a>
-
         </div>
 
-        <!-- Coming Soon Plans -->
+        <!-- Basic Plan (Enabled) -->
+        <div class="pricing-card">
+            <div class="popular-badge">{{ __('messages.Available Now') }}</div>
+            <h3>{{ __('messages.Basic') }}</h3>
+     <div class="price">
+    <div class="biannual-price">400 <span class="currency">{{ __('messages.MAD') }}</span><span>/{{ __('messages.month') }}</span></div>
+    <div class="annual-price" style="display: none;">367 <span class="currency">{{ __('messages.MAD') }}</span><span>/{{ __('messages.month') }}</span></div>
+    
+    <div class="total-price biannual-text small-text">{{ __('messages.Billed every 6 months') }}: 2,400 <span class="currency">{{ __('messages.MAD') }}</span></div>
+    <div class="total-price annual-text small-text" style="display: none;">{{ __('messages.Billed annually') }}: 4,400 <span class="currency">{{ __('messages.MAD') }}</span></div>
+</div>
+
+            <ul class="features-list">
+                
+                <li><i class="fas fa-check"></i> {{ __('messages.Up to 2 Team Members') }}</li>
+                <li><i class="fas fa-check"></i> {{ __('messages.Basic Analytics') }}</li>
+            </ul>
+            <a href="#placeOrder" class="button primary-button pricing-cta-button" data-plan="basic">{{ __('messages.Place an Order') }}</a>
+        </div>
+
+        <!-- Pro Plan (Coming Soon) -->
         <div class="pricing-card coming-soon">
             <div class="coming-soon-badge">{{ __('messages.Coming Soon') }}</div>
             <h3>{{ __('messages.Pro') }}</h3>
             <div class="price price-tba">
-        <span>{{ __('messages.Price TBA') }}</span>
-        <p class="price-info">{{ __('messages.Sign up to be notified') }}</p>
-</div>
+                <span>{{ __('messages.Price TBA') }}</span>
+                <p class="price-info">{{ __('messages.Sign up to be notified') }}</p>
+            </div>
             <ul class="features-list opacity-75">
-                <li><i class="fas fa-check"></i> {{ __('messages.All Trial Features') }}</li>
+                <li><i class="fas fa-check"></i> {{ __('messages.All Basic Features') }}</li>
                 <li><i class="fas fa-check"></i> {{ __('messages.Up to 5 Team Members') }}</li>
                 <li><i class="fas fa-check"></i> {{ __('messages.Advanced Analytics') }}</li>
             </ul>
@@ -951,17 +1209,19 @@
             </button>
         </div>
 
+        <!-- Enterprise Plan (Coming Soon) -->
         <div class="pricing-card coming-soon">
             <div class="coming-soon-badge">{{ __('messages.Coming Soon') }}</div>
             <h3>{{ __('messages.Enterprise') }}</h3>
             <div class="price price-tba">
-        <span>{{ __('messages.Price TBA') }}</span>
-        <p class="price-info">{{ __('messages.Sign up to be notified') }}</p>
-</div>
+                <span>{{ __('messages.Price TBA') }}</span>
+                <p class="price-info">{{ __('messages.Sign up to be notified') }}</p>
+            </div>
             <ul class="features-list opacity-75">
                 <li><i class="fas fa-check"></i> {{ __('messages.All Pro Features') }}</li>
-                <li><i class="fas fa-check"></i> {{ __('messages.Unlimited Users') }}</li>
+                <li><i class="fas fa-check"></i> {{ __('messages.Unlimited Team Members') }}</li>
                 <li><i class="fas fa-check"></i> {{ __('messages.Custom Integration') }}</li>
+                <li><i class="fas fa-check"></i> {{ __('messages.Dedicated Support') }}</li>
             </ul>
             <button disabled class="button secondary-button opacity-75">
                 {{ __('messages.Coming Soon') }}
@@ -969,6 +1229,74 @@
         </div>
     </div>
 </section>
+
+
+    
+    <!-- Comparison Table -->
+    <div class="pricing-comparison">
+        <h3>{{ __('messages.Feature Comparison') }}</h3>
+        <div class="comparison-table-container">
+            <table class="comparison-table">
+                <thead>
+                    <tr>
+                        <th>{{ __('messages.Feature') }}</th>
+                        <th>{{ __('messages.Free Trial') }}</th>
+                        <th>{{ __('messages.Basic') }}</th>
+                        <th>{{ __('messages.Pro') }}</th>
+                        <th>{{ __('messages.Enterprise') }}</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>{{ __('messages.Duration') }}</td>
+                        <td>14 {{ __('messages.days') }}</td>
+                        <td>{{ __('messages.Unlimited') }}</td>
+                        <td>{{ __('messages.Unlimited') }}</td>
+                        <td>{{ __('messages.Unlimited') }}</td>
+                    </tr>
+                    <tr>
+                        <td>{{ __('messages.Team Members') }}</td>
+                        <td>1</td>
+                        <td>1</td>
+                        <td>5</td>
+                        <td>{{ __('messages.Unlimited') }}</td>
+                    </tr>
+                    <tr>
+                        <td>{{ __('messages.Analytics') }}</td>
+                        <td>{{ __('messages.Basic') }}</td>
+                        <td>{{ __('messages.Basic') }}</td>
+                        <td>{{ __('messages.Advanced') }}</td>
+                        <td>{{ __('messages.Custom') }}</td>
+                    </tr>
+               
+                    <tr>
+                        <td>{{ __('messages.Priority Support') }}</td>
+                        <td><i class="fas fa-check text-success"></i></td>
+                        <td><i class="fas fa-check text-success"></i></td>
+                        <td><i class="fas fa-check text-success"></i></td>
+                        <td><i class="fas fa-check text-success"></i></td>
+                    </tr>
+                    <tr>
+                        <td>{{ __('messages.Custom Integration') }}</td>
+                        <td><i class="fas fa-times text-danger"></i></td>
+                        <td><i class="fas fa-times text-danger"></i></td>
+                        <td><i class="fas fa-check text-success"></i></td>
+                        <td><i class="fas fa-check text-success"></i></td>
+                    </tr>
+                    <tr>
+                        <td>{{ __('messages.Dedicated Support') }}</td>
+                        <td><i class="fas fa-times text-danger"></i></td>
+                        <td><i class="fas fa-times text-danger"></i></td>
+                        <td><i class="fas fa-times text-danger"></i></td>
+                        <td><i class="fas fa-check text-success"></i></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</section>
+
+
 
 
 <!-- CTA Section -->
@@ -985,7 +1313,53 @@
 @push('scripts')
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-
+  const billingToggle = document.getElementById('billingToggle');
+    const biannualPrices = document.querySelectorAll('.biannual-price');
+    const annualPrices = document.querySelectorAll('.annual-price');
+    const biannualText = document.querySelectorAll('.biannual-text');
+    const annualText = document.querySelectorAll('.annual-text');
+    const billingOptions = document.querySelectorAll('.billing-option');
+    
+    // Set default to yearly (checked)
+    billingToggle.checked = true;
+    updatePriceDisplay();
+    
+    billingToggle.addEventListener('change', updatePriceDisplay);
+    
+    function updatePriceDisplay() {
+        if (billingToggle.checked) {
+            // Show annual prices
+            biannualPrices.forEach(el => el.style.display = 'none');
+            annualPrices.forEach(el => el.style.display = 'block');
+            biannualText.forEach(el => el.style.display = 'none');
+            annualText.forEach(el => el.style.display = 'block');
+            billingOptions[1].classList.add('active');
+            billingOptions[0].classList.remove('active');
+        } else {
+            // Show biannual prices
+            biannualPrices.forEach(el => el.style.display = 'block');
+            annualPrices.forEach(el => el.style.display = 'none');
+            biannualText.forEach(el => el.style.display = 'block');
+            annualText.forEach(el => el.style.display = 'none');
+            billingOptions[0].classList.add('active');
+            billingOptions[1].classList.remove('active');
+        }
+    }
+    
+    // Handle place order button clicks
+    document.querySelectorAll('[data-plan]').forEach(button => {
+        button.addEventListener('click', function(e) {
+            e.preventDefault();
+            const plan = this.getAttribute('data-plan');
+            const period = billingToggle.checked ? 'annual' : 'biannual';
+            
+            // Here you would typically open a modal or redirect to a checkout page
+            alert(`You selected the ${plan} plan with ${period} billing.`);
+            
+            // In a real implementation, you might use something like:
+            // window.location.href = `/checkout?plan=${plan}&period=${period}`;
+        });
+    });
 
 
     const scrollToTopButton = document.getElementById('scrollToTop');

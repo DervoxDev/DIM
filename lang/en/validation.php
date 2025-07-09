@@ -161,6 +161,10 @@ return [
     'ulid' => 'The :attribute field must be a valid ULID.',
     'uuid' => 'The :attribute field must be a valid UUID.',
 
+    // Country and Profile specific validation messages
+    'country_code_invalid' => 'The selected :attribute is invalid.',
+    'country_code_format' => 'The :attribute must be a valid 3-character country code.',
+
     /*
     |--------------------------------------------------------------------------
     | Custom Validation Language Lines
@@ -173,8 +177,14 @@ return [
     */
 
     'custom' => [
-        'attribute-name' => [
-            'rule-name' => 'custom-message',
+        'country_id' => [
+            'size' => 'The country code must be exactly 3 characters.',
+            'string' => 'The country code must be a string.',
+            'invalid' => 'The selected country is invalid.',
+        ],
+        'terms' => [
+            'required' => 'You must accept the Terms and Conditions.',
+            'accepted' => 'You must accept the Terms and Conditions.',
         ],
     ],
 
@@ -189,6 +199,13 @@ return [
     |
     */
 
-    'attributes' => [],
+    'attributes' => [
+        'name' => 'Name',
+        'email' => 'Email Address',
+        'password' => 'Password',
+        'password_confirmation' => 'Password Confirmation',
+        'country_id' => 'Country',
+        'terms' => 'Terms and Conditions',
+    ],
 
 ];

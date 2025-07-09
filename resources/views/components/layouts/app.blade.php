@@ -33,12 +33,7 @@ html[lang="ar"] .nav-links {
     margin-right: auto;
     order: 1; /* Add this */
 }
-[dir="rtl"] .logo,
-html[lang="ar"] .logo {
-    margin-left: auto; /* Add this */
-    margin-right: 0; /* Add this */
-    order: 2; /* Add this */
-}
+ 
 
 /* Profile dropdown RTL adjustments */
 [dir="rtl"] .profile-dropdown,
@@ -222,13 +217,184 @@ html[lang="ar"] .main-nav-group {
             align-items: center;
         }
 
-        .logo {
-            font-size: 1.5rem;
-            font-weight: 700;
-            color: var(--primary-color);
-            text-decoration: none;
-            transition: color 0.3s ease;
-        }
+/* Logo SVG Styles */
+.logo {
+    display: flex;
+    align-items: center;
+    text-decoration: none;
+    transition: transform 0.3s ease;
+    flex-shrink: 0; /* Prevent logo from shrinking */
+}
+
+.logo:hover {
+    transform: scale(1.05);
+}
+
+.logo-svg {
+    height: 40px;
+    width: auto;
+    max-width: 150px;
+    transition: all 0.3s ease;
+}
+
+/* RTL Logo positioning - More specific */
+[dir="rtl"] .navbar-container .logo,
+html[lang="ar"] .navbar-container .logo {
+    order: 3; /* Place logo at the end (rightmost) */
+    margin-left: auto;
+    margin-right: 0;
+}
+
+[dir="rtl"] .nav-links,
+html[lang="ar"] .nav-links {
+    order: 1;
+    margin-right: auto;
+    margin-left: 0;
+}
+
+[dir="rtl"] .profile-dropdown,
+html[lang="ar"] .profile-dropdown {
+    order: 2;
+}
+
+/* Dark mode SVG adjustments */
+.dark .logo-svg {
+    filter: brightness(1.1);
+}
+
+/* Responsive logo sizing */
+@media (max-width: 768px) {
+    .logo-svg {
+        height: 32px;
+        max-width: 120px;
+    }
+}
+
+
+/* Footer Logo Styles - Complete and Fixed */
+.footer-logo {
+    display: block;
+    text-decoration: none;
+    transition: transform 0.3s ease;
+    margin-bottom: 1rem;
+    width: fit-content;
+    max-width: 100%;
+}
+
+.footer-logo:hover {
+    transform: scale(1.05);
+}
+
+.footer-logo-svg {
+    height: 60px !important;
+    width: auto !important;
+    max-width: 200px !important;
+    min-height: 60px !important;
+    display: block !important;
+    transition: all 0.3s ease;
+    filter: brightness(1.1) contrast(1.2);
+    opacity: 1 !important;
+    visibility: visible !important;
+}
+
+.footer-tagline {
+    color: #cbd5e0 !important;
+    font-size: 0.875rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 1.5rem;
+    margin-top: 0.5rem;
+    line-height: 1.4;
+}
+
+/* Footer brand container */
+.footer-brand {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    justify-content: flex-start !important;
+    width: 100% !important;
+}
+
+/* Ensure no conflicts with existing footer styles */
+.footer-brand h3 {
+    display: none !important;
+}
+
+.footer-brand * {
+    max-width: 100%;
+}
+
+/* Social links spacing */
+.footer-brand .social-links {
+    margin-top: 0;
+    width: 100%;
+}
+
+/* RTL Footer Logo Support */
+[dir="rtl"] .footer-brand,
+html[lang="ar"] .footer-brand {
+    align-items: flex-end !important;
+    text-align: right !important;
+}
+
+[dir="rtl"] .footer-logo,
+html[lang="ar"] .footer-logo {
+    margin-left: auto;
+    margin-right: 0;
+}
+
+[dir="rtl"] .footer-tagline,
+html[lang="ar"] .footer-tagline {
+    text-align: right !important;
+}
+
+/* Dark mode adjustments */
+.dark .footer-logo-svg {
+    filter: brightness(1.3) contrast(1.1) !important;
+}
+
+.dark .footer-tagline {
+    color: #e2e8f0 !important;
+}
+
+/* Mobile responsive */
+@media (max-width: 768px) {
+    .footer-logo-svg {
+        height: 45px !important;
+        max-width: 150px !important;
+        min-height: 45px !important;
+    }
+    
+    .footer-brand {
+        align-items: center !important;
+        text-align: center !important;
+        margin-bottom: 2rem;
+    }
+    
+    [dir="rtl"] .footer-brand,
+    html[lang="ar"] .footer-brand {
+        align-items: center !important;
+        text-align: center !important;
+    }
+    
+    .footer-tagline {
+        text-align: center !important;
+    }
+    
+    [dir="rtl"] .footer-tagline,
+    html[lang="ar"] .footer-tagline {
+        text-align: center !important;
+    }
+}
+
+/* Override any conflicting footer styles */
+.footer .footer-grid .footer-brand {
+    display: flex !important;
+    flex-direction: column !important;
+}
+
 
         .nav-links {
             display: flex;
@@ -861,7 +1027,13 @@ input:checked + .cookie-slider:before {
         flex-direction: row;
     }
 }
-
+.social-icon {
+    width: 1em;
+    height: 1em;
+    fill: currentColor;
+    display: inline-block;
+    vertical-align: middle;
+}
     </style>
 
     @stack('styles')
@@ -938,7 +1110,12 @@ input:checked + .cookie-slider:before {
     <nav class="guest-navbar">
             <div class="navbar-container">
                 <!-- Logo -->
-                <a href="/" class="logo">{{ config('app.name') }}</a>
+                 <a href="/" class="logo">
+            <img src="{{ Vite::asset('resources/images/NEW_Blue_White.svg') }}" 
+                 alt="{{ config('app.name') }}" 
+                 class="logo-svg">
+        </a>
+        
                 
                 <!-- Mobile Menu Button -->
                 <button class="mobile-menu-button">
@@ -1017,51 +1194,81 @@ input:checked + .cookie-slider:before {
                 @yield('content')
             </main>
 
-        <footer class="footer">
+    <footer class="footer">
             <div class="footer-grid">
                 <div class="footer-brand">
-                    <h3>{{ config('app.name') }}<br>YOUR BEST COMPANY</h3>
-                    <div class="social-links">
-                        <a href="#"><i class="fab fa-twitter"></i></a>
-                        <a href="#"><i class="fab fa-instagram"></i></a>
-                        <a href="#"><i class="fab fa-facebook"></i></a>
-                        <a href="#"><i class="fab fa-youtube"></i></a>
-                    </div>
+                     <!-- Logo -->
+            <a href="/" class="footer-logo">
+                <img src="{{ Vite::asset('resources/images/New_Trans_Blue.svg') }}" 
+                     alt="{{ config('app.name') }}" 
+                     class="footer-logo-svg">
+            </a>
+            
+            <!-- Company tagline under logo -->
+            <p class="footer-tagline">YOUR BEST COMPANY</p>
+            
+                <div class="social-links">
+                    <!-- X (Twitter) -->
+                    <a href="https://x.com/DervoxOfficial/" target="_blank" rel="noopener noreferrer" aria-label="Follow us on X">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" class="social-icon">
+                            <path d="M389.2 48h70.6L305.6 224.2 487 464H345L233.7 318.6 106.5 464H35.8L200.7 275.5 26.8 48H172.4L272.9 180.9 389.2 48zM364.4 421.8h39.1L151.1 88h-42L364.4 421.8z"/>
+                        </svg>
+                    </a>
+                    
+                    <!-- Instagram -->
+                    <a href="https://www.instagram.com/dervox.official/" target="_blank" rel="noopener noreferrer" aria-label="Follow us on Instagram">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512" class="social-icon">
+                            <path d="M224.1 141c-63.6 0-114.9 51.3-114.9 114.9s51.3 114.9 114.9 114.9S339 319.5 339 255.9 287.7 141 224.1 141zm0 189.6c-41.1 0-74.7-33.5-74.7-74.7s33.5-74.7 74.7-74.7 74.7 33.5 74.7 74.7-33.6 74.7-74.7 74.7zm146.4-194.3c0 14.9-12 26.8-26.8 26.8-14.9 0-26.8-12-26.8-26.8s12-26.8 26.8-26.8 26.8 12 26.8 26.8zm76.1 27.2c-1.7-35.9-9.9-67.7-36.2-93.9-26.2-26.2-58-34.4-93.9-36.2-37-2.1-147.9-2.1-184.9 0-35.8 1.7-67.6 9.9-93.9 36.1s-34.4 58-36.2 93.9c-2.1 37-2.1 147.9 0 184.9 1.7 35.9 9.9 67.7 36.2 93.9s58 34.4 93.9 36.2c37 2.1 147.9 2.1 184.9 0 35.9-1.7 67.7-9.9 93.9-36.2 26.2-26.2 34.4-58 36.2-93.9 2.1-37 2.1-147.8 0-184.8zM398.8 388c-7.8 19.6-22.9 34.7-42.6 42.6-29.5 11.7-99.5 9-132.1 9s-102.7 2.6-132.1-9c-19.6-7.8-34.7-22.9-42.6-42.6-11.7-29.5-9-99.5-9-132.1s-2.6-102.7 9-132.1c7.8-19.6 22.9-34.7 42.6-42.6 29.5-11.7 99.5-9 132.1-9s102.7-2.6 132.1 9c19.6 7.8 34.7 22.9 42.6 42.6 11.7 29.5 9 99.5 9 132.1s2.7 102.7-9 132.1z"/>
+                        </svg>
+                    </a>
+                    
+                    <!-- Facebook -->
+                    <a href="https://www.facebook.com/Dervox.Official/" target="_blank" rel="noopener noreferrer" aria-label="Follow us on Facebook">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" class="social-icon">
+                            <path d="M504 256C504 119 393 8 256 8S8 119 8 256c0 123.78 90.69 226.38 209.25 245V327.69h-63V256h63v-54.64c0-62.15 37-96.48 93.67-96.48 27.14 0 55.52 4.84 55.52 4.84v61h-31.28c-30.8 0-40.41 19.12-40.41 38.73V256h68.78l-11 71.69h-57.78V501C413.31 482.38 504 379.78 504 256z"/>
+                        </svg>
+                    </a>
+                    
+                    <!-- TikTok -->
+                    <a href="https://www.tiktok.com/@dervox.official" target="_blank" rel="noopener noreferrer" aria-label="Follow us on TikTok">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512" class="social-icon">
+                            <path d="M448,209.91a210.06,210.06,0,0,1-122.77-39.25V349.38A162.55,162.55,0,1,1,185,188.31V278.2a72.27,72.27,0,1,0,72.15,72.14V0H448Z"/>
+                        </svg>
+                    </a>
+                    
+                    <!-- YouTube -->
+                    <a href="https://youtube.com/@dervoxgroupe?si=-T2rxC98Hu1_ZjeY" target="_blank" rel="noopener noreferrer" aria-label="Subscribe to our YouTube channel">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 576 512" class="social-icon">
+                            <path d="M549.655 124.083c-6.281-23.65-24.787-42.276-48.284-48.597C458.781 64 288 64 288 64S117.22 64 74.629 75.486c-23.497 6.322-42.003 24.947-48.284 48.597-11.412 42.867-11.412 132.305-11.412 132.305s0 89.438 11.412 132.305c6.281 23.65 24.787 41.5 48.284 47.821C117.22 448 288 448 288 448s170.78 0 213.371-11.486c23.497-6.321 42.003-24.171 48.284-47.821 11.412-42.867 11.412-132.305 11.412-132.305s0-89.438-11.412-132.305zm-317.51 213.508V175.185l142.739 81.205-142.739 81.201z"/>
+                        </svg>
+                    </a>
+                </div>
+
+
                 </div>
                 
                 <div class="footer-column">
                     <h4>Product</h4>
                     <ul class="footer-links">
-                        <li><a href="#download">Download</a></li>
-                        <li><a href="#pricing">Pricing</a></li>
-                        <li><a href="#features">Features</a></li>
+                        <li><a href="{{ url('/#download') }}">Download</a></li>
+                        <li><a href="{{ url('/#pricing') }}">Pricing</a></li>
                     </ul>
                 </div>
 
-                <div class="footer-column">
-                    <h4>Company</h4>
-                    <ul class="footer-links">
-                        <li><a href="#">About</a></li>
-                        <li><a href="#">Careers</a></li>
-                        <li><a href="#">Blog</a></li>
-                    </ul>
-                </div>
 
                 <div class="footer-column">
                     <h4>Resources</h4>
                     <ul class="footer-links">
-                        <li><a href="#">Support</a></li>
-                        <li><a href="#">Documentation</a></li>
-                        <li><a href="#">Security</a></li>
+                        <li><a href="{{ route('contact') }}">Support</a></li>
+                        <li><a href="{{ url('https://dervox.com/about') }}">About</a></li>
                     </ul>
                 </div>
 
                 <div class="footer-column">
                     <h4>Legal</h4>
                     <ul class="footer-links">
-                        <li><a href="#">Terms</a></li>
-                        <li><a href="#">Privacy</a></li>
-                        <li><a href="#">Guidelines</a></li>
+                        <li><a href="{{ route('policies.terms') }}" >Terms</a></li>
+                        <li><a href="{{ route('policies.privacy') }}" >Privacy</a></li>
                     </ul>
                 </div>
             </div>
@@ -1070,51 +1277,81 @@ input:checked + .cookie-slider:before {
             <main class="mt-16">
                 @yield('content')
             </main>
-              <footer class="footer">
+   <footer class="footer">
             <div class="footer-grid">
                 <div class="footer-brand">
-                    <h3>{{ config('app.name') }}<br>YOUR BEST COMPANY</h3>
-                    <div class="social-links">
-                        <a href="#"><i class="fab fa-twitter"></i></a>
-                        <a href="#"><i class="fab fa-instagram"></i></a>
-                        <a href="#"><i class="fab fa-facebook"></i></a>
-                        <a href="#"><i class="fab fa-youtube"></i></a>
-                    </div>
+                     <!-- Logo -->
+            <a href="/" class="footer-logo">
+                <img src="{{ Vite::asset('resources/images/New_Trans_Blue.svg') }}" 
+                     alt="{{ config('app.name') }}" 
+                     class="footer-logo-svg">
+            </a>
+            
+            <!-- Company tagline under logo -->
+            <p class="footer-tagline">YOUR BEST COMPANY</p>
+            
+                <div class="social-links">
+                    <!-- X (Twitter) -->
+                    <a href="https://x.com/DervoxOfficial/" target="_blank" rel="noopener noreferrer" aria-label="Follow us on X">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" class="social-icon">
+                            <path d="M389.2 48h70.6L305.6 224.2 487 464H345L233.7 318.6 106.5 464H35.8L200.7 275.5 26.8 48H172.4L272.9 180.9 389.2 48zM364.4 421.8h39.1L151.1 88h-42L364.4 421.8z"/>
+                        </svg>
+                    </a>
+                    
+                    <!-- Instagram -->
+                    <a href="https://www.instagram.com/dervox.official/" target="_blank" rel="noopener noreferrer" aria-label="Follow us on Instagram">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512" class="social-icon">
+                            <path d="M224.1 141c-63.6 0-114.9 51.3-114.9 114.9s51.3 114.9 114.9 114.9S339 319.5 339 255.9 287.7 141 224.1 141zm0 189.6c-41.1 0-74.7-33.5-74.7-74.7s33.5-74.7 74.7-74.7 74.7 33.5 74.7 74.7-33.6 74.7-74.7 74.7zm146.4-194.3c0 14.9-12 26.8-26.8 26.8-14.9 0-26.8-12-26.8-26.8s12-26.8 26.8-26.8 26.8 12 26.8 26.8zm76.1 27.2c-1.7-35.9-9.9-67.7-36.2-93.9-26.2-26.2-58-34.4-93.9-36.2-37-2.1-147.9-2.1-184.9 0-35.8 1.7-67.6 9.9-93.9 36.1s-34.4 58-36.2 93.9c-2.1 37-2.1 147.9 0 184.9 1.7 35.9 9.9 67.7 36.2 93.9s58 34.4 93.9 36.2c37 2.1 147.9 2.1 184.9 0 35.9-1.7 67.7-9.9 93.9-36.2 26.2-26.2 34.4-58 36.2-93.9 2.1-37 2.1-147.8 0-184.8zM398.8 388c-7.8 19.6-22.9 34.7-42.6 42.6-29.5 11.7-99.5 9-132.1 9s-102.7 2.6-132.1-9c-19.6-7.8-34.7-22.9-42.6-42.6-11.7-29.5-9-99.5-9-132.1s-2.6-102.7 9-132.1c7.8-19.6 22.9-34.7 42.6-42.6 29.5-11.7 99.5-9 132.1-9s102.7-2.6 132.1 9c19.6 7.8 34.7 22.9 42.6 42.6 11.7 29.5 9 99.5 9 132.1s2.7 102.7-9 132.1z"/>
+                        </svg>
+                    </a>
+                    
+                    <!-- Facebook -->
+                    <a href="https://www.facebook.com/Dervox.Official/" target="_blank" rel="noopener noreferrer" aria-label="Follow us on Facebook">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" class="social-icon">
+                            <path d="M504 256C504 119 393 8 256 8S8 119 8 256c0 123.78 90.69 226.38 209.25 245V327.69h-63V256h63v-54.64c0-62.15 37-96.48 93.67-96.48 27.14 0 55.52 4.84 55.52 4.84v61h-31.28c-30.8 0-40.41 19.12-40.41 38.73V256h68.78l-11 71.69h-57.78V501C413.31 482.38 504 379.78 504 256z"/>
+                        </svg>
+                    </a>
+                    
+                    <!-- TikTok -->
+                    <a href="https://www.tiktok.com/@dervox.official" target="_blank" rel="noopener noreferrer" aria-label="Follow us on TikTok">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512" class="social-icon">
+                            <path d="M448,209.91a210.06,210.06,0,0,1-122.77-39.25V349.38A162.55,162.55,0,1,1,185,188.31V278.2a72.27,72.27,0,1,0,72.15,72.14V0H448Z"/>
+                        </svg>
+                    </a>
+                    
+                    <!-- YouTube -->
+                    <a href="https://youtube.com/@dervoxgroupe?si=-T2rxC98Hu1_ZjeY" target="_blank" rel="noopener noreferrer" aria-label="Subscribe to our YouTube channel">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 576 512" class="social-icon">
+                            <path d="M549.655 124.083c-6.281-23.65-24.787-42.276-48.284-48.597C458.781 64 288 64 288 64S117.22 64 74.629 75.486c-23.497 6.322-42.003 24.947-48.284 48.597-11.412 42.867-11.412 132.305-11.412 132.305s0 89.438 11.412 132.305c6.281 23.65 24.787 41.5 48.284 47.821C117.22 448 288 448 288 448s170.78 0 213.371-11.486c23.497-6.321 42.003-24.171 48.284-47.821 11.412-42.867 11.412-132.305 11.412-132.305s0-89.438-11.412-132.305zm-317.51 213.508V175.185l142.739 81.205-142.739 81.201z"/>
+                        </svg>
+                    </a>
+                </div>
+
+
                 </div>
                 
                 <div class="footer-column">
                     <h4>Product</h4>
                     <ul class="footer-links">
-                        <li><a href="#download">Download</a></li>
-                        <li><a href="#pricing">Pricing</a></li>
-                        <li><a href="#features">Features</a></li>
+                        <li><a href="{{ url('/#download') }}">Download</a></li>
+                        <li><a href="{{ url('/#pricing') }}">Pricing</a></li>
                     </ul>
                 </div>
 
-                <div class="footer-column">
-                    <h4>Company</h4>
-                    <ul class="footer-links">
-                        <li><a href="#">About</a></li>
-                        <li><a href="#">Careers</a></li>
-                        <li><a href="#">Blog</a></li>
-                    </ul>
-                </div>
 
                 <div class="footer-column">
                     <h4>Resources</h4>
                     <ul class="footer-links">
-                        <li><a href="#">Support</a></li>
-                        <li><a href="#">Documentation</a></li>
-                        <li><a href="#">Security</a></li>
+                        <li><a href="{{ route('contact') }}">Support</a></li>
+                        <li><a href="{{ url('https://dervox.com/about') }}">About</a></li>
                     </ul>
                 </div>
 
                 <div class="footer-column">
                     <h4>Legal</h4>
                     <ul class="footer-links">
-                        <li><a href="#">Terms</a></li>
-                        <li><a href="#">Privacy</a></li>
-                        <li><a href="#">Guidelines</a></li>
+                        <li><a href="{{ route('policies.terms') }}" >Terms</a></li>
+                        <li><a href="{{ route('policies.privacy') }}" >Privacy</a></li>
                     </ul>
                 </div>
             </div>
@@ -1123,8 +1360,11 @@ input:checked + .cookie-slider:before {
     @else
     <nav class="guest-navbar">
     <div class="navbar-container">
-        <a href="/" class="logo">{{ config('app.name') }}</a>
-        
+      <a href="/" class="logo">
+            <img src="{{ Vite::asset('resources/images/NEW_Blue_White.svg') }}" 
+                 alt="{{ config('app.name') }}" 
+                 class="logo-svg">
+        </a>        
         <button class="mobile-menu-button">
             <i class="fas fa-bars"></i>
         </button>
@@ -1133,10 +1373,10 @@ input:checked + .cookie-slider:before {
             <div class="nav-links-container">
                 <div class="main-nav-group">
             
-                    <a href="#features" class="nav-link">{{ __('messages.Features') }}</a>
-                    <a href="#download" class="nav-link">{{ __('messages.Download') }}</a>
-                    <a href="#pricing" class="nav-link">{{ __('messages.Pricing') }}</a>
-                    <a href="#" class="nav-link">{{ __('messages.Support') }}</a>
+                    <a href="{{ url('/#features') }}" class="nav-link">{{ __('messages.Features') }}</a>
+                    <a href="{{ url('/#download') }}" class="nav-link">{{ __('messages.Download') }}</a>
+                    <a href="{{ url('/#pricing') }}" class="nav-link">{{ __('messages.Pricing') }}</a>
+                    <a href="{{ route('contact') }}"  class="nav-link">{{ __('messages.Support') }}</a>
                     <a href="{{ route('login') }}" class="nav-link">{{ __('messages.Login') }}</a>
                     <a href="{{ route('register') }}" class="nav-link">{{ __('messages.Sign Up') }}</a>
                     <div class="language-switcher">
@@ -1170,48 +1410,78 @@ input:checked + .cookie-slider:before {
         <footer class="footer">
             <div class="footer-grid">
                 <div class="footer-brand">
-                    <h3>{{ config('app.name') }}<br>YOUR BEST COMPANY</h3>
-                    <div class="social-links">
-                        <a href="#"><i class="fab fa-twitter"></i></a>
-                        <a href="#"><i class="fab fa-instagram"></i></a>
-                        <a href="#"><i class="fab fa-facebook"></i></a>
-                        <a href="#"><i class="fab fa-youtube"></i></a>
-                    </div>
+                     <!-- Logo -->
+            <a href="/" class="footer-logo">
+                <img src="{{ Vite::asset('resources/images/New_Trans_Blue.svg') }}" 
+                     alt="{{ config('app.name') }}" 
+                     class="footer-logo-svg">
+            </a>
+            
+            <!-- Company tagline under logo -->
+            <p class="footer-tagline">YOUR BEST COMPANY</p>
+            
+                <div class="social-links">
+                    <!-- X (Twitter) -->
+                    <a href="https://x.com/DervoxOfficial/" target="_blank" rel="noopener noreferrer" aria-label="Follow us on X">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" class="social-icon">
+                            <path d="M389.2 48h70.6L305.6 224.2 487 464H345L233.7 318.6 106.5 464H35.8L200.7 275.5 26.8 48H172.4L272.9 180.9 389.2 48zM364.4 421.8h39.1L151.1 88h-42L364.4 421.8z"/>
+                        </svg>
+                    </a>
+                    
+                    <!-- Instagram -->
+                    <a href="https://www.instagram.com/dervox.official/" target="_blank" rel="noopener noreferrer" aria-label="Follow us on Instagram">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512" class="social-icon">
+                            <path d="M224.1 141c-63.6 0-114.9 51.3-114.9 114.9s51.3 114.9 114.9 114.9S339 319.5 339 255.9 287.7 141 224.1 141zm0 189.6c-41.1 0-74.7-33.5-74.7-74.7s33.5-74.7 74.7-74.7 74.7 33.5 74.7 74.7-33.6 74.7-74.7 74.7zm146.4-194.3c0 14.9-12 26.8-26.8 26.8-14.9 0-26.8-12-26.8-26.8s12-26.8 26.8-26.8 26.8 12 26.8 26.8zm76.1 27.2c-1.7-35.9-9.9-67.7-36.2-93.9-26.2-26.2-58-34.4-93.9-36.2-37-2.1-147.9-2.1-184.9 0-35.8 1.7-67.6 9.9-93.9 36.1s-34.4 58-36.2 93.9c-2.1 37-2.1 147.9 0 184.9 1.7 35.9 9.9 67.7 36.2 93.9s58 34.4 93.9 36.2c37 2.1 147.9 2.1 184.9 0 35.9-1.7 67.7-9.9 93.9-36.2 26.2-26.2 34.4-58 36.2-93.9 2.1-37 2.1-147.8 0-184.8zM398.8 388c-7.8 19.6-22.9 34.7-42.6 42.6-29.5 11.7-99.5 9-132.1 9s-102.7 2.6-132.1-9c-19.6-7.8-34.7-22.9-42.6-42.6-11.7-29.5-9-99.5-9-132.1s-2.6-102.7 9-132.1c7.8-19.6 22.9-34.7 42.6-42.6 29.5-11.7 99.5-9 132.1-9s102.7-2.6 132.1 9c19.6 7.8 34.7 22.9 42.6 42.6 11.7 29.5 9 99.5 9 132.1s2.7 102.7-9 132.1z"/>
+                        </svg>
+                    </a>
+                    
+                    <!-- Facebook -->
+                    <a href="https://www.facebook.com/Dervox.Official/" target="_blank" rel="noopener noreferrer" aria-label="Follow us on Facebook">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" class="social-icon">
+                            <path d="M504 256C504 119 393 8 256 8S8 119 8 256c0 123.78 90.69 226.38 209.25 245V327.69h-63V256h63v-54.64c0-62.15 37-96.48 93.67-96.48 27.14 0 55.52 4.84 55.52 4.84v61h-31.28c-30.8 0-40.41 19.12-40.41 38.73V256h68.78l-11 71.69h-57.78V501C413.31 482.38 504 379.78 504 256z"/>
+                        </svg>
+                    </a>
+                    
+                    <!-- TikTok -->
+                    <a href="https://www.tiktok.com/@dervox.official" target="_blank" rel="noopener noreferrer" aria-label="Follow us on TikTok">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512" class="social-icon">
+                            <path d="M448,209.91a210.06,210.06,0,0,1-122.77-39.25V349.38A162.55,162.55,0,1,1,185,188.31V278.2a72.27,72.27,0,1,0,72.15,72.14V0H448Z"/>
+                        </svg>
+                    </a>
+                    
+                    <!-- YouTube -->
+                    <a href="https://youtube.com/@dervoxgroupe?si=-T2rxC98Hu1_ZjeY" target="_blank" rel="noopener noreferrer" aria-label="Subscribe to our YouTube channel">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 576 512" class="social-icon">
+                            <path d="M549.655 124.083c-6.281-23.65-24.787-42.276-48.284-48.597C458.781 64 288 64 288 64S117.22 64 74.629 75.486c-23.497 6.322-42.003 24.947-48.284 48.597-11.412 42.867-11.412 132.305-11.412 132.305s0 89.438 11.412 132.305c6.281 23.65 24.787 41.5 48.284 47.821C117.22 448 288 448 288 448s170.78 0 213.371-11.486c23.497-6.321 42.003-24.171 48.284-47.821 11.412-42.867 11.412-132.305 11.412-132.305s0-89.438-11.412-132.305zm-317.51 213.508V175.185l142.739 81.205-142.739 81.201z"/>
+                        </svg>
+                    </a>
+                </div>
+
+
                 </div>
                 
                 <div class="footer-column">
                     <h4>Product</h4>
                     <ul class="footer-links">
-                        <li><a href="#download">Download</a></li>
-                        <li><a href="#pricing">Pricing</a></li>
-                        <li><a href="#features">Features</a></li>
+                        <li><a href="{{ url('/#download') }}">Download</a></li>
+                        <li><a href="{{ url('/#pricing') }}">Pricing</a></li>
                     </ul>
                 </div>
 
-                <div class="footer-column">
-                    <h4>Company</h4>
-                    <ul class="footer-links">
-                        <li><a href="#">About</a></li>
-                        <li><a href="#">Careers</a></li>
-                        <li><a href="#">Blog</a></li>
-                    </ul>
-                </div>
 
                 <div class="footer-column">
                     <h4>Resources</h4>
                     <ul class="footer-links">
-                        <li><a href="#">Support</a></li>
-                        <li><a href="#">Documentation</a></li>
-                        <li><a href="#">Security</a></li>
+                        <li><a href="{{ route('contact') }}">Support</a></li>
+                        <li><a href="{{ url('https://dervox.com/about') }}">About</a></li>
                     </ul>
                 </div>
 
                 <div class="footer-column">
                     <h4>Legal</h4>
                     <ul class="footer-links">
-                        <li><a href="#">Terms</a></li>
-                        <li><a href="#">Privacy</a></li>
-                        <li><a href="#">Guidelines</a></li>
+                        <li><a href="{{ route('policies.terms') }}" >Terms</a></li>
+                        <li><a href="{{ route('policies.privacy') }}" >Privacy</a></li>
                     </ul>
                 </div>
             </div>

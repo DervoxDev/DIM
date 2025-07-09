@@ -7,6 +7,67 @@
 @endpush
 
 @section('content')
+<!-- DIM Service Banner -->
+<div class="dim-banner">
+    <div class="banner-bg-effects">
+        <div class="floating-shapes">
+            <div class="shape shape-1"></div>
+            <div class="shape shape-2"></div>
+            <div class="shape shape-3"></div>
+            <div class="shape shape-4"></div>
+        </div>
+    </div>
+    <div class="container" style="padding-top:80px;">
+        <div class="row">
+            <div class="banner-image">
+                <div class="image-glow"></div>
+                <div class="image-wrapper">
+                    <img src="{{ Vite::asset('resources/images/image2.png') }}" alt="DIM Service" />
+                </div>
+                <div class="pulse-rings">
+                    <div class="pulse-ring ring-1"></div>
+                    <div class="pulse-ring ring-2"></div>
+                    <div class="pulse-ring ring-3"></div>
+                </div>
+            </div>
+            <div class="banner-content">
+                <div class="content-wrapper">
+                    <div class="badge">
+                        <span>{{ __('home.new_service') }}</span>
+                    </div>
+                    <h3>{{ __('home.dim_title') }}</h3>
+                    <p>{{ __('home.dim_description') }}</p>
+                    <div class="features-list">
+                        <div class="feature-item">
+                            <i class="fas fa-check"></i>
+                            <span>{{ __('home.feature_1') }}</span>
+                        </div>
+                        <div class="feature-item">
+                            <i class="fas fa-check"></i>
+                            <span>{{ __('home.feature_2') }}</span>
+                        </div>
+                        <div class="feature-item">
+                            <i class="fas fa-check"></i>
+                            <span>{{ __('home.feature_3') }}</span>
+                        </div>
+                    </div>
+                    <div class="button-group">
+                        <a href="https://dim.dervox.com" target="_blank" class="button dim-button primary">
+                            <span>{{ __('home.try_dim') }}</span>
+                            <i class="fas fa-arrow-right"></i>
+                        </a>
+                        <a href="#demo" class="button dim-button secondary">
+                            <span>{{ __('home.watch_demo') }}</span>
+                            <i class="fas fa-play"></i>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
     <!-- Home intro -->
     <div class="home-intro">
         <div class="container">
@@ -25,6 +86,7 @@
             </div>
         </div>
     </div>
+
 
     <!-- Words section -->
     <div class="words-section section-bottom-only">
